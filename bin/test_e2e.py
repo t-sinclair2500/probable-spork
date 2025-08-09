@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-import os, json, subprocess, sys, time
+import json
+import os
+import subprocess
+import sys
+import time
+
 
 def run(cmd):
     print("RUN:", cmd)
     r = subprocess.run(cmd, shell=True)
     if r.returncode != 0:
-        print("FAILED:", cmd); sys.exit(r.returncode)
+        print("FAILED:", cmd)
+        sys.exit(r.returncode)
+
 
 def main():
     # Minimal end-to-end with placeholders
@@ -25,6 +32,7 @@ def main():
     run("python bin/blog_post_wp.py")
     run("python bin/blog_ping_search.py")
     print("E2E smoke complete.")
+
 
 if __name__ == "__main__":
     main()

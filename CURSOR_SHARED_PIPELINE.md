@@ -83,7 +83,7 @@
 }
 ```
 
-**script text (`*.txt`)**  
+**script text (`*.txt`)**
 - Plain text, conversational sentences, `[B-ROLL: ...]` markers every 2–3 lines.
 
 **metadata JSON (`*.metadata.json`)**
@@ -262,8 +262,8 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 ### G) Reliability / Ops
 **Tasks**
 - Wrap FFmpeg/whisper calls with `nice/ionice`.
-- Thermal defer when `vcgencmd` > 75°C (sleep & retry).  
-- Add `elapsed_ms` to every `jobs/state.jsonl` entry.  
+- Thermal defer when `vcgencmd` > 75°C (sleep & retry).
+- Add `elapsed_ms` to every `jobs/state.jsonl` entry.
 - Improve `bin/healthcheck.py` to report last successful steps and queue depths.
 
 **Acceptance**

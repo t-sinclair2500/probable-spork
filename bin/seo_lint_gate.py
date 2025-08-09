@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-import sys, json
+import json
+import sys
+
 from bin.seo_lint import lint as seo_lint
+
 
 def main():
     if len(sys.argv) < 3:
-        print(json.dumps({"error":"usage: seo_lint_gate.py <title> <meta_desc>"}))
+        print(json.dumps({"error": "usage: seo_lint_gate.py <title> <meta_desc>"}))
         sys.exit(2)
     title = sys.argv[1]
     meta = sys.argv[2]
@@ -13,6 +16,7 @@ def main():
         print(json.dumps({"ok": False, "issues": issues}))
         sys.exit(1)
     print(json.dumps({"ok": True}))
+
 
 if __name__ == "__main__":
     main()

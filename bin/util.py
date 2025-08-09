@@ -1,8 +1,17 @@
-import os, json, yaml, time, fcntl, sys, subprocess, pathlib
+import fcntl
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import time
 from contextlib import contextmanager
+
+import yaml
 from rich import print
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
 
 def load_global_config():
     p = os.path.join(BASE, "conf", "global.yaml")
@@ -11,8 +20,10 @@ def load_global_config():
     with open(p, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
+
 def env(key, default=""):
     return os.environ.get(key, default)
+
 
 @contextmanager
 def single_lock():
@@ -32,31 +43,50 @@ def single_lock():
         except Exception:
             pass
 
+
 def log_state(step, status="OK", notes=""):
     state_path = os.path.join(BASE, "jobs", "state.jsonl")
-    rec = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-           "step": step, "status": status, "notes": notes}
+    rec = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "step": step,
+        "status": status,
+        "notes": notes,
+    }
     with open(state_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(rec) + "\n")
+
 
 def paced_sleep(cfg, label="cooldown"):
     secs = int(cfg.get("pipeline", {}).get("pacing_cooldown_seconds", 30))
     time.sleep(secs)
 
+
 def run_cmd(cmd, cwd=None):
     res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True)
     return res.returncode, res.stdout, res.stderr
 
+
 def load_json(path, default=None):
-    if not os.path.exists(path): return default
+    if not os.path.exists(path):
+        return default
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
 
 def dump_json(path, obj):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2)
 
+
 def ensure_dirs(cfg):
     s = cfg["storage"]
-    for key in ["videos_dir","assets_dir","scripts_dir","voiceovers_dir","logs_dir","data_dir","jobs_dir"]:
+    for key in [
+        "videos_dir",
+        "assets_dir",
+        "scripts_dir",
+        "voiceovers_dir",
+        "logs_dir",
+        "data_dir",
+        "jobs_dir",
+    ]:
         os.makedirs(os.path.join(BASE, s[key]), exist_ok=True)

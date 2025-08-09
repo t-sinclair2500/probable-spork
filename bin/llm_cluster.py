@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
-import os, json, sqlite3, requests, time, re
-from util import single_lock, log_state, load_global_config, BASE, ensure_dirs
+import json
+import os
+import re
+import sqlite3
+import time
+
+import requests
+from util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+
 try:
     from bin.core import parse_llm_json  # when repo root is on sys.path
 except Exception:
@@ -17,6 +24,7 @@ except Exception:
                 return json.loads(m.group(0))
             raise ValueError("No JSON object found in LLM output.")
 
+
 def call_ollama(prompt, cfg):
     url = cfg["llm"]["endpoint"]
     model = cfg["llm"]["model"]
@@ -24,21 +32,25 @@ def call_ollama(prompt, cfg):
     r = requests.post(url, json=payload, timeout=600)
     r.raise_for_status()
     # Ollama returns {"response": "..."} with the text
-    return r.json().get("response","")
+    return r.json().get("response", "")
+
 
 def main():
     cfg = load_global_config()
     ensure_dirs(cfg)
     # Collect recent titles/tags from sqlite
-    db_path = os.path.join(BASE,"data","trending_topics.db")
+    db_path = os.path.join(BASE, "data", "trending_topics.db")
     rows = []
     if os.path.exists(db_path):
-        con = sqlite3.connect(db_path); cur = con.cursor()
-        for (ts, source, title, tags) in cur.execute("SELECT ts, source, title, tags FROM trends ORDER BY rowid DESC LIMIT 50"):
+        con = sqlite3.connect(db_path)
+        cur = con.cursor()
+        for ts, source, title, tags in cur.execute(
+            "SELECT ts, source, title, tags FROM trends ORDER BY rowid DESC LIMIT 50"
+        ):
             rows.append({"title": title, "tags": tags, "source": source})
         con.close()
     # Build prompt
-    with open(os.path.join(BASE,"prompts","cluster_topics.txt"),"r",encoding="utf-8") as f:
+    with open(os.path.join(BASE, "prompts", "cluster_topics.txt"), "r", encoding="utf-8") as f:
         template = f.read()
     prompt = template + "\nINPUT:\n" + json.dumps(rows)
     # Call local LLM
@@ -49,8 +61,18 @@ def main():
         topics = parsed.get("topics", [])
     except Exception:
         topics = [
-            {"topic":"ai tools","score":0.6,"hook":"5 AI tools to save hours","keywords":["ai","tools"]},
-            {"topic":"space trivia","score":0.5,"hook":"10 wild space facts","keywords":["space","trivia"]}
+            {
+                "topic": "ai tools",
+                "score": 0.6,
+                "hook": "5 AI tools to save hours",
+                "keywords": ["ai", "tools"],
+            },
+            {
+                "topic": "space trivia",
+                "score": 0.5,
+                "hook": "10 wild space facts",
+                "keywords": ["space", "trivia"],
+            },
         ]
     # Enrich with created_at and clamp to top 10 by score
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -61,11 +83,12 @@ def main():
     topics.sort(key=lambda x: float(x.get("score", 0.0)), reverse=True)
     topics = topics[:10]
     # Save queue
-    queue_path = os.path.join(BASE,"data","topics_queue.json")
-    with open(queue_path,"w",encoding="utf-8") as f:
+    queue_path = os.path.join(BASE, "data", "topics_queue.json")
+    with open(queue_path, "w", encoding="utf-8") as f:
         json.dump(topics, f, indent=2)
-    log_state("llm_cluster","OK",f"topics={len(topics)}")
+    log_state("llm_cluster", "OK", f"topics={len(topics)}")
     print(f"Wrote {queue_path}")
+
 
 if __name__ == "__main__":
     with single_lock():

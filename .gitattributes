@@ -12,4 +12,3 @@
 
 # Merge strategy for lock/state files
 jobs/state.jsonl merge=union
-
