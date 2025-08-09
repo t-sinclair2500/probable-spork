@@ -7,7 +7,8 @@ curl -fsSL https://ollama.com/install.sh | sh
 sudo systemctl enable --now ollama
 cp conf/global.example.yaml conf/global.yaml
 cp conf/blog.example.yaml conf/blog.yaml
-cp .env.example .env
+cp .env.example .env  # Comprehensive environment variables template
+# Edit .env with your actual API keys and credentials
 make check
 ```
 
@@ -44,4 +45,8 @@ make backup
 - Check `logs/pipeline.log` and `jobs/state.jsonl`.
 - Ensure GPU split low and swap on SSD.
 - If CPU temp > 75°C, pipeline defers heavy steps.
- - Missing API keys: copy `.env.example` → `.env` and fill provider keys (PIXABAY/PEXELS). `make check` reports missing keys. `conf/sources.yaml` has been archived.
+- **Missing API keys**: The comprehensive `.env.example` file documents all available environment variables. Copy to `.env` and configure your actual API keys. `make check` reports missing keys and suggests which features will be skipped.
+  - Asset providers: `PIXABAY_API_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY` (optional)
+  - Data ingestion: `YOUTUBE_API_KEY`, Reddit API credentials
+  - Optional services: OpenAI API key for TTS/ASR fallbacks
+- **Note**: `.env` files are excluded from version control for security. Always use `.env.example` as your template.

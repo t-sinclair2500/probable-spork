@@ -7,6 +7,14 @@ import time
 
 import markdown
 
+import sys
+import os
+
+# Ensure repo root on path
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 from bin.core import sanitize_html, schema_article
 from bin.util import BASE, ensure_dirs, load_global_config, log_state, single_lock
 

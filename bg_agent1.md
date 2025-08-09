@@ -1,19 +1,22 @@
-# Background Agent 1: Data Integration & Testing Track
+# Local Agent 1: Data Integration & Testing Track
 
-You are a senior Python developer working in an Ubuntu-based Cursor background agent environment. Your mission is to resolve critical blockers in the data ingestion pipeline and strengthen the testing foundation for a Raspberry Pi content automation system.
+You are a senior Python developer working locally on a macOS development environment. Your mission is to resolve critical blockers in the data ingestion pipeline and strengthen the testing foundation for a Raspberry Pi content automation system.
 
 ## Environment Context
 
-You are working in a clean Ubuntu VM that has been set up with:
-- Python 3.x with venv created at `.venv`
-- System dependencies: ffmpeg, git, jq, sqlite3, build-essential, cmake
+You are working in the full local development environment that includes:
+- Python 3.x with venv at `.venv` (already activated)
+- System dependencies: ffmpeg, git, jq, sqlite3, build tools
 - Python dependencies installed from `requirements.txt`
+- **Ollama service**: Available locally for LLM operations
+- **whisper.cpp**: May be available at `~/whisper.cpp/build/bin/whisper-cli`
+- **Local file system**: Full access to macOS tools and paths
 
-**Important**: You do NOT have access to:
-- Ollama service (will not be running)
-- whisper.cpp binary (not built in this environment) 
-- YouTube/Reddit/OpenAI API keys (will cause some tests to fail)
-- macOS-specific tools or paths
+**Available for testing**:
+- Real API keys in `.env` (if configured)
+- Local Ollama service for LLM calls
+- Full macOS development stack
+- Interactive testing and debugging
 
 ## Your Assigned Work Track
 
@@ -40,48 +43,54 @@ Start by reading these files to understand the current state:
 6. **`bin/youtube_upload.py`** - YouTube uploader needing dry-run flow
 7. **`AGENT_HANDOFF_PLAN.md`** - Contains specific YouTube API debugging context (lines 26-37)
 
-## Environment-Aware Implementation Strategy
+## Local Development Implementation Strategy
 
 ### For A1 (YouTube API Fix):
 - Debug the 404 error in `bin/niche_trends.py` 
 - The error is: `404 Client Error: Not Found for url: https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&maxResults=25&videoCategoryId=27&key=...`
-- Test with different category IDs (28, 25, 24) or remove category filter entirely
-- Implement graceful fallback when YouTube fails (continue with Reddit/Google Trends)
-- **Note**: You won't have real API keys, so focus on error handling and fallback logic
+- **Test with real API key**: Add `YOUTUBE_API_KEY` to `.env` and test different approaches
+- Try different category IDs (28, 25, 24) or remove category filter entirely
+- Test regionCode variations (US, GB, None)
+- Implement robust fallback when YouTube fails (continue with Reddit/Google Trends)
+- **Interactive debugging**: Use breakpoints and real API responses
 
 ### For H7 (E2E Test Robustness):
-- Modify `bin/test_e2e.py` to gracefully skip when:
-  - No API keys present in environment
-  - whisper.cpp binary not found
-  - Ollama service not running
-- Still validate the core flow with placeholder data
-- Use environment variable checks and try/except blocks
+- Enhance `bin/test_e2e.py` to gracefully handle missing dependencies:
+  - Check for API keys and skip external calls if missing
+  - Detect whisper.cpp binary and skip audio processing if unavailable
+  - Test Ollama connectivity and fallback to offline mode
+- **Full end-to-end testing**: Run with real services when available
+- Add comprehensive test coverage for both online and offline modes
 
 ### For H2 (.env.example):
-- Create `.env.example` at repo root with all required environment variables
-- Include clear comments about which are required vs optional
-- Reference existing patterns in `README.md` and `TYLER_TODO.md`
+- Create comprehensive `.env.example` at repo root
+- Include all discovered environment variables from code analysis
+- Add clear documentation for required vs optional keys
+- Test the example file by copying to `.env.test` and validating
 
 ### For E2 (YouTube Uploader):
-- Focus on the dry-run functionality and OAuth setup documentation
-- Test upload payload generation without actual upload
-- **Note**: Real YouTube upload won't work without OAuth tokens
+- Implement full OAuth flow for YouTube uploads
+- **Test real upload**: Set up OAuth credentials and test dry-run uploads
+- Generate proper video metadata and thumbnails
+- Test with actual video files from the pipeline
 
 ### For F2 (Healthcheck):
-- Enhance `bin/healthcheck.py` to report:
-  - Last successful step from `jobs/state.jsonl`
-  - Queue depths from various JSON files
-  - Service status (but account for missing services in your environment)
+- Enhance `bin/healthcheck.py` with comprehensive monitoring:
+  - Real-time service status (Ollama, whisper.cpp availability)
+  - Last successful step analysis from `jobs/state.jsonl`
+  - Queue depths and pipeline health metrics
+  - **Live testing**: Monitor actual pipeline runs
 
-## Testing Strategy
+## Local Testing Strategy
 
-Since you're in a constrained environment:
+With full local environment access:
 
-1. **Use the existing venv**: `. .venv/bin/activate` before running Python scripts
-2. **Test with placeholders**: Focus on code paths that work without external services
-3. **Validate error handling**: Ensure graceful degradation when services unavailable
-4. **Check file outputs**: Verify scripts create expected JSON/log files
-5. **Use `python bin/check_env.py`** to validate your changes don't break basic checks
+1. **Interactive development**: Use the existing venv and full IDE debugging capabilities
+2. **Real service testing**: Test with actual Ollama, whisper.cpp, and API services when available
+3. **Comprehensive validation**: Test both online and offline modes thoroughly
+4. **Live pipeline runs**: Execute `make run-once` and `make blog-once` to test end-to-end
+5. **API validation**: Use real API keys to test and debug integration issues
+6. **Performance monitoring**: Use `python bin/check_env.py` and health endpoints
 
 ## Acceptance Criteria
 
@@ -107,4 +116,4 @@ For each completed task, provide:
 - Test results showing graceful degradation
 - Documentation of any assumptions or limitations in the Ubuntu environment
 
-**Begin with H2 (.env.example) as it will help with subsequent testing. Focus on making the system resilient to missing external dependencies while maintaining core functionality.**
+**Start with A1 (YouTube API) since you can test with real keys and debug interactively. Use H2 (.env.example) to document all required environment variables. Focus on both robust error handling AND full functionality when services are available.**

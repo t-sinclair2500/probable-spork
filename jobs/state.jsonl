@@ -452,3 +452,173 @@
 {"ts": "2025-08-09T08:04:31Z", "step": "assemble_video_progress", "status": "OK", "notes": "97.3% (t)"}
 {"ts": "2025-08-09T08:04:34Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
 {"ts": "2025-08-09T08:04:36Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:28:44Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-09T19:28:52Z", "step": "niche_trends", "status": "OK", "notes": "rows=131"}
+{"ts": "2025-08-09T19:28:52Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T19:29:10Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T19:29:31Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T19:29:31Z", "step": "fetch_assets", "status": "OK", "notes": "exists:19"}
+{"ts": "2025-08-09T19:29:31Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3"}
+{"ts": "2025-08-09T19:29:32Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-09T19:30:16Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:16Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=image;asset=pexels_typing-on-a-keyboard_9551663.jpeg;q="}
+{"ts": "2025-08-09T19:30:16Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pexels_monitor-displaying-a-search-result_7253660_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=image;asset=pexels_typing_1181208.jpeg;q=typing"}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=image;asset=pexels_monitor-displaying-a-search-result_4069064.jpeg;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=video;asset=pexels_clock_855782_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=image;asset=pexels_clock_707582.jpeg;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=image;asset=pexels_clock-ticking-away_359989.jpeg;q=clock"}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=image;asset=pexels_keyboard_1772123.jpeg;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pexels_typing_946146_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=image;asset=pexels_monitor_1029757.jpeg;q="}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pexels_typing-on-a-keyboard_19162270_norm.mp4;q=keyboard"}
+{"ts": "2025-08-09T19:30:17Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=video;asset=pexels_notebook_852422_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=image;asset=pexels_subscribe-button_33347365.jpeg;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=image;asset=pexels_notebook_733857.jpeg;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pexels_monitor_1536322_norm.mp4;q=monitor"}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pexels_checklist_4058074_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=18;type=video;asset=pexels_subscribe-button_3822778_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=19;type=video;asset=pexels_clock-ticking-away_7033786_norm.mp4;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=20;type=image;asset=pexels_notebook_733857.jpeg;q=notebook"}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=21;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:18Z", "step": "assemble_pick", "status": "OK", "notes": "beat=22;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=23;type=image;asset=pexels_typing_1181208.jpeg;q=typing"}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=24;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=25;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=26;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=27;type=image;asset=pexels_clock_707582.jpeg;q=clock"}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=28;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=29;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=30;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=31;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=32;type=image;asset=pexels_subscribe-button_33347365.jpeg;q=subscribe button"}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T19:30:19Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T19:30:20Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T19:30:30Z", "step": "assemble_video_progress", "status": "OK", "notes": "9.9% (t)"}
+{"ts": "2025-08-09T19:30:40Z", "step": "assemble_video_progress", "status": "OK", "notes": "20.3% (t)"}
+{"ts": "2025-08-09T19:30:50Z", "step": "assemble_video_progress", "status": "OK", "notes": "30.2% (t)"}
+{"ts": "2025-08-09T19:31:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "40.4% (t)"}
+{"ts": "2025-08-09T19:31:10Z", "step": "assemble_video_progress", "status": "OK", "notes": "49.8% (t)"}
+{"ts": "2025-08-09T19:31:20Z", "step": "assemble_video_progress", "status": "OK", "notes": "55.4% (t)"}
+{"ts": "2025-08-09T19:31:30Z", "step": "assemble_video_progress", "status": "OK", "notes": "63.1% (t)"}
+{"ts": "2025-08-09T19:31:40Z", "step": "assemble_video_progress", "status": "OK", "notes": "70.3% (t)"}
+{"ts": "2025-08-09T19:31:50Z", "step": "assemble_video_progress", "status": "OK", "notes": "77.2% (t)"}
+{"ts": "2025-08-09T19:32:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "85.4% (t)"}
+{"ts": "2025-08-09T19:32:10Z", "step": "assemble_video_progress", "status": "OK", "notes": "93.8% (t)"}
+{"ts": "2025-08-09T19:32:18Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T19:32:20Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:32:21Z", "step": "upload_stage", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:32:21Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T19:33:16Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=2"}
+{"ts": "2025-08-09T19:33:16Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T19:33:36Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T19:34:16Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-09T19:34:23Z", "step": "niche_trends", "status": "OK", "notes": "rows=131"}
+{"ts": "2025-08-09T19:34:23Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T19:34:37Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T19:34:53Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T19:34:53Z", "step": "fetch_assets", "status": "OK", "notes": "exists:19"}
+{"ts": "2025-08-09T19:34:53Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3"}
+{"ts": "2025-08-09T19:34:54Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-09T19:35:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:35:19Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=image;asset=pexels_typing-on-a-keyboard_9551663.jpeg;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pexels_monitor-displaying-a-search-result_7253660_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=image;asset=pexels_monitor-displaying-a-search-result_4069064.jpeg;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=image;asset=pexels_typing_1181208.jpeg;q=typing"}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=video;asset=pexels_clock_855782_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=image;asset=pexels_clock_707582.jpeg;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=image;asset=pexels_clock-ticking-away_359989.jpeg;q=clock"}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=image;asset=pexels_keyboard_1772123.jpeg;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pexels_typing_946146_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=image;asset=pexels_monitor_1029757.jpeg;q="}
+{"ts": "2025-08-09T19:35:20Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pexels_notebook_852422_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=video;asset=pexels_typing-on-a-keyboard_19162270_norm.mp4;q=keyboard"}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=image;asset=pexels_subscribe-button_33347365.jpeg;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=image;asset=pexels_notebook_733857.jpeg;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pexels_checklist_4058074_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pexels_subscribe-button_3822778_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=18;type=video;asset=pexels_monitor_1536322_norm.mp4;q=monitor"}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=19;type=video;asset=pexels_clock-ticking-away_7033786_norm.mp4;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=20;type=image;asset=pexels_notebook_733857.jpeg;q=notebook"}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=21;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=22;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:35:21Z", "step": "assemble_pick", "status": "OK", "notes": "beat=23;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:35:22Z", "step": "assemble_pick", "status": "OK", "notes": "beat=24;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:35:22Z", "step": "assemble_pick", "status": "OK", "notes": "beat=25;type=image;asset=pexels_subscribe-button_33347365.jpeg;q=subscribe button"}
+{"ts": "2025-08-09T19:35:22Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T19:35:22Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T19:35:22Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T19:35:32Z", "step": "assemble_video_progress", "status": "OK", "notes": "11.7% (t)"}
+{"ts": "2025-08-09T19:35:42Z", "step": "assemble_video_progress", "status": "OK", "notes": "24.3% (t)"}
+{"ts": "2025-08-09T19:35:53Z", "step": "assemble_video_progress", "status": "OK", "notes": "36.9% (t)"}
+{"ts": "2025-08-09T19:36:03Z", "step": "assemble_video_progress", "status": "OK", "notes": "49.1% (t)"}
+{"ts": "2025-08-09T19:36:13Z", "step": "assemble_video_progress", "status": "OK", "notes": "61.4% (t)"}
+{"ts": "2025-08-09T19:36:23Z", "step": "assemble_video_progress", "status": "OK", "notes": "73.7% (t)"}
+{"ts": "2025-08-09T19:36:33Z", "step": "assemble_video_progress", "status": "OK", "notes": "85.6% (t)"}
+{"ts": "2025-08-09T19:36:43Z", "step": "assemble_video_progress", "status": "OK", "notes": "95.6% (t)"}
+{"ts": "2025-08-09T19:36:48Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T19:36:48Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:36:49Z", "step": "upload_stage", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:36:49Z", "step": "blog_pick_topics", "status": "OK", "notes": "space trivia"}
+{"ts": "2025-08-09T19:37:34Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=3"}
+{"ts": "2025-08-09T19:37:34Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T19:37:34Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T19:37:35Z", "step": "blog_post_wp", "status": "DRY_RUN", "notes": "{\"title\": \"Space Trivia\", \"status\": \"publish\", \"content\": \"<!DOCTYPE html>\\n<html><head>\\n<meta charset=\\\"utf-8\\\"/>\\n<title>Space Trivia</title>\\n<script type=\\\"application/ld+json\\\">{\\\"@context\\\": \\\""}
+{"ts": "2025-08-09T19:37:56Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-09T19:38:04Z", "step": "niche_trends", "status": "OK", "notes": "rows=131"}
+{"ts": "2025-08-09T19:38:27Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-09T19:38:34Z", "step": "niche_trends", "status": "OK", "notes": "rows=131"}
+{"ts": "2025-08-09T19:38:35Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T19:38:46Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T19:38:59Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T19:38:59Z", "step": "fetch_assets", "status": "OK", "notes": "exists:19"}
+{"ts": "2025-08-09T19:38:59Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3"}
+{"ts": "2025-08-09T19:38:59Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-09T19:39:27Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:39:27Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=image;asset=pexels_typing-on-a-keyboard_9551663.jpeg;q="}
+{"ts": "2025-08-09T19:39:27Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pexels_monitor-displaying-a-search-result_7253660_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=image;asset=pexels_monitor-displaying-a-search-result_4069064.jpeg;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=video;asset=pexels_clock_855782_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=image;asset=pexels_clock_707582.jpeg;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=image;asset=pexels_keyboard_1772123.jpeg;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=video;asset=pexels_typing_946146_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=image;asset=pexels_monitor_1029757.jpeg;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pexels_notebook_852422_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=image;asset=pexels_typing_1181208.jpeg;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pexels_typing-on-a-keyboard_19162270_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=image;asset=pexels_subscribe-button_33347365.jpeg;q="}
+{"ts": "2025-08-09T19:39:28Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=image;asset=pexels_notebook_733857.jpeg;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=video;asset=pexels_checklist_4058074_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pexels_subscribe-button_3822778_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pexels_clock-ticking-away_7033786_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=18;type=video;asset=pexels_monitor_1536322_norm.mp4;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=19;type=image;asset=pexels_clock-ticking-away_359989.jpeg;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=20;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=21;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_pick", "status": "OK", "notes": "beat=22;type=image;asset=pexels_checklist_1226398.jpeg;q="}
+{"ts": "2025-08-09T19:39:29Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T19:39:30Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T19:39:30Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T19:39:40Z", "step": "assemble_video_progress", "status": "OK", "notes": "11.8% (t)"}
+{"ts": "2025-08-09T19:39:50Z", "step": "assemble_video_progress", "status": "OK", "notes": "21.4% (t)"}
+{"ts": "2025-08-09T19:40:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "31.9% (t)"}
+{"ts": "2025-08-09T19:40:11Z", "step": "assemble_video_progress", "status": "OK", "notes": "43.2% (t)"}
+{"ts": "2025-08-09T19:40:21Z", "step": "assemble_video_progress", "status": "OK", "notes": "53.7% (t)"}
+{"ts": "2025-08-09T19:40:31Z", "step": "assemble_video_progress", "status": "OK", "notes": "60.9% (t)"}
+{"ts": "2025-08-09T19:40:41Z", "step": "assemble_video_progress", "status": "OK", "notes": "68.8% (t)"}
+{"ts": "2025-08-09T19:40:51Z", "step": "assemble_video_progress", "status": "OK", "notes": "76.4% (t)"}
+{"ts": "2025-08-09T19:41:01Z", "step": "assemble_video_progress", "status": "OK", "notes": "81.6% (t)"}
+{"ts": "2025-08-09T19:41:11Z", "step": "assemble_video_progress", "status": "OK", "notes": "88.0% (t)"}
+{"ts": "2025-08-09T19:41:21Z", "step": "assemble_video_progress", "status": "OK", "notes": "95.2% (t)"}
+{"ts": "2025-08-09T19:41:27Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T19:41:29Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:41:30Z", "step": "upload_stage", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T19:41:30Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T19:43:08Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=4"}
+{"ts": "2025-08-09T19:43:08Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T19:43:08Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T19:43:08Z", "step": "blog_post_wp", "status": "DRY_RUN", "notes": "{\"title\": \"Ai Tools\", \"status\": \"publish\", \"content\": \"<!DOCTYPE html>\\n<html><head>\\n<meta charset=\\\"utf-8\\\"/>\\n<title>Ai Tools</title>\\n<script type=\\\"application/ld+json\\\">{\\\"@context\\\": \\\"https://"}
+{"ts": "2025-08-09T19:43:09Z", "step": "blog_ping_search", "status": "OK", "notes": "google:404"}
+{"ts": "2025-08-09T19:45:13Z", "step": "youtube_upload", "status": "DRY_RUN", "notes": "{\"file\": \"videos/2025-08-09_ai-tools.mp4\", \"title\": \"ai tools: 5 Quick Tips\", \"description\": \"Auto-generated with local LLM.\", \"tags\": [\"ai\", \"productivity\"], \"visibility\": \"public\", \"category_id\": \"2"}
+{"ts": "2025-08-09T19:45:19Z", "step": "youtube_upload", "status": "OK", "notes": "oauth_ready"}

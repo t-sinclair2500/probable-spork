@@ -41,6 +41,8 @@ cp .env.example .env
 # Note: Paths auto-detect based on your environment (Mac dev vs Pi production)
 ```
 
+**Environment Setup Note**: `.env` files are excluded from version control for security. The comprehensive `.env.example` file documents all available environment variables with examples and setup instructions. Copy it to `.env` and configure your actual API keys and credentials.
+
 6) **Seed cron (optional)**
 See `crontab.seed.txt`. Apply with:
 ```bash

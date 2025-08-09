@@ -3,6 +3,7 @@ import json
 import os
 import re
 import time
+from collections import Counter
 
 # Ensure repo root on path
 import sys
@@ -34,6 +35,140 @@ def choose_script_for_topic(topic):
 
 
 log = get_logger("blog_generate_post")
+
+
+def count_words(text):
+    """Count words in text, excluding common markdown elements."""
+    # Remove code blocks, links, and image references
+    clean_text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    clean_text = re.sub(r'`[^`]+`', '', clean_text)
+    clean_text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean_text)
+    clean_text = re.sub(r'!\[([^\]]*)\]\([^)]+\)', '', clean_text)
+    clean_text = re.sub(r'#+\s+', '', clean_text)
+    clean_text = re.sub(r'[*_-]{1,3}', '', clean_text)
+    
+    words = re.findall(r'\b\w+\b', clean_text.lower())
+    return len(words)
+
+
+def validate_structure(markdown_content):
+    """Validate blog post structure and return issues."""
+    issues = []
+    lines = markdown_content.split('\n')
+    
+    # Check for H1 title
+    h1_found = any(line.strip().startswith('# ') for line in lines)
+    if not h1_found:
+        issues.append("Missing H1 title")
+    
+    # Check for H2/H3 headings
+    h2_h3_count = sum(1 for line in lines if re.match(r'^#{2,3}\s+', line.strip()))
+    if h2_h3_count < 2:
+        issues.append("Insufficient H2/H3 headings (need at least 2)")
+    
+    # Check for bullet points
+    bullet_count = sum(1 for line in lines if re.match(r'^\s*[-*+]\s+', line.strip()))
+    if bullet_count == 0:
+        issues.append("No bullet points found")
+    
+    # Check heading hierarchy
+    heading_levels = []
+    for line in lines:
+        match = re.match(r'^(#{1,6})\s+', line.strip())
+        if match:
+            heading_levels.append(len(match.group(1)))
+    
+    for i in range(1, len(heading_levels)):
+        if heading_levels[i] > heading_levels[i-1] + 1:
+            issues.append("Improper heading hierarchy (skipped levels)")
+            break
+    
+    return issues
+
+
+def validate_content_quality(markdown_content, target_keywords=None):
+    """Validate content quality and return quality metrics."""
+    issues = []
+    
+    # Check for FAQ section if required
+    has_faq = bool(re.search(r'##?\s*(?:FAQ|Frequently\s+Asked\s+Questions)', markdown_content, re.IGNORECASE))
+    
+    # Check for CTA (Call to Action)
+    cta_patterns = [
+        r'subscribe', r'newsletter', r'follow', r'contact', r'share',
+        r'comment', r'feedback', r'join', r'learn more'
+    ]
+    has_cta = any(re.search(pattern, markdown_content, re.IGNORECASE) for pattern in cta_patterns)
+    
+    # Sentence length analysis
+    sentences = re.split(r'[.!?]+', markdown_content)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    word_counts = [len(s.split()) for s in sentences]
+    
+    if word_counts:
+        avg_sentence_length = sum(word_counts) / len(word_counts)
+        long_sentences = sum(1 for wc in word_counts if wc > 25)
+        
+        if avg_sentence_length > 20:
+            issues.append("Average sentence length too long (improve readability)")
+        
+        if long_sentences > len(sentences) * 0.3:
+            issues.append("Too many long sentences (>25 words)")
+    
+    # Paragraph analysis
+    paragraphs = [p.strip() for p in markdown_content.split('\n\n') if p.strip() and not p.strip().startswith('#')]
+    if paragraphs:
+        avg_paragraph_words = sum(count_words(p) for p in paragraphs) / len(paragraphs)
+        if avg_paragraph_words > 100:
+            issues.append("Paragraphs too long (aim for 50-100 words)")
+    
+    return {
+        'has_faq': has_faq,
+        'has_cta': has_cta,
+        'avg_sentence_length': avg_sentence_length if word_counts else 0,
+        'issues': issues
+    }
+
+
+def validate_blog_post(markdown_content, min_words, max_words, include_faq=True):
+    """Comprehensive blog post validation."""
+    validation_result = {
+        'valid': True,
+        'issues': [],
+        'warnings': [],
+        'metrics': {}
+    }
+    
+    # Word count validation
+    word_count = count_words(markdown_content)
+    validation_result['metrics']['word_count'] = word_count
+    
+    if word_count < min_words:
+        validation_result['issues'].append(f"Word count too low: {word_count} < {min_words}")
+        validation_result['valid'] = False
+    elif word_count > max_words:
+        validation_result['issues'].append(f"Word count too high: {word_count} > {max_words}")
+        validation_result['valid'] = False
+    
+    # Structure validation
+    structure_issues = validate_structure(markdown_content)
+    validation_result['issues'].extend(structure_issues)
+    if structure_issues:
+        validation_result['valid'] = False
+    
+    # Content quality validation
+    quality_result = validate_content_quality(markdown_content)
+    validation_result['metrics'].update(quality_result)
+    
+    if include_faq and not quality_result['has_faq']:
+        validation_result['warnings'].append("FAQ section recommended but not found")
+    
+    if not quality_result['has_cta']:
+        validation_result['warnings'].append("Call-to-action not detected")
+    
+    validation_result['issues'].extend(quality_result['issues'])
+    
+    return validation_result
 
 
 def main():
@@ -112,6 +247,26 @@ def main():
 
     md = md3 or ("# " + topic + "\n\n" + text[:800])
 
+    # Validate the generated content
+    validation_result = validate_blog_post(md, mn, mx, include_faq)
+    
+    # Log validation results
+    if validation_result['valid']:
+        log.info(f"Content validation passed: {validation_result['metrics']['word_count']} words")
+        log_state("blog_generate_post", "VALIDATE_OK", f"words={validation_result['metrics']['word_count']}")
+    else:
+        log.warning(f"Content validation issues: {'; '.join(validation_result['issues'])}")
+        log_state("blog_generate_post", "VALIDATE_WARN", f"issues={len(validation_result['issues'])}")
+    
+    if validation_result['warnings']:
+        log.info(f"Content warnings: {'; '.join(validation_result['warnings'])}")
+    
+    # Log detailed metrics
+    metrics = validation_result['metrics']
+    log.info(f"Content metrics: words={metrics.get('word_count', 0)}, "
+             f"faq={metrics.get('has_faq', False)}, cta={metrics.get('has_cta', False)}, "
+             f"avg_sentence_len={metrics.get('avg_sentence_length', 0):.1f}")
+
     # Inline image reuse from assets folder when available
     try:
         base_key = os.path.basename(sfile).replace(".txt", "")
@@ -138,6 +293,8 @@ def main():
         "description": f"Insights on {topic} generated by our automation pipeline.",
         "tags": ["automation", "raspberry pi", "ai"],
         "category": "AI Tools",
+        "validation": validation_result,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     json.dump(
         meta,

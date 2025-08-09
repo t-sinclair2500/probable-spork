@@ -41,6 +41,7 @@ assets:
   providers:
     - "pixabay"
     - "pexels"
+    # - "unsplash"  # Uncomment and add UNSPLASH_ACCESS_KEY to .env for attribution-required assets
   max_per_section: 3
 
 render:

@@ -61,26 +61,91 @@ def build_youtube_service(env: dict):
     return service
 
 
-def upload_video(service, file_path: str, title: str, description: str, tags: list, privacy: str) -> Tuple[str, dict]:
+def upload_video(service, file_path: str, title: str, description: str, tags: list, privacy: str, category_id: str = None, thumbnail_path: str = None) -> Tuple[str, dict]:
     from googleapiclient.http import MediaFileUpload
 
     body = {
         "snippet": {
-            "title": title[:95],
-            "description": description[:4900],
-            "tags": tags or [],
-            # categoryId optional; leave unset or derive from config later
+            "title": title[:100],  # YouTube limit is 100 characters
+            "description": description[:5000],  # YouTube limit is 5000 characters
+            "tags": (tags or [])[:10],  # YouTube limit is 10 tags max
         },
         "status": {"privacyStatus": (privacy or "public")},
     }
+    
+    # Add category if specified (default is 22 for "People & Blogs")
+    if category_id:
+        body["snippet"]["categoryId"] = str(category_id)
+    
     media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
     request = service.videos().insert(part=",".join(body.keys()), body=body, media_body=media)
+    
+    # Upload with progress reporting
     response = None
     while response is None:
-        status, response = request.next_chunk()
-        # Could add progress reporting
+        try:
+            status, response = request.next_chunk()
+            if status:
+                log.info(f"Upload progress: {int(status.progress() * 100)}%")
+        except Exception as e:
+            log.error(f"Upload chunk failed: {e}")
+            raise
+    
     vid = response.get("id")
+    
+    # Upload thumbnail if provided
+    if thumbnail_path and os.path.exists(thumbnail_path):
+        try:
+            thumbnail_media = MediaFileUpload(thumbnail_path)
+            service.thumbnails().set(
+                videoId=vid,
+                media_body=thumbnail_media
+            ).execute()
+            log.info(f"Thumbnail uploaded for video {vid}")
+        except Exception as e:
+            log.warning(f"Thumbnail upload failed: {e}")
+    
     return vid, response
+
+
+def load_video_metadata(file_path: str) -> dict:
+    """Load metadata for a video from its corresponding .metadata.json file"""
+    if not file_path:
+        return {}
+    
+    # Look for corresponding metadata file
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    metadata_path = os.path.join(BASE, "scripts", f"{base_name}.metadata.json")
+    
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            log.warning(f"Failed to load metadata from {metadata_path}: {e}")
+    
+    return {}
+
+
+def find_thumbnail(video_path: str) -> str:
+    """Find corresponding thumbnail for a video"""
+    if not video_path:
+        return None
+    
+    base_name = os.path.splitext(os.path.basename(video_path))[0]
+    
+    # Look in videos directory for thumbnail
+    possible_thumbnails = [
+        os.path.join(os.path.dirname(video_path), f"{base_name}.png"),
+        os.path.join(os.path.dirname(video_path), f"{base_name}_thumb.png"),
+        os.path.join(BASE, "thumbnails", f"{base_name}.png"),
+    ]
+    
+    for thumb_path in possible_thumbnails:
+        if os.path.exists(thumb_path):
+            return thumb_path
+    
+    return None
 
 
 def main():
@@ -90,6 +155,8 @@ def main():
     parser.add_argument("--desc", help="Video description")
     parser.add_argument("--tags", help="Comma-separated tags")
     parser.add_argument("--visibility", help="public|unlisted|private", default="public")
+    parser.add_argument("--category", help="YouTube category ID (default: 22)", default="22")
+    parser.add_argument("--thumbnail", help="Path to thumbnail image")
     parser.add_argument("--dry-run", action="store_true", help="Print payload only")
     parser.add_argument("--auth-only", action="store_true", help="Run OAuth flow and exit (no upload)")
     args = parser.parse_args()
@@ -97,46 +164,102 @@ def main():
     cfg = load_config()
     env = load_env()
 
+    # Load from upload queue or use CLI args
     item = load_queue_item()
     file_path = args.file or item.get("file")
-    title = args.title or item.get("title") or "Untitled"
-    desc = args.desc or item.get("description") or ""
-    tags = (args.tags.split(",") if args.tags else item.get("tags") or [])
-    vis = args.visibility or item.get("visibility") or "public"
+    
+    # Load metadata if available
+    metadata = load_video_metadata(file_path)
+    
+    # Build video details with priority: CLI args > metadata > queue item > defaults
+    title = args.title or metadata.get("title") or item.get("title") or "Untitled"
+    desc = args.desc or metadata.get("description") or item.get("description") or ""
+    
+    # Handle tags from various sources
+    tags = []
+    if args.tags:
+        tags = [t.strip() for t in args.tags.split(",")]
+    elif metadata.get("tags"):
+        tags = metadata["tags"]
+    elif item.get("tags"):
+        tags = item["tags"]
+    
+    vis = args.visibility or item.get("visibility") or cfg.upload.visibility or "public"
+    category_id = args.category
+    thumbnail_path = args.thumbnail or find_thumbnail(file_path)
 
     # Auth-only mode to prime OAuth tokens without uploading
     if args.auth_only:
         try:
+            print("Initializing YouTube OAuth flow...")
+            print("This will open a browser window for authentication.")
+            print("Grant permissions to upload videos to your YouTube channel.")
             _ = build_youtube_service(env)
             log_state("youtube_upload", "OK", "oauth_ready")
-            print("YouTube OAuth completed; token saved.")
+            print("✓ YouTube OAuth completed successfully!")
+            print("Token saved to data/token_youtube.json")
+            print("You can now upload videos without re-authentication.")
         except Exception as e:
             log_state("youtube_upload", "FAIL", str(e)[:180])
+            print(f"✗ OAuth failed: {e}")
             raise
         return
 
     if not file_path or not os.path.exists(file_path):
         log_state("youtube_upload", "SKIP", "no file")
-        print("No file to upload")
+        print("No video file found to upload")
+        if file_path:
+            print(f"File does not exist: {file_path}")
         return
 
-    payload = {"title": title, "description": desc[:160], "tags": tags, "visibility": vis}
+    # Build comprehensive payload for display
+    payload = {
+        "file": file_path,
+        "title": title,
+        "description": desc[:200] + "..." if len(desc) > 200 else desc,
+        "tags": tags,
+        "visibility": vis,
+        "category_id": category_id,
+        "thumbnail": thumbnail_path,
+        "file_size_mb": round(os.path.getsize(file_path) / 1024 / 1024, 1) if os.path.exists(file_path) else 0
+    }
 
     # Dry-run toggles
     dry_env = (env.get("YOUTUBE_UPLOAD_DRY_RUN") or "1").lower() in ("1", "true", "yes")
     dry = bool(args.dry_run or dry_env)
+    
     if dry:
         log_state("youtube_upload", "DRY_RUN", json.dumps(payload)[:200])
-        print("DRY RUN:", json.dumps(payload, indent=2)[:400] + "...")
+        print("=== DRY RUN MODE ===")
+        print("Would upload to YouTube with the following details:")
+        print(json.dumps(payload, indent=2))
+        print("\nTo perform actual upload:")
+        print("1. Set YOUTUBE_UPLOAD_DRY_RUN=false in .env")
+        print("2. Or use --dry-run=false flag")
+        print("3. Ensure OAuth is set up with --auth-only first")
         return
 
+    # Real upload
     try:
+        print(f"Uploading video: {title}")
+        print(f"File: {file_path} ({payload['file_size_mb']} MB)")
+        
         svc = build_youtube_service(env)
-        vid, resp = upload_video(svc, file_path, title, desc, tags, vis)
+        vid, resp = upload_video(svc, file_path, title, desc, tags, vis, category_id, thumbnail_path)
+        
         log_state("youtube_upload", "OK", f"id={vid}")
-        print("Uploaded video id:", vid)
+        print(f"✓ Successfully uploaded to YouTube!")
+        print(f"Video ID: {vid}")
+        print(f"URL: https://youtube.com/watch?v={vid}")
+        
+        # Update queue item with video ID if it exists
+        if item:
+            item["youtube_id"] = vid
+            item["uploaded_at"] = json.dumps({"youtube": vid})
+            
     except Exception as e:
         log_state("youtube_upload", "FAIL", str(e)[:180])
+        print(f"✗ Upload failed: {e}")
         raise
 
 

@@ -2,7 +2,12 @@
 
 # Environment & credentials
 .env
-.env.*
+.env.local
+.env.production
+.env.development
+.env.test
+# Allow .env.example to be visible in Cursor
+!.env.example
 
 # Virtual environments & caches
 .venv/

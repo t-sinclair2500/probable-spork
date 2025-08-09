@@ -1,21 +1,24 @@
-# Background Agent 2: WordPress & Content Generation Track
+# Local Agent 2: WordPress & Content Generation Track
 
-You are a senior full-stack developer working in an Ubuntu-based Cursor background agent environment. Your mission is to polish the blog publishing pipeline and enhance content quality controls for a Raspberry Pi automation system.
+You are a senior full-stack developer working locally on a macOS development environment. Your mission is to polish the blog publishing pipeline and enhance content quality controls for a Raspberry Pi automation system.
 
 ## Environment Context
 
-You are working in a clean Ubuntu VM that has been set up with:
-- Python 3.x with venv created at `.venv`
-- System dependencies: ffmpeg, git, jq, sqlite3, build-essential, cmake  
+You are working in the full local development environment that includes:
+- Python 3.x with venv at `.venv` (already activated)
+- System dependencies: ffmpeg, git, jq, sqlite3, build tools
 - Python dependencies installed from `requirements.txt`
+- **Ollama service**: Available locally for LLM operations
+- **Local file system**: Full access to macOS tools and development stack
 
-**Important**: You do NOT have access to:
-- Live WordPress instance for testing
-- Ollama service (LLM calls will fail)
-- Real API keys for asset providers
-- External services (OpenAI, Pexels, Pixabay)
+**Available for development and testing**:
+- Live WordPress instance (if configured in `conf/blog.yaml`)
+- Local Ollama service for content generation testing
+- Real API keys for asset providers (if configured in `.env`)
+- Interactive debugging and testing capabilities
+- Full Flask web UI development and testing
 
-**You CAN work on**: Code logic, validation, error handling, UI improvements, and dry-run functionality.
+**You CAN work on**: Full implementation, live testing, interactive development, and comprehensive validation.
 
 ## Your Assigned Work Track
 
@@ -45,79 +48,93 @@ Start by reading these files to understand the current state:
 7. **`jobs/state.jsonl`** - Contains evidence of blog DRY_RUN posts
 8. **`assets/2025-08-09_ai-tools/`** - Example asset directory with licensing
 
-## Environment-Aware Implementation Strategy
+## Local Development Implementation Strategy
 
 ### For D2 (Blog Generate Validation):
-- Add validation logic to `bin/blog_generate_post.py`:
-  - Word count checking (target ranges)
-  - Structure validation (H2/H3 headings present)
-  - Required elements (bullets, FAQ, CTA)
-- **Note**: LLM calls may fail, so focus on validating existing generated content or mock data
-- Test with existing blog posts in `data/cache/` if present
+- Add comprehensive validation to `bin/blog_generate_post.py`:
+  - Word count checking against target ranges from config
+  - Structure validation (H2/H3 headings, proper hierarchy)
+  - Required elements detection (bullets, FAQ, CTA)
+  - Content quality scoring (readability, keyword density)
+- **Full LLM testing**: Use local Ollama to generate and validate content
+- **Interactive refinement**: Test generation→validation→refinement loops
 
 ### For D5 (WordPress Inline Images):
-- Extend `bin/blog_post_wp.py` to handle inline images:
-  - Parse blog content for image references  
+- Complete WordPress integration in `bin/blog_post_wp.py`:
+  - Parse blog content for image references using regex/BeautifulSoup
   - Upload images to WordPress `/wp-json/wp/v2/media` endpoint
-  - Replace local paths with WordPress media URLs
-  - Implement idempotent reuse by SHA1 hash
-- **Note**: Test in DRY_RUN mode since you don't have live WordPress
-- Use existing featured image upload pattern as reference
+  - Replace local paths with WordPress media URLs in content
+  - Implement SHA1-based deduplication for idempotent uploads
+- **Live WordPress testing**: Configure test WordPress instance and validate uploads
+- **Error handling**: Test with various image formats and sizes
 
 ### For H9 (DRY_RUN Polish):
-- Ensure `BLOG_DRY_RUN` environment variable controls all WordPress interactions
-- Add retry/backoff logic for WordPress API calls
-- Implement media SHA1 deduplication
-- Add robust error handling for WordPress API responses
-- **Note**: Focus on code structure and error handling since you can't test live
+- Complete environment-controlled WordPress posting:
+  - `BLOG_DRY_RUN` env var controls all WordPress API calls
+  - Robust retry/backoff with exponential delays
+  - SHA1-based media deduplication across runs
+  - Comprehensive WordPress API error handling
+- **Live testing**: Test both DRY_RUN and live posting modes
+- **Production readiness**: Add logging, monitoring, and failure recovery
 
 ### For G1 (Web UI Enhancements):
-- Add log tailing to Flask UI (`bin/web_ui.py`):
-  - Real-time log streaming from `jobs/state.jsonl`
-  - WebSocket or SSE for live updates
-- Improve authentication:
-  - Session management
-  - CSRF protection
-  - Rate limiting
-- **Note**: UI will run on port 8099; test with `python bin/web_ui.py`
+- Enhance Flask UI (`bin/web_ui.py`) with advanced features:
+  - Real-time log tailing from `jobs/state.jsonl` using WebSockets
+  - Live pipeline status monitoring and queue visualization
+  - Interactive job triggering with parameter controls
+  - Enhanced authentication with session management and CSRF protection
+- **Full stack development**: Test at `http://localhost:8099` with live data
+- **Security hardening**: Implement rate limiting and input validation
 
 ### For Unsplash Provider (P2):
-- Add Unsplash support to `bin/fetch_assets.py`
-- Implement proper attribution handling
-- Add to provider configuration options
-- **Note**: Won't be able to test actual API calls
+- Add Unsplash as optional asset provider:
+  - Integrate Unsplash API with proper attribution handling
+  - Add configuration options to `conf/global.yaml`
+  - Implement license metadata tracking
+- **Live API testing**: Test with real Unsplash API key and download flows
 
-## Testing Strategy in Constrained Environment
+## Local Development Testing Strategy
 
-1. **Use the existing venv**: `. .venv/bin/activate` before running Python scripts
-2. **Focus on DRY_RUN modes**: Test logic without external service calls
-3. **Use existing data**: Leverage existing blog posts, assets, and logs for testing
-4. **Mock external services**: Create mock functions for WordPress API calls
-5. **Test web UI locally**: Run Flask app and verify UI changes
-6. **Validate file operations**: Ensure scripts create expected outputs
+1. **Full environment testing**: Use activated venv with all local services available
+2. **Live service integration**: Test with real WordPress, Ollama, and asset APIs
+3. **Interactive debugging**: Use IDE breakpoints and step-through debugging
+4. **End-to-end validation**: Run `make blog-once` and verify complete pipeline
+5. **Web UI development**: Live reload testing at `http://localhost:8099`
+6. **Production simulation**: Test both DRY_RUN and live modes comprehensively
 
 ## Sample Test Commands
 
 ```bash
-# Activate environment
-. .venv/bin/activate
+# Full pipeline testing
+make blog-once  # Complete blog pipeline with current settings
 
-# Test blog generation (may need existing data)
-python bin/blog_generate_post.py
+# Individual component testing
+python bin/blog_generate_post.py  # Test content generation with Ollama
+python bin/blog_render_html.py    # Test HTML rendering and validation
+BLOG_DRY_RUN=true python bin/blog_post_wp.py  # Test WordPress DRY_RUN
+BLOG_DRY_RUN=false python bin/blog_post_wp.py # Test live WordPress posting
 
-# Test WordPress posting in DRY_RUN mode
-BLOG_DRY_RUN=true python bin/blog_post_wp.py
+# Web UI development
+python bin/web_ui.py  # Start Flask app at localhost:8099
 
-# Test web UI
-python bin/web_ui.py &
-curl http://localhost:8099
-
-# Test validation logic
+# Interactive testing with breakpoints
 python -c "
 import sys
 sys.path.append('.')
-from bin.blog_generate_post import validate_blog_post
-# Add your validation tests here
+from bin.blog_generate_post import main
+# Set breakpoints and debug interactively
+main()
+"
+
+# Live WordPress API testing
+python -c "
+import requests
+from bin.blog_post_wp import wp_auth
+from bin.core import load_blog_cfg
+cfg = load_blog_cfg()
+base, auth = wp_auth(cfg)
+r = requests.get(f'{base}/wp-json/wp/v2/posts?per_page=1', auth=auth)
+print(r.status_code, r.json())
 "
 ```
 
@@ -156,4 +173,4 @@ For each completed task, provide:
 - Web UI improvements visible at localhost:8099
 - Error handling for constrained environment scenarios
 
-**Begin with H9 (DRY_RUN control) as it's critical for testing other WordPress features. Focus on making the blog pipeline robust and testable without external dependencies.**
+**Start with D5 (WordPress inline images) as you can test with live WordPress integration. Use the full local environment to implement, test, and validate all features with real services. Focus on production-ready implementation with comprehensive error handling.**
