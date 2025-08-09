@@ -3,6 +3,8 @@ wordpress:
   base_url: "http://127.0.0.1"
   api_user: "poster_user"
   api_app_password: "REPLACE_WITH_APP_PASSWORD"
+  publish_enabled: false            # NEW: disables live posting
+  staging_root: "exports/blog"      # NEW: local export root
   default_status: "publish"         # or "future"
   default_category: "AI Tools"
   default_tags: ["automation","raspberry pi","ai"]

@@ -24,3 +24,4 @@ flask==3.0.3
 flask-socketio==5.3.6
 rapidfuzz==3.9.7
 psutil==6.0.0
+pytest==8.3.2

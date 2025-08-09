@@ -22,6 +22,32 @@ from bin.seo_enhancer import SEOEnhancer
 log = get_logger("blog_render_html")
 
 
+def load_monetization_config() -> dict:
+    """Load monetization configuration"""
+    config_path = os.path.join(BASE, "conf", "monetization.yaml")
+    if not os.path.exists(config_path):
+        return {}
+    
+    try:
+        import yaml
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f) or {}
+    except Exception as e:
+        log.warning(f"Failed to load monetization config: {e}")
+        return {}
+
+
+def ensure_monetization_styles(html_content: str, monetization_config: dict) -> str:
+    """Ensure monetization elements have proper styling and are preserved"""
+    if not monetization_config:
+        return html_content
+    
+    # Add any additional styling or processing for monetization elements
+    # The affiliate disclosure and newsletter signup are already HTML, so markdown conversion preserves them
+    
+    return html_content
+
+
 def load_blog_cfg():
     """Load blog configuration with SEO settings."""
     p = os.path.join(BASE, "conf", "blog.yaml")
@@ -35,6 +61,7 @@ def main():
     cfg = load_global_config()
     ensure_dirs(cfg)
     blog_cfg = load_blog_cfg()
+    monetization_config = load_monetization_config()
     md_path = os.path.join(BASE, "data", "cache", "post.md")
     meta_path = os.path.join(BASE, "data", "cache", "post.meta.json")
     if not (os.path.exists(md_path) and os.path.exists(meta_path)):
@@ -43,6 +70,9 @@ def main():
     md = open(md_path, "r", encoding="utf-8").read()
     html = markdown.markdown(md, extensions=["extra", "sane_lists", "toc"])
     meta = json.load(open(meta_path, "r", encoding="utf-8")) if os.path.exists(meta_path) else {}
+    
+    # Ensure monetization elements are properly handled
+    html = ensure_monetization_styles(html, monetization_config)
     # Optional attribution block if licenses require it and assets license file exists
     try:
         cfg = load_global_config()

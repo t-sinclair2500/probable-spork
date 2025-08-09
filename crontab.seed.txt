@@ -1,5 +1,5 @@
 # Unified cron for shared pipeline (YouTube + Blog lanes) on a single Pi.
-# Adjust times as needed; each script is lock-aware and exits if another step is running.
+# Uses orchestrator for single daily run instead of fragmented individual steps.
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
@@ -8,25 +8,13 @@ REPO=~/youtube_onepi_pipeline
 PY=$REPO/.venv/bin/python
 LOG=$REPO/logs/cron.log
 
-# Shared ingestion
-30 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/niche_trends.py      >> $LOG 2>&1
-45 8  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/llm_cluster.py       >> $LOG 2>&1
+# MAIN ORCHESTRATED PIPELINE (single daily run)
+# Runs complete pipeline: ingestion -> YouTube lane -> Blog lane (staged)
+0  9  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/run_pipeline.py >> $LOG 2>&1
 
-# YouTube lane
-30 9  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/llm_outline.py       >> $LOG 2>&1
-45 9  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/llm_script.py        >> $LOG 2>&1
-0  12 * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/fetch_assets.py      >> $LOG 2>&1
-30 12 * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/tts_generate.py      >> $LOG 2>&1
-0  13 * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/generate_captions.py >> $LOG 2>&1
-30 13 * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/assemble_video.py    >> $LOG 2>&1
-0  14 * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/upload_stage.py      >> $LOG 2>&1
+# Health monitoring (hourly)
+0  *  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/healthcheck.py >> $REPO/logs/health.log 2>&1
 
-# Blog lane
-20 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/blog_pick_topics.py   >> $LOG 2>&1
-35 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/blog_generate_post.py >> $LOG 2>&1
-45 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/blog_render_html.py   >> $LOG 2>&1
-55 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/blog_post_wp.py       >> $LOG 2>&1
-5  8  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/blog_ping_search.py   >> $LOG 2>&1
-
-# Health (hourly)
-0  *  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/healthcheck.py       >> $REPO/logs/health.log 2>&1
+# OPTIONAL: Manual override lanes (comment out for normal operation)
+# 30 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/run_pipeline.py --yt-only   >> $LOG 2>&1
+# 45 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/run_pipeline.py --blog-only >> $LOG 2>&1

@@ -122,8 +122,21 @@ asset-quality:
 	$(PY) bin/asset_quality.py $(FILE) --query "$(QUERY)"
 
 test:
-	$(PY) -m unittest discover -s tests -p "test_*.py" -v
-	$(PY) bin/test_e2e.py
+	@echo "Running REUSE mode tests (no network calls)..."
+	TEST_ASSET_MODE=reuse $(PY) -m pytest tests/ -m "not liveapi" -v
+	@echo "Running E2E test in reuse mode..."
+	TEST_ASSET_MODE=reuse $(PY) bin/test_e2e.py
+
+test-live:
+	@echo "Running LIVE mode tests (requires API keys)..."
+	@echo "WARNING: This will make actual API calls and consume quota!"
+	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	TEST_ASSET_MODE=live $(PY) -m pytest tests/ -m "liveapi" -v
+
+test-all:
+	@echo "Running ALL tests (reuse + live modes)..."
+	$(MAKE) test
+	$(MAKE) test-live
 
 # -------- Raspberry Pi Helpers --------
 PI_HOST ?= onepi

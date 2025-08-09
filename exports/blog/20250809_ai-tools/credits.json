@@ -1,0 +1,141 @@
+{
+  "generated_at": "2025-08-09T21:28:02.859959Z",
+  "licenses": [
+    {
+      "topic_slug": "ai-tools",
+      "downloaded_at": "2025-08-09T21:10:45Z",
+      "items": [
+        {
+          "provider": "pixabay",
+          "url": "https://pixabay.com/videos/id-3174/",
+          "file": "pixabay_typing_3174_norm.mp4",
+          "license": "Pixabay License \u2014 Free to use",
+          "user": "Coverr-Free-Footage",
+          "quality": {
+            "overall_score": 91.55555555555556,
+            "relevance_score": 100,
+            "resolution": "1280x720",
+            "file_type": "video",
+            "quality_issues": [],
+            "keywords": [
+              "pixabay",
+              "typing",
+              "keyboard",
+              "writing",
+              "coding"
+            ]
+          }
+        },
+        {
+          "provider": "pixabay",
+          "url": "https://pixabay.com/videos/id-3188/",
+          "file": "pixabay_keyboard_3188_norm.mp4",
+          "license": "Pixabay License \u2014 Free to use",
+          "user": "Coverr-Free-Footage",
+          "quality": {
+            "overall_score": 91.55555555555556,
+            "relevance_score": 100,
+            "resolution": "1280x720",
+            "file_type": "video",
+            "quality_issues": [],
+            "keywords": [
+              "pixabay",
+              "keyboard"
+            ]
+          }
+        },
+        {
+          "provider": "pixabay",
+          "url": "https://pixabay.com/videos/id-205519/",
+          "file": "pixabay_monitor_205519_norm.mp4",
+          "license": "Pixabay License \u2014 Free to use",
+          "user": "conte_public",
+          "quality": {
+            "overall_score": 96.0,
+            "relevance_score": 100,
+            "resolution": "2560x1440",
+            "file_type": "video",
+            "quality_issues": [],
+            "keywords": [
+              "pixabay",
+              "monitor",
+              "screen",
+              "display",
+              "computer"
+            ]
+          }
+        },
+        {
+          "provider": "pixabay",
+          "url": "https://pixabay.com/videos/id-4952/",
+          "file": "pixabay_notebook_4952_norm.mp4",
+          "license": "Pixabay License \u2014 Free to use",
+          "user": "klimkin",
+          "quality": {
+            "overall_score": 91.55555555555556,
+            "relevance_score": 100,
+            "resolution": "1280x720",
+            "file_type": "video",
+            "quality_issues": [],
+            "keywords": [
+              "pixabay",
+              "notebook",
+              "notes",
+              "writing",
+              "planning"
+            ]
+          }
+        },
+        {
+          "provider": "pixabay",
+          "url": "https://pixabay.com/videos/id-34855/",
+          "file": "pixabay_clock_34855_norm.mp4",
+          "license": "Pixabay License \u2014 Free to use",
+          "user": "Danil_Shostak",
+          "quality": {
+            "overall_score": 96.0,
+            "relevance_score": 100,
+            "resolution": "2560x1440",
+            "file_type": "video",
+            "quality_issues": [],
+            "keywords": [
+              "pixabay",
+              "clock",
+              "time",
+              "schedule",
+              "deadline"
+            ]
+          }
+        },
+        {
+          "provider": "pixabay",
+          "url": "https://pixabay.com/videos/id-49076/",
+          "file": "pixabay_subscribe-button_49076_norm.mp4",
+          "license": "Pixabay License \u2014 Free to use",
+          "user": "TechVideoStack",
+          "quality": {
+            "overall_score": 96.0,
+            "relevance_score": 100,
+            "resolution": "2560x1440",
+            "file_type": "video",
+            "quality_issues": [],
+            "keywords": [
+              "button",
+              "pixabay",
+              "subscribe"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "sources": [
+    "pixabay: https://pixabay.com/videos/id-3174/",
+    "pixabay: https://pixabay.com/videos/id-3188/",
+    "pixabay: https://pixabay.com/videos/id-205519/",
+    "pixabay: https://pixabay.com/videos/id-4952/",
+    "pixabay: https://pixabay.com/videos/id-34855/",
+    "pixabay: https://pixabay.com/videos/id-49076/"
+  ],
+  "attribution_required": false
+}

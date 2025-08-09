@@ -177,8 +177,21 @@ python bin/blog_ping_search.py
 - **Asset Integration**: Intelligent featured image selection from quality-assessed assets
 - **Structured Data**: Enhanced breadcrumbs and article markup for better search visibility
 
-> By default, posting uses a **dry-run** mode (prints JSON) until you toggle `DRY_RUN=False` in `bin/blog_post_wp.py`.
-> Prefer setting `BLOG_DRY_RUN=false` in `.env` instead of editing code.
+## Publishing Control
+
+All publishing operations use **centralized flag governance** with clear precedence:
+
+1. **CLI flags** (highest): `--dry-run` forces dry-run mode
+2. **Environment variables**: `BLOG_DRY_RUN`, `YOUTUBE_UPLOAD_DRY_RUN` 
+3. **Config files**: `wordpress.publish_enabled` in `conf/blog.yaml`
+4. **Safe defaults** (lowest): dry-run enabled, publishing disabled
+
+**Quick toggles:**
+- Blog: Set `wordpress.publish_enabled: true` in `conf/blog.yaml` + `BLOG_DRY_RUN=false` in `.env`
+- YouTube: Set `YOUTUBE_UPLOAD_DRY_RUN=false` in `.env`
+- Global dry-run: Use `--dry-run` flag with any script or orchestrator
+
+> **Security**: Defaults are safe (dry-run enabled). Production requires explicit configuration.
 
 
 ## Cron (Unified Seed)
@@ -209,7 +222,8 @@ Each script is lock-aware and exits if another heavy step is in progress.
   - Optional: UNSPLASH_ACCESS_KEY (only if enabled later)
   - Optional ingestion: YOUTUBE_API_KEY or GOOGLE_API_KEY; REDDIT_CLIENT_ID/SECRET/USER_AGENT
   - Optional fallbacks: OPENAI_API_KEY
-  - BLOG_DRY_RUN=true|false
+  - BLOG_DRY_RUN=true|false (controlled by centralized flags)
+  - YOUTUBE_UPLOAD_DRY_RUN=true|false (controlled by centralized flags)
 
 - `conf/global.yaml`
   - `limits.max_retries` controls API backoff retries for providers.

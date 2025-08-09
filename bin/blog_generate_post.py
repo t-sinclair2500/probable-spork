@@ -14,6 +14,7 @@ if ROOT not in sys.path:
 
 from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock, parse_llm_json  # noqa: E402
 from bin.fact_check import fact_check_content, should_gate_content  # noqa: E402
+from urllib.parse import urlencode  # noqa: E402
 
 
 def load_blog_cfg():
@@ -36,6 +37,92 @@ def choose_script_for_topic(topic):
 
 
 log = get_logger("blog_generate_post")
+
+
+def load_monetization_config() -> dict:
+    """Load monetization configuration"""
+    config_path = os.path.join(BASE, "conf", "monetization.yaml")
+    if not os.path.exists(config_path):
+        log.warning("No monetization.yaml found, using empty config")
+        return {}
+    
+    try:
+        import yaml
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f) or {}
+    except Exception as e:
+        log.warning(f"Failed to load monetization config: {e}")
+        return {}
+
+
+def inject_monetization_elements(content: str, monetization_config: dict) -> str:
+    """Inject affiliate disclosure and newsletter signup into blog content"""
+    if not monetization_config:
+        return content
+    
+    blog_config = monetization_config.get("blog", {})
+    content_config = monetization_config.get("content", {})
+    
+    # Check minimum word count requirement
+    min_words = content_config.get("min_words_for_monetization", 500)
+    word_count = len(content.split())
+    if word_count < min_words:
+        log.info(f"Content too short for monetization ({word_count} < {min_words} words)")
+        return content
+    
+    # Store monetization elements to inject
+    elements_to_add = []
+    
+    # Add affiliate disclosure if enabled
+    if content_config.get("include_affiliate_disclosure", True):
+        disclosure = blog_config.get("affiliate_disclosure", "")
+        if disclosure:
+            elements_to_add.append(disclosure)
+    
+    # Add newsletter signup if enabled
+    if content_config.get("include_newsletter_signup", True):
+        newsletter_html = blog_config.get("newsletter_html_slot", "")
+        if newsletter_html:
+            elements_to_add.append(newsletter_html)
+    
+    if not elements_to_add:
+        return content
+    
+    # Find a good insertion point (after first section but before conclusion)
+    lines = content.split('\n')
+    insertion_point = len(lines) // 2  # Default to middle
+    
+    # Look for a better insertion point (after first H2 section)
+    h2_count = 0
+    for i, line in enumerate(lines):
+        if line.startswith('## '):
+            h2_count += 1
+            if h2_count == 2:  # Insert after first content section
+                insertion_point = i
+                break
+    
+    # Insert monetization elements
+    for element in reversed(elements_to_add):  # Reverse to maintain order
+        lines.insert(insertion_point, "")
+        lines.insert(insertion_point + 1, element)
+        lines.insert(insertion_point + 2, "")
+    
+    return '\n'.join(lines)
+
+
+def add_utm_tracking_to_links(content: str, monetization_config: dict) -> str:
+    """Add UTM tracking to external links in blog content"""
+    blog_config = monetization_config.get("blog", {})
+    utm_params = {
+        "utm_source": blog_config.get("utm_source", "blog"),
+        "utm_medium": blog_config.get("utm_medium", "article"),
+        "utm_campaign": blog_config.get("utm_campaign", "ai_content_pipeline")
+    }
+    
+    # This is a placeholder - in a real implementation, you'd parse markdown links
+    # and add UTM parameters to external links
+    # For now, just return content as-is
+    return content
 
 
 def count_words(text):
@@ -219,6 +306,7 @@ def main():
     cfg = load_config()
     guard_system(cfg)
     bcfg = load_blog_cfg()
+    monetization_config = load_monetization_config()
     work = os.path.join(BASE, "data", "cache", "blog_topic.json")
     if not os.path.exists(work):
         log_state("blog_generate_post", "SKIP", "no topic")
@@ -290,6 +378,10 @@ def main():
             md3 = md2
 
     md = md3 or ("# " + topic + "\n\n" + text[:800])
+    
+    # Inject monetization elements (affiliate disclosure, newsletter signup)
+    md = inject_monetization_elements(md, monetization_config)
+    md = add_utm_tracking_to_links(md, monetization_config)
 
     # Get fact-checking configuration
     fact_check_config = bcfg.get('fact_check', {})

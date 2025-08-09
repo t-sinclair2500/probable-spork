@@ -15,7 +15,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from bin.core import BASE, get_logger, load_config, load_env, log_state, single_lock  # noqa: E402
+from bin.core import BASE, get_logger, get_publish_flags, load_config, load_env, log_state, single_lock  # noqa: E402
 
 log = get_logger("blog_post_wp")
 
@@ -222,17 +222,14 @@ def main():
     env = load_env()
     bcfg = load_blog_cfg()
     
-    # Determine DRY_RUN mode early - environment variable takes precedence
-    dry_run = (env.get("BLOG_DRY_RUN", "true").lower() in ("1", "true", "yes"))
+    # Use centralized flag governance - no CLI dry-run arg passed from blog_post_wp.py directly
+    flags = get_publish_flags(cli_dry_run=False, target="blog")
+    dry_run = flags["blog_dry_run"]
     
-    # Also check config if blog.yaml has a dry_run setting
-    try:
-        config_dry_run = bcfg.get("wordpress", {}).get("dry_run", True)
-        # Environment variable takes precedence over config
-        if "BLOG_DRY_RUN" not in env:
-            dry_run = config_dry_run
-    except Exception:
-        pass
+    if not flags["blog_publish_enabled"]:
+        log.info("Blog publishing disabled in config (wordpress.publish_enabled=false)")
+        log_state("blog_post_wp", "SKIP", "publish_disabled_in_config")
+        return
     
     meta = json.load(
         open(os.path.join(BASE, "data", "cache", "post.meta.json"), "r", encoding="utf-8")

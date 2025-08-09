@@ -122,10 +122,38 @@ make backup
 3) Restore repo backups to `data/` and media dirs.
 4) Recreate application passwords for WordPress poster.
 
+## Publishing Control & Toggles
+
+**Centralized Flag Governance** - all publishing uses the same precedence hierarchy:
+1. **CLI flags** (highest): `--dry-run` forces dry-run mode
+2. **Environment variables**: `BLOG_DRY_RUN`, `YOUTUBE_UPLOAD_DRY_RUN`
+3. **Config files**: `wordpress.publish_enabled` in `conf/blog.yaml`
+4. **Safe defaults** (lowest): dry-run enabled, publishing disabled
+
+**Enable Live Publishing:**
+```bash
+# Blog publishing (both required):
+echo "  publish_enabled: true" >> conf/blog.yaml
+echo "BLOG_DRY_RUN=false" >> .env
+
+# YouTube uploads:
+echo "YOUTUBE_UPLOAD_DRY_RUN=false" >> .env
+
+# Check current status:
+python -c "from bin.core import get_publish_summary; print(get_publish_summary())"
+```
+
+**Emergency Dry-Run Override:**
+```bash
+# Force all publishing to dry-run regardless of config:
+python bin/run_pipeline.py --dry-run
+```
+
 ## Troubleshooting
 - Check `logs/pipeline.log` and `jobs/state.jsonl`.
 - Ensure GPU split low and swap on SSD.
 - If CPU temp > 75°C, pipeline defers heavy steps.
+- **Publishing Issues**: Use `get_publish_summary()` to check flag hierarchy and current settings.
 - **Missing API keys**: The comprehensive `.env.example` file documents all available environment variables. Copy to `.env` and configure your actual API keys. `make check` reports missing keys and suggests which features will be skipped.
   - Asset providers: `PIXABAY_API_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY` (optional)
   - Data ingestion: `YOUTUBE_API_KEY`, Reddit API credentials

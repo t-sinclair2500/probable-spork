@@ -1,0 +1,87 @@
+# Monetization configuration for the content pipeline
+# This file defines CTAs, affiliate settings, and UTM tracking for revenue generation
+
+youtube:
+  # Call-to-action text and URL for video descriptions
+  cta_text: "🔔 Subscribe for daily AI tips and hit the bell for notifications!"
+  cta_url: "https://youtube.com/@YourChannel"
+  
+  # Affiliate disclosure text (required by FTC)
+  affiliate_disclosure: "Some links in this description may be affiliate links. We earn a small commission if you purchase through these links at no extra cost to you."
+  
+  # Default hashtags for all videos
+  default_hashtags: ["#AI", "#Productivity", "#TechTips", "#Automation", "#Tutorial"]
+  
+  # UTM tracking parameters for YouTube traffic
+  utm_source: "youtube"
+  utm_medium: "video"
+  utm_campaign: "ai_content_pipeline"
+  
+  # Additional video monetization settings
+  end_screen_cta: "Check out our blog for more detailed guides and tools!"
+  blog_link_text: "📚 Read the full article"
+
+blog:
+  # Affiliate disclosure for blog posts (required by FTC)
+  affiliate_disclosure: |
+    <div class="affiliate-disclosure" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; margin: 20px 0; font-size: 14px;">
+      <strong>Disclosure:</strong> Some links in this post may be affiliate links. 
+      If you purchase through these links, we may earn a small commission at no additional cost to you. 
+      This helps support our content creation. Thank you for your support!
+    </div>
+  
+  # Optional newsletter signup HTML slot
+  newsletter_html_slot: |
+    <div class="newsletter-signup" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 8px; margin: 30px 0; text-align: center;">
+      <h3 style="margin: 0 0 12px 0; color: white;">🚀 Get Weekly AI Tips</h3>
+      <p style="margin: 0 0 16px 0; opacity: 0.9;">Join 1000+ subscribers getting cutting-edge AI tools and automation tips delivered to their inbox.</p>
+      <form action="#" method="post" style="display: flex; gap: 8px; max-width: 400px; margin: 0 auto;">
+        <input type="email" placeholder="Enter your email" required style="flex: 1; padding: 12px; border: none; border-radius: 4px; font-size: 14px;">
+        <button type="submit" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Subscribe</button>
+      </form>
+    </div>
+  
+  # UTM tracking parameters for blog traffic
+  utm_source: "blog"
+  utm_medium: "article"
+  utm_campaign: "ai_content_pipeline"
+  
+  # Affiliate settings
+  affiliates:
+    amazon_tag: "your-tag-20"
+    openai_ref: "your-openai-ref"
+    default_keywords:
+      - "AI tools"
+      - "automation software"
+      - "productivity apps"
+      - "online courses"
+      - "tech books"
+
+# Cross-platform linking settings
+crosslinks:
+  # UTM parameters for video-to-blog links
+  video_to_blog:
+    utm_source: "youtube"
+    utm_medium: "video_description"
+    utm_campaign: "traffic_from_video"
+  
+  # UTM parameters for blog-to-video links  
+  blog_to_video:
+    utm_source: "blog"
+    utm_medium: "article_link"
+    utm_campaign: "traffic_from_blog"
+
+# Content monetization rules
+content:
+  # Minimum word count before adding monetization elements
+  min_words_for_monetization: 500
+  
+  # Whether to include affiliate disclosure by default
+  include_affiliate_disclosure: true
+  
+  # Whether to include newsletter signup by default
+  include_newsletter_signup: true
+  
+  # Maximum number of affiliate links per piece of content
+  max_affiliate_links: 3
+

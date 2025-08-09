@@ -622,3 +622,302 @@
 {"ts": "2025-08-09T19:43:09Z", "step": "blog_ping_search", "status": "OK", "notes": "google:404"}
 {"ts": "2025-08-09T19:45:13Z", "step": "youtube_upload", "status": "DRY_RUN", "notes": "{\"file\": \"videos/2025-08-09_ai-tools.mp4\", \"title\": \"ai tools: 5 Quick Tips\", \"description\": \"Auto-generated with local LLM.\", \"tags\": [\"ai\", \"productivity\"], \"visibility\": \"public\", \"category_id\": \"2"}
 {"ts": "2025-08-09T19:45:19Z", "step": "youtube_upload", "status": "OK", "notes": "oauth_ready"}
+{"ts": "2025-08-09T20:42:16Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby.outline.json"}
+{"ts": "2025-08-09T20:42:43Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby.txt"}
+{"ts": "2025-08-09T20:43:26Z", "step": "fetch_assets", "status": "OK", "notes": "count=7,avg_quality=94.1"}
+{"ts": "2025-08-09T20:44:37Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby.mp3;prov=coqui;dur=207.6s"}
+{"ts": "2025-08-09T20:45:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=video;asset=pixabay_clock_34855_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:35Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pixabay_checklist_48702_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:35Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=video;asset=pixabay_typing_3174_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:36Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=video;asset=pixabay_keyboard_3188_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:36Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=video;asset=pixabay_monitor_205519_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:36Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=video;asset=pixabay_subscribe-button_49076_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:37Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:37Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:37Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:38Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:38Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:38Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:38Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:38Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:39Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:39Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:39Z", "step": "assemble_pick", "status": "OK", "notes": "beat=18;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:39Z", "step": "assemble_pick", "status": "OK", "notes": "beat=19;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:40Z", "step": "assemble_pick", "status": "OK", "notes": "beat=20;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:40Z", "step": "assemble_pick", "status": "OK", "notes": "beat=21;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:40Z", "step": "assemble_pick", "status": "OK", "notes": "beat=22;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:40Z", "step": "assemble_pick", "status": "OK", "notes": "beat=23;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:41Z", "step": "assemble_pick", "status": "OK", "notes": "beat=24;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:41Z", "step": "assemble_pick", "status": "OK", "notes": "beat=25;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:41Z", "step": "assemble_pick", "status": "OK", "notes": "beat=26;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T20:45:41Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T20:45:41Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.1% (chunk)"}
+{"ts": "2025-08-09T20:45:43Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T20:45:53Z", "step": "assemble_video_progress", "status": "OK", "notes": "3.5% (t)"}
+{"ts": "2025-08-09T20:46:03Z", "step": "assemble_video_progress", "status": "OK", "notes": "5.0% (t)"}
+{"ts": "2025-08-09T20:46:13Z", "step": "assemble_video_progress", "status": "OK", "notes": "7.5% (t)"}
+{"ts": "2025-08-09T20:46:23Z", "step": "assemble_video_progress", "status": "OK", "notes": "10.3% (t)"}
+{"ts": "2025-08-09T20:46:33Z", "step": "assemble_video_progress", "status": "OK", "notes": "14.1% (t)"}
+{"ts": "2025-08-09T20:46:43Z", "step": "assemble_video_progress", "status": "OK", "notes": "17.9% (t)"}
+{"ts": "2025-08-09T20:46:54Z", "step": "assemble_video_progress", "status": "OK", "notes": "20.5% (t)"}
+{"ts": "2025-08-09T20:47:04Z", "step": "assemble_video_progress", "status": "OK", "notes": "23.2% (t)"}
+{"ts": "2025-08-09T20:47:14Z", "step": "assemble_video_progress", "status": "OK", "notes": "26.2% (t)"}
+{"ts": "2025-08-09T20:47:24Z", "step": "assemble_video_progress", "status": "OK", "notes": "30.5% (t)"}
+{"ts": "2025-08-09T20:47:34Z", "step": "assemble_video_progress", "status": "OK", "notes": "35.3% (t)"}
+{"ts": "2025-08-09T20:47:44Z", "step": "assemble_video_progress", "status": "OK", "notes": "37.8% (t)"}
+{"ts": "2025-08-09T20:47:54Z", "step": "assemble_video_progress", "status": "OK", "notes": "39.8% (t)"}
+{"ts": "2025-08-09T20:48:04Z", "step": "assemble_video_progress", "status": "OK", "notes": "42.7% (t)"}
+{"ts": "2025-08-09T20:48:14Z", "step": "assemble_video_progress", "status": "OK", "notes": "45.5% (t)"}
+{"ts": "2025-08-09T20:48:24Z", "step": "assemble_video_progress", "status": "OK", "notes": "49.8% (t)"}
+{"ts": "2025-08-09T20:48:34Z", "step": "assemble_video_progress", "status": "OK", "notes": "53.8% (t)"}
+{"ts": "2025-08-09T20:48:44Z", "step": "assemble_video_progress", "status": "OK", "notes": "58.6% (t)"}
+{"ts": "2025-08-09T20:48:54Z", "step": "assemble_video_progress", "status": "OK", "notes": "62.7% (t)"}
+{"ts": "2025-08-09T20:49:05Z", "step": "assemble_video_progress", "status": "OK", "notes": "65.4% (t)"}
+{"ts": "2025-08-09T20:49:15Z", "step": "assemble_video_progress", "status": "OK", "notes": "68.7% (t)"}
+{"ts": "2025-08-09T20:49:25Z", "step": "assemble_video_progress", "status": "OK", "notes": "73.0% (t)"}
+{"ts": "2025-08-09T20:49:35Z", "step": "assemble_video_progress", "status": "OK", "notes": "75.9% (t)"}
+{"ts": "2025-08-09T20:49:46Z", "step": "assemble_video_progress", "status": "OK", "notes": "77.5% (t)"}
+{"ts": "2025-08-09T20:49:56Z", "step": "assemble_video_progress", "status": "OK", "notes": "80.0% (t)"}
+{"ts": "2025-08-09T20:50:06Z", "step": "assemble_video_progress", "status": "OK", "notes": "83.3% (t)"}
+{"ts": "2025-08-09T20:50:16Z", "step": "assemble_video_progress", "status": "OK", "notes": "85.5% (t)"}
+{"ts": "2025-08-09T20:50:27Z", "step": "assemble_video_progress", "status": "OK", "notes": "88.4% (t)"}
+{"ts": "2025-08-09T20:50:37Z", "step": "assemble_video_progress", "status": "OK", "notes": "90.6% (t)"}
+{"ts": "2025-08-09T20:50:47Z", "step": "assemble_video_progress", "status": "OK", "notes": "94.4% (t)"}
+{"ts": "2025-08-09T20:50:57Z", "step": "assemble_video_progress", "status": "OK", "notes": "98.9% (t)"}
+{"ts": "2025-08-09T20:51:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T20:51:03Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby.mp4"}
+{"ts": "2025-08-09T20:51:16Z", "step": "make_thumbnail", "status": "OK", "notes": "2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby.png"}
+{"ts": "2025-08-09T21:10:11Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'blog_only': False, 'from_step': None, 'dry_run': True}"}
+{"ts": "2025-08-09T21:10:11Z", "step": "niche_trends", "status": "OK", "notes": "elapsed_ms=277"}
+{"ts": "2025-08-09T21:10:12Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T21:10:12Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=182"}
+{"ts": "2025-08-09T21:10:29Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T21:10:29Z", "step": "llm_outline", "status": "OK", "notes": "elapsed_ms=17897"}
+{"ts": "2025-08-09T21:10:44Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T21:10:44Z", "step": "llm_script", "status": "OK", "notes": "elapsed_ms=14947"}
+{"ts": "2025-08-09T21:10:45Z", "step": "fact_check", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=543"}
+{"ts": "2025-08-09T21:11:07Z", "step": "fetch_assets", "status": "OK", "notes": "count=6,avg_quality=93.8"}
+{"ts": "2025-08-09T21:11:07Z", "step": "fetch_assets", "status": "OK", "notes": "elapsed_ms=22183"}
+{"ts": "2025-08-09T21:11:07Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3"}
+{"ts": "2025-08-09T21:11:07Z", "step": "tts_generate", "status": "OK", "notes": "elapsed_ms=181"}
+{"ts": "2025-08-09T21:11:08Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-09T21:11:08Z", "step": "generate_captions", "status": "OK", "notes": "elapsed_ms=192"}
+{"ts": "2025-08-09T21:11:42Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:42Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=video;asset=pixabay_clock_34855_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:44Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pixabay_typing_3174_norm.mp4;q=typing"}
+{"ts": "2025-08-09T21:11:44Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=video;asset=pixabay_keyboard_3188_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:44Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=video;asset=pixabay_monitor_205519_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:45Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=video;asset=pixabay_subscribe-button_49076_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:45Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=video;asset=pixabay_keyboard_3188_norm.mp4;q=keyboard"}
+{"ts": "2025-08-09T21:11:46Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:46Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:46Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pixabay_monitor_205519_norm.mp4;q=monitor"}
+{"ts": "2025-08-09T21:11:47Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:47Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=video;asset=pixabay_notebook_4952_norm.mp4;q=notebook"}
+{"ts": "2025-08-09T21:11:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:49Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pixabay_clock_34855_norm.mp4;q=clock"}
+{"ts": "2025-08-09T21:11:50Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:50Z", "step": "assemble_pick", "status": "OK", "notes": "beat=18;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:50Z", "step": "assemble_pick", "status": "OK", "notes": "beat=19;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:51Z", "step": "assemble_pick", "status": "OK", "notes": "beat=20;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:51Z", "step": "assemble_pick", "status": "OK", "notes": "beat=21;type=video;asset=pixabay_subscribe-button_49076_norm.mp4;q=subscribe button"}
+{"ts": "2025-08-09T21:11:51Z", "step": "assemble_pick", "status": "OK", "notes": "beat=22;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:52Z", "step": "assemble_pick", "status": "OK", "notes": "beat=23;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:11:52Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T21:11:53Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T21:11:54Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T21:12:04Z", "step": "assemble_video_progress", "status": "OK", "notes": "5.7% (t)"}
+{"ts": "2025-08-09T21:12:14Z", "step": "assemble_video_progress", "status": "OK", "notes": "10.4% (t)"}
+{"ts": "2025-08-09T21:12:24Z", "step": "assemble_video_progress", "status": "OK", "notes": "14.9% (t)"}
+{"ts": "2025-08-09T21:12:34Z", "step": "assemble_video_progress", "status": "OK", "notes": "18.2% (t)"}
+{"ts": "2025-08-09T21:12:45Z", "step": "assemble_video_progress", "status": "OK", "notes": "22.4% (t)"}
+{"ts": "2025-08-09T21:12:55Z", "step": "assemble_video_progress", "status": "OK", "notes": "27.1% (t)"}
+{"ts": "2025-08-09T21:13:05Z", "step": "assemble_video_progress", "status": "OK", "notes": "32.6% (t)"}
+{"ts": "2025-08-09T21:13:15Z", "step": "assemble_video_progress", "status": "OK", "notes": "38.6% (t)"}
+{"ts": "2025-08-09T21:13:25Z", "step": "assemble_video_progress", "status": "OK", "notes": "41.1% (t)"}
+{"ts": "2025-08-09T21:13:36Z", "step": "assemble_video_progress", "status": "OK", "notes": "43.6% (t)"}
+{"ts": "2025-08-09T21:13:46Z", "step": "assemble_video_progress", "status": "OK", "notes": "47.0% (t)"}
+{"ts": "2025-08-09T21:13:56Z", "step": "assemble_video_progress", "status": "OK", "notes": "48.9% (t)"}
+{"ts": "2025-08-09T21:14:07Z", "step": "assemble_video_progress", "status": "OK", "notes": "50.6% (t)"}
+{"ts": "2025-08-09T21:14:17Z", "step": "assemble_video_progress", "status": "OK", "notes": "53.1% (t)"}
+{"ts": "2025-08-09T21:14:27Z", "step": "assemble_video_progress", "status": "OK", "notes": "55.7% (t)"}
+{"ts": "2025-08-09T21:14:37Z", "step": "assemble_video_progress", "status": "OK", "notes": "58.3% (t)"}
+{"ts": "2025-08-09T21:14:47Z", "step": "assemble_video_progress", "status": "OK", "notes": "59.9% (t)"}
+{"ts": "2025-08-09T21:14:57Z", "step": "assemble_video_progress", "status": "OK", "notes": "62.0% (t)"}
+{"ts": "2025-08-09T21:15:07Z", "step": "assemble_video_progress", "status": "OK", "notes": "64.2% (t)"}
+{"ts": "2025-08-09T21:15:18Z", "step": "assemble_video_progress", "status": "OK", "notes": "66.1% (t)"}
+{"ts": "2025-08-09T21:15:30Z", "step": "assemble_video_progress", "status": "OK", "notes": "67.7% (t)"}
+{"ts": "2025-08-09T21:15:41Z", "step": "assemble_video_progress", "status": "OK", "notes": "68.7% (t)"}
+{"ts": "2025-08-09T21:15:51Z", "step": "assemble_video_progress", "status": "OK", "notes": "70.0% (t)"}
+{"ts": "2025-08-09T21:16:02Z", "step": "assemble_video_progress", "status": "OK", "notes": "71.7% (t)"}
+{"ts": "2025-08-09T21:16:12Z", "step": "assemble_video_progress", "status": "OK", "notes": "74.0% (t)"}
+{"ts": "2025-08-09T21:16:22Z", "step": "assemble_video_progress", "status": "OK", "notes": "76.2% (t)"}
+{"ts": "2025-08-09T21:16:32Z", "step": "assemble_video_progress", "status": "OK", "notes": "77.8% (t)"}
+{"ts": "2025-08-09T21:16:42Z", "step": "assemble_video_progress", "status": "OK", "notes": "80.0% (t)"}
+{"ts": "2025-08-09T21:16:53Z", "step": "assemble_video_progress", "status": "OK", "notes": "84.0% (t)"}
+{"ts": "2025-08-09T21:17:07Z", "step": "assemble_video_progress", "status": "OK", "notes": "86.2% (t)"}
+{"ts": "2025-08-09T21:17:17Z", "step": "assemble_video_progress", "status": "OK", "notes": "87.7% (t)"}
+{"ts": "2025-08-09T21:17:27Z", "step": "assemble_video_progress", "status": "OK", "notes": "93.1% (t)"}
+{"ts": "2025-08-09T21:17:36Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T21:17:39Z", "step": "assemble_video_coverage", "status": "METRIC", "notes": "visual=100.0%;beats=100.0%;total_dur=37.7s;black_dur=0.0s"}
+{"ts": "2025-08-09T21:17:39Z", "step": "assemble_video_coverage", "status": "OK", "notes": "coverage=100.0% meets threshold \u226585.0%"}
+{"ts": "2025-08-09T21:17:39Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T21:17:42Z", "step": "assemble_video", "status": "OK", "notes": "elapsed_ms=393967"}
+{"ts": "2025-08-09T21:17:42Z", "step": "make_thumbnail", "status": "OK", "notes": "2025-08-09_ai-tools.png"}
+{"ts": "2025-08-09T21:17:42Z", "step": "make_thumbnail", "status": "OK", "notes": "elapsed_ms=578"}
+{"ts": "2025-08-09T21:17:42Z", "step": "upload_stage", "status": "OK", "notes": "backup_video.mp4"}
+{"ts": "2025-08-09T21:17:42Z", "step": "upload_stage", "status": "OK", "notes": "elapsed_ms=181"}
+{"ts": "2025-08-09T21:17:42Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T21:17:42Z", "step": "blog_pick_topics", "status": "OK", "notes": "elapsed_ms=172"}
+{"ts": "2025-08-09T21:19:28Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=2"}
+{"ts": "2025-08-09T21:19:28Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T21:19:28Z", "step": "blog_generate_post", "status": "OK", "notes": "elapsed_ms=105947"}
+{"ts": "2025-08-09T21:19:29Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T21:19:29Z", "step": "blog_render_html", "status": "OK", "notes": "elapsed_ms=247"}
+{"ts": "2025-08-09T21:19:31Z", "step": "blog_stage_local", "status": "OK", "notes": "export=20250809_ai-tools;assets=13"}
+{"ts": "2025-08-09T21:19:31Z", "step": "blog_stage_local", "status": "OK", "notes": "elapsed_ms=2222"}
+{"ts": "2025-08-09T21:19:31Z", "step": "blog_post_wp", "status": "SKIP", "notes": "publish_disabled"}
+{"ts": "2025-08-09T21:19:31Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-08-09T21:25:44Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T21:27:19Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=4"}
+{"ts": "2025-08-09T21:27:19Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T21:27:24Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T21:27:53Z", "step": "blog_stage_local", "status": "OK", "notes": "exists: 20250809_ai-tools"}
+{"ts": "2025-08-09T21:28:03Z", "step": "blog_stage_local", "status": "OK", "notes": "files=6, assets=8, zip=true"}
+{"ts": "2025-08-09T21:32:28Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'blog_only': True, 'from_step': None, 'dry_run': True}"}
+{"ts": "2025-08-09T21:32:29Z", "step": "niche_trends", "status": "OK", "notes": "elapsed_ms=195"}
+{"ts": "2025-08-09T21:32:29Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T21:32:29Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=178"}
+{"ts": "2025-08-09T21:32:42Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T21:32:42Z", "step": "llm_outline", "status": "OK", "notes": "elapsed_ms=13431"}
+{"ts": "2025-08-09T21:32:55Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T21:32:55Z", "step": "llm_script", "status": "OK", "notes": "elapsed_ms=12936"}
+{"ts": "2025-08-09T21:32:55Z", "step": "fact_check", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=270"}
+{"ts": "2025-08-09T21:33:20Z", "step": "fetch_assets", "status": "OK", "notes": "count=13,avg_quality=92.5"}
+{"ts": "2025-08-09T21:33:20Z", "step": "fetch_assets", "status": "OK", "notes": "elapsed_ms=24842"}
+{"ts": "2025-08-09T21:33:20Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T21:33:20Z", "step": "blog_pick_topics", "status": "OK", "notes": "elapsed_ms=225"}
+{"ts": "2025-08-09T21:34:18Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=2"}
+{"ts": "2025-08-09T21:34:18Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T21:34:18Z", "step": "blog_generate_post", "status": "OK", "notes": "elapsed_ms=57875"}
+{"ts": "2025-08-09T21:34:19Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T21:34:19Z", "step": "blog_render_html", "status": "OK", "notes": "elapsed_ms=341"}
+{"ts": "2025-08-09T21:34:19Z", "step": "blog_stage_local", "status": "OK", "notes": "exists: 20250809_ai-tools"}
+{"ts": "2025-08-09T21:34:19Z", "step": "blog_stage_local", "status": "OK", "notes": "elapsed_ms=205"}
+{"ts": "2025-08-09T21:34:19Z", "step": "blog_post_wp", "status": "SKIP", "notes": "publish_disabled"}
+{"ts": "2025-08-09T21:34:19Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-08-09T21:37:31Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:31Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=video;asset=pixabay_subscribe-button_120302_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:31Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pixabay_clock_34855_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:32Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=video;asset=pixabay_checklist_48702_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:32Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=video;asset=pixabay_typing_3174_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:32Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=video;asset=pixabay_keyboard_3188_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:33Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=video;asset=pixabay_typing_1046_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:33Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=video;asset=pixabay_monitor_205519_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:33Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=video;asset=pixabay_subscribe-button_49076_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:33Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pixabay_clock_15629_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=video;asset=pixabay_monitor_1210_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pixabay_notebook_1028_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=video;asset=pixabay_keyboard_232538_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:34Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:35Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:35Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:37:35Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T21:37:35Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T21:37:36Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T21:37:46Z", "step": "assemble_video_progress", "status": "OK", "notes": "8.8% (t)"}
+{"ts": "2025-08-09T21:37:56Z", "step": "assemble_video_progress", "status": "OK", "notes": "15.0% (t)"}
+{"ts": "2025-08-09T21:38:06Z", "step": "assemble_video_progress", "status": "OK", "notes": "20.7% (t)"}
+{"ts": "2025-08-09T21:38:16Z", "step": "assemble_video_progress", "status": "OK", "notes": "27.3% (t)"}
+{"ts": "2025-08-09T21:38:26Z", "step": "assemble_video_progress", "status": "OK", "notes": "34.9% (t)"}
+{"ts": "2025-08-09T21:38:36Z", "step": "assemble_video_progress", "status": "OK", "notes": "42.0% (t)"}
+{"ts": "2025-08-09T21:38:46Z", "step": "assemble_video_progress", "status": "OK", "notes": "46.7% (t)"}
+{"ts": "2025-08-09T21:38:56Z", "step": "assemble_video_progress", "status": "OK", "notes": "51.1% (t)"}
+{"ts": "2025-08-09T21:39:06Z", "step": "assemble_video_progress", "status": "OK", "notes": "56.1% (t)"}
+{"ts": "2025-08-09T21:39:17Z", "step": "assemble_video_progress", "status": "OK", "notes": "61.3% (t)"}
+{"ts": "2025-08-09T21:39:27Z", "step": "assemble_video_progress", "status": "OK", "notes": "65.7% (t)"}
+{"ts": "2025-08-09T21:39:37Z", "step": "assemble_video_progress", "status": "OK", "notes": "68.6% (t)"}
+{"ts": "2025-08-09T21:39:49Z", "step": "assemble_video_progress", "status": "OK", "notes": "69.3% (t)"}
+{"ts": "2025-08-09T21:39:59Z", "step": "assemble_video_progress", "status": "OK", "notes": "70.7% (t)"}
+{"ts": "2025-08-09T21:40:09Z", "step": "assemble_video_progress", "status": "OK", "notes": "73.2% (t)"}
+{"ts": "2025-08-09T21:40:19Z", "step": "assemble_video_progress", "status": "OK", "notes": "77.1% (t)"}
+{"ts": "2025-08-09T21:40:29Z", "step": "assemble_video_progress", "status": "OK", "notes": "82.1% (t)"}
+{"ts": "2025-08-09T21:40:39Z", "step": "assemble_video_progress", "status": "OK", "notes": "87.7% (t)"}
+{"ts": "2025-08-09T21:40:50Z", "step": "assemble_video_progress", "status": "OK", "notes": "93.1% (t)"}
+{"ts": "2025-08-09T21:41:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "98.7% (t)"}
+{"ts": "2025-08-09T21:41:02Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T21:41:05Z", "step": "assemble_video_coverage", "status": "METRIC", "notes": "visual=100.0%;beats=100.0%;total_dur=34.8s;black_dur=0.0s"}
+{"ts": "2025-08-09T21:41:05Z", "step": "assemble_video_coverage", "status": "OK", "notes": "coverage=100.0% meets threshold \u226585.0%"}
+{"ts": "2025-08-09T21:41:05Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T21:44:05Z", "step": "youtube_upload", "status": "DRY_RUN", "notes": "{\"file\": \"/Users/tylersinclair/Documents/GitHub/probable-spork/videos/backup_video.mp4\", \"title\": \"backup video\", \"description\": \"Auto-generated video.\\n\\n\\ud83d\\udd14 Subscribe for daily AI tips and "}
+{"ts": "2025-08-09T21:57:20Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-09T21:57:27Z", "step": "niche_trends", "status": "OK", "notes": "rows=131"}
+{"ts": "2025-08-09T21:57:27Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T21:57:41Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T21:57:57Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T21:58:23Z", "step": "fetch_assets", "status": "OK", "notes": "count=18,avg_quality=83.4"}
+{"ts": "2025-08-09T21:58:23Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3"}
+{"ts": "2025-08-09T21:58:23Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-09T21:58:53Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:53Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=video;asset=pixabay_subscribe-button_120302_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:53Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=video;asset=pixabay_typing-on-a-keyboard_43559_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:54Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=video;asset=pixabay_a-person-sitting-at-a-notebook-looking-at-data-on-their-phone_122233_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:54Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=video;asset=pixabay_clock_34855_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:55Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=video;asset=pixabay_checklist_48702_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:55Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=video;asset=pixabay_keyboard_3188_norm.mp4;q=Typing on a keyboard"}
+{"ts": "2025-08-09T21:58:55Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=video;asset=pixabay_typing_3174_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:55Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=video;asset=pixabay_typing_1046_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:55Z", "step": "assemble_pick", "status": "OK", "notes": "beat=10;type=video;asset=pixabay_a-close-up-of-a-monitor-displaying-a-writing-tool_145428_norm.mp4;q=A close-up of a monitor displaying a writing tool"}
+{"ts": "2025-08-09T21:58:56Z", "step": "assemble_pick", "status": "OK", "notes": "beat=11;type=video;asset=pixabay_a-group-of-people-working-together-on-a-project-with-an-ai-tool-displaying-their-progress_186195_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:56Z", "step": "assemble_pick", "status": "OK", "notes": "beat=12;type=video;asset=pixabay_monitor_205519_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:57Z", "step": "assemble_pick", "status": "OK", "notes": "beat=13;type=video;asset=pixabay_notebook_1028_norm.mp4;q=A person sitting at a notebook, looking at data on their phone"}
+{"ts": "2025-08-09T21:58:57Z", "step": "assemble_pick", "status": "OK", "notes": "beat=14;type=video;asset=pixabay_subscribe-button_49076_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:57Z", "step": "assemble_pick", "status": "OK", "notes": "beat=15;type=video;asset=pixabay_clock_15629_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:58Z", "step": "assemble_pick", "status": "OK", "notes": "beat=16;type=video;asset=pixabay_a-person-sitting-at-a-desk-watching-as-an-ai-tool-automates-a-task_16160_norm.mp4;q=A person sitting at a desk, watching as an AI tool automates a task"}
+{"ts": "2025-08-09T21:58:58Z", "step": "assemble_pick", "status": "OK", "notes": "beat=17;type=video;asset=pixabay_monitor_1210_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:58Z", "step": "assemble_pick", "status": "OK", "notes": "beat=18;type=video;asset=pixabay_keyboard_232538_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:58Z", "step": "assemble_pick", "status": "OK", "notes": "beat=19;type=video;asset=pixabay_a-group-of-people-working-together-on-a-project-with-an-ai-tool-displaying-their-progress_186195_norm.mp4;q=A group of people working together on a project, with an AI tool displaying their progress"}
+{"ts": "2025-08-09T21:58:59Z", "step": "assemble_pick", "status": "OK", "notes": "beat=20;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:59Z", "step": "assemble_pick", "status": "OK", "notes": "beat=21;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:58:59Z", "step": "assemble_pick", "status": "OK", "notes": "beat=22;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:59:00Z", "step": "assemble_pick", "status": "OK", "notes": "beat=23;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:59:00Z", "step": "assemble_pick", "status": "OK", "notes": "beat=24;type=video;asset=pixabay_notebook_4952_norm.mp4;q="}
+{"ts": "2025-08-09T21:59:00Z", "step": "assemble_timeline_progress", "status": "OK", "notes": "100.0% beats"}
+{"ts": "2025-08-09T21:59:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T21:59:01Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T21:59:11Z", "step": "assemble_video_progress", "status": "OK", "notes": "9.1% (t)"}
+{"ts": "2025-08-09T21:59:21Z", "step": "assemble_video_progress", "status": "OK", "notes": "16.8% (t)"}
+{"ts": "2025-08-09T21:59:31Z", "step": "assemble_video_progress", "status": "OK", "notes": "22.6% (t)"}
+{"ts": "2025-08-09T21:59:41Z", "step": "assemble_video_progress", "status": "OK", "notes": "28.7% (t)"}
+{"ts": "2025-08-09T21:59:51Z", "step": "assemble_video_progress", "status": "OK", "notes": "35.0% (t)"}
+{"ts": "2025-08-09T22:00:01Z", "step": "assemble_video_progress", "status": "OK", "notes": "42.8% (t)"}
+{"ts": "2025-08-09T22:00:12Z", "step": "assemble_video_progress", "status": "OK", "notes": "49.3% (t)"}
+{"ts": "2025-08-09T22:00:22Z", "step": "assemble_video_progress", "status": "OK", "notes": "55.2% (t)"}
+{"ts": "2025-08-09T22:00:32Z", "step": "assemble_video_progress", "status": "OK", "notes": "60.4% (t)"}
+{"ts": "2025-08-09T22:00:42Z", "step": "assemble_video_progress", "status": "OK", "notes": "67.0% (t)"}
+{"ts": "2025-08-09T22:00:52Z", "step": "assemble_video_progress", "status": "OK", "notes": "72.6% (t)"}
+{"ts": "2025-08-09T22:01:02Z", "step": "assemble_video_progress", "status": "OK", "notes": "78.0% (t)"}
+{"ts": "2025-08-09T22:01:12Z", "step": "assemble_video_progress", "status": "OK", "notes": "84.9% (t)"}
+{"ts": "2025-08-09T22:01:22Z", "step": "assemble_video_progress", "status": "OK", "notes": "92.2% (t)"}
+{"ts": "2025-08-09T22:01:33Z", "step": "assemble_video_progress", "status": "OK", "notes": "97.7% (t)"}
+{"ts": "2025-08-09T22:01:37Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T22:01:39Z", "step": "assemble_video_coverage", "status": "METRIC", "notes": "visual=100.0%;beats=100.0%;total_dur=38.1s;black_dur=0.0s"}
+{"ts": "2025-08-09T22:01:39Z", "step": "assemble_video_coverage", "status": "OK", "notes": "coverage=100.0% meets threshold \u226585.0%"}
+{"ts": "2025-08-09T22:01:39Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T22:01:44Z", "step": "upload_stage", "status": "OK", "notes": "backup_video.mp4"}
+{"ts": "2025-08-09T22:01:44Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T22:04:05Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=5"}
+{"ts": "2025-08-09T22:04:05Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T22:04:06Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T22:04:06Z", "step": "blog_post_wp", "status": "SKIP", "notes": "publish_disabled_in_config"}
+{"ts": "2025-08-09T22:04:06Z", "step": "blog_ping_search", "status": "OK", "notes": "google:404"}
+{"ts": "2025-08-09T22:17:38Z", "step": "fetch_assets", "status": "OK", "notes": "exists:18"}
+{"ts": "2025-08-09T22:18:01Z", "step": "fetch_assets", "status": "OK", "notes": "fixtures:18"}
+{"ts": "2025-08-09T22:19:13Z", "step": "fetch_assets", "status": "OK", "notes": "exists:18"}
+{"ts": "2025-08-09T22:19:21Z", "step": "fetch_assets", "status": "OK", "notes": "exists:18"}
+{"ts": "2025-08-09T22:19:31Z", "step": "fetch_assets", "status": "ERROR", "notes": "missing_keys=['PIXABAY_API_KEY', 'PEXELS_API_KEY']"}

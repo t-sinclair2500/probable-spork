@@ -11,7 +11,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import random
 import requests
-from PIL import Image
+import shutil
+from PIL import Image, ImageDraw, ImageFont
 
 # Ensure repo root is on sys.path for `import bin.core`
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -378,11 +379,242 @@ def load_outline_for_slug(slug: str) -> Optional[dict]:
     return None
 
 
-def main():
-    cfg = load_config()
-    guard_system(cfg)
-    env = load_env()
+def main_reuse_mode(cfg, env):
+    """Asset fetching in reuse mode - use fixtures, no network calls"""
+    log.info("Running in REUSE mode - using fixtures, no network calls")
+    
+    spath = latest_script()
+    if not spath:
+        log_state("fetch_assets", "SKIP", "no scripts")
+        log.info("No scripts found; nothing to fetch.")
+        return
 
+    script_text = read_script(spath)
+    script_base = os.path.basename(spath)
+    base_no_ext = script_base.replace(".txt", "")
+    parts = base_no_ext.split("_", 1)
+    date_tag = parts[0] if parts else time.strftime("%Y-%m-%d")
+    slug = parts[1] if len(parts) > 1 else slugify(base_no_ext)
+
+    out_dir = target_assets_dir(spath)
+    ensure_dir(out_dir)
+
+    # Check if assets already exist
+    current_assets = [f for f in os.listdir(out_dir) 
+                     if os.path.isfile(os.path.join(out_dir, f)) 
+                     and not f.endswith(".json") and not f.endswith(".txt")]
+    
+    max_per_section = int(getattr(cfg.assets, "max_per_section", 3))
+    sections = 6
+    desired_total = max_per_section * sections
+    
+    if len(current_assets) >= desired_total:
+        log_state("fetch_assets", "OK", f"exists:{len(current_assets)}")
+        log.info("Assets already present; skipping fixture copy.")
+        return
+
+    # Try to copy from fixtures
+    testing_cfg = getattr(cfg, "testing", {})
+    fixture_dir = testing_cfg.get("fixture_dir", "assets/fixtures")
+    
+    # First try slug-specific fixtures
+    slug_fixture_dir = os.path.join(BASE, fixture_dir, slug)
+    generic_fixture_dir = os.path.join(BASE, fixture_dir, "_generic")
+    
+    copied = 0
+    if os.path.exists(slug_fixture_dir):
+        copied = copy_fixtures(slug_fixture_dir, out_dir, desired_total)
+        log.info(f"Copied {copied} assets from slug-specific fixtures")
+    
+    if copied < desired_total and os.path.exists(generic_fixture_dir):
+        remaining = desired_total - copied
+        additional = copy_fixtures(generic_fixture_dir, out_dir, remaining)
+        copied += additional
+        log.info(f"Copied {additional} additional assets from generic fixtures")
+    
+    # Generate synthetic assets if still not enough
+    if copied < desired_total:
+        remaining = desired_total - copied
+        synthetic = generate_synthetic_assets(out_dir, remaining, slug)
+        copied += synthetic
+        log.info(f"Generated {synthetic} synthetic assets")
+    
+    # Create fixture license
+    create_fixture_license(out_dir, slug, copied)
+    
+    log_state("fetch_assets", "OK", f"fixtures:{copied}")
+    log.info(f"Asset reuse complete: {copied} assets in {out_dir}")
+
+
+def copy_fixtures(src_dir: str, dest_dir: str, max_count: int) -> int:
+    """Copy assets from fixture directory to destination, respecting max count"""
+    copied = 0
+    existing_files = set(os.listdir(dest_dir))
+    
+    for filename in sorted(os.listdir(src_dir)):
+        if filename in ["license.json", "sources_used.txt"]:
+            continue
+            
+        if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4', '.mov', '.avi')):
+            continue
+            
+        if filename in existing_files:
+            continue
+            
+        if copied >= max_count:
+            break
+            
+        src_path = os.path.join(src_dir, filename)
+        dest_path = os.path.join(dest_dir, filename)
+        
+        try:
+            shutil.copy2(src_path, dest_path)
+            copied += 1
+        except Exception as e:
+            log.warning(f"Failed to copy {filename}: {e}")
+    
+    return copied
+
+
+def generate_synthetic_assets(out_dir: str, count: int, slug: str) -> int:
+    """Generate synthetic test assets when fixtures are insufficient"""
+    generated = 0
+    
+    for i in range(count):
+        # Create a simple colored image with text
+        width, height = 1920, 1080
+        colors = [(52, 152, 219), (46, 204, 113), (155, 89, 182), (241, 196, 15)]
+        color = colors[i % len(colors)]
+        
+        img = Image.new("RGB", (width, height), color)
+        draw = ImageDraw.Draw(img)
+        
+        # Add text overlay
+        text = f"SYNTHETIC ASSET\n{slug}\n#{i+1}"
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 48)
+        except (OSError, IOError):
+            font = ImageFont.load_default()
+        
+        # Center the text
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = (width - text_width) // 2
+        y = (height - text_height) // 2
+        
+        # Draw with outline
+        for adj in range(-1, 2):
+            for adj2 in range(-1, 2):
+                draw.text((x+adj, y+adj2), text, font=font, fill=(0, 0, 0))
+        draw.text((x, y), text, font=font, fill=(255, 255, 255))
+        
+        filename = f"synthetic_{slug}_{i+1:03d}.jpg"
+        filepath = os.path.join(out_dir, filename)
+        img.save(filepath, "JPEG", quality=85)
+        generated += 1
+    
+    return generated
+
+
+def create_fixture_license(out_dir: str, slug: str, asset_count: int):
+    """Create license.json for fixture-based assets"""
+    license_data = {
+        "source": "fixtures",
+        "topic_slug": slug,
+        "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "asset_count": asset_count,
+        "mode": "reuse",
+        "items": []
+    }
+    
+    # Add entries for each asset file
+    for filename in os.listdir(out_dir):
+        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4', '.mov', '.avi')):
+            license_data["items"].append({
+                "filename": filename,
+                "source": "fixtures" if not filename.startswith("synthetic_") else "synthetic",
+                "license": "test_usage",
+                "attribution_required": False
+            })
+    
+    license_path = os.path.join(out_dir, "license.json")
+    with open(license_path, 'w') as f:
+        json.dump(license_data, f, indent=2)
+    
+    # Create sources_used.txt
+    sources_path = os.path.join(out_dir, "sources_used.txt")
+    with open(sources_path, 'w') as f:
+        f.write("# Asset sources (REUSE mode)\n")
+        f.write("fixtures://test_fixtures\n")
+
+
+def main_live_mode(cfg, env):
+    """Asset fetching in live mode - actual API calls with budget control"""
+    log.info("Running in LIVE mode - making actual API calls with budget controls")
+    
+    testing_cfg = getattr(cfg, "testing", {})
+    live_budget = int(env.get("ASSET_LIVE_BUDGET", testing_cfg.get("live_budget_per_run", 5)))
+    rate_limit = testing_cfg.get("live_rate_limit_per_min", 10)
+    fail_without_keys = testing_cfg.get("fail_on_live_without_keys", True)
+    
+    # Check API keys if required
+    providers = [p.lower() for p in getattr(cfg.assets, "providers", ["pixabay", "pexels"])]
+    missing_keys = []
+    if "pixabay" in providers and not env.get("PIXABAY_API_KEY"):
+        missing_keys.append("PIXABAY_API_KEY")
+    if "pexels" in providers and not env.get("PEXELS_API_KEY"):
+        missing_keys.append("PEXELS_API_KEY")
+    if "unsplash" in providers and not env.get("UNSPLASH_ACCESS_KEY"):
+        missing_keys.append("UNSPLASH_ACCESS_KEY")
+    
+    if missing_keys and fail_without_keys:
+        log.error(f"Live mode requires API keys: {missing_keys}")
+        log_state("fetch_assets", "ERROR", f"missing_keys={missing_keys}")
+        return
+    
+    # Initialize budget tracker
+    global live_fetch_count
+    live_fetch_count = 0
+    
+    log.info(f"Live mode budget: {live_budget} fetches, rate limit: {rate_limit}/min")
+    
+    # Call original main logic with budget enforcement
+    return main_original_logic_with_budget(cfg, env, live_budget, rate_limit)
+
+
+# Global counter for live fetches
+live_fetch_count = 0
+last_fetch_times = []
+
+
+def enforce_live_budget(budget: int, rate_limit: int):
+    """Check and enforce live fetch budget and rate limits"""
+    global live_fetch_count, last_fetch_times
+    
+    if live_fetch_count >= budget:
+        raise Exception(f"Live fetch budget exceeded: {live_fetch_count}/{budget}")
+    
+    # Rate limiting - remove fetches older than 1 minute
+    now = time.time()
+    last_fetch_times = [t for t in last_fetch_times if now - t < 60]
+    
+    if len(last_fetch_times) >= rate_limit:
+        sleep_time = 60 - (now - last_fetch_times[0])
+        if sleep_time > 0:
+            log.info(f"Rate limit reached, sleeping {sleep_time:.1f}s")
+            time.sleep(sleep_time)
+    
+    # Record this fetch
+    live_fetch_count += 1
+    last_fetch_times.append(now)
+    
+    log.info(f"LIVE_FETCH #{live_fetch_count} - budget: {live_fetch_count}/{budget}")
+
+
+def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
+    """Original main logic with budget enforcement for live mode"""
+    
     spath = latest_script()
     if not spath:
         log_state("fetch_assets", "SKIP", "no scripts")
@@ -450,6 +682,13 @@ def main():
     for q in queries:
         fetched: List[ProviderResult] = []
         for p in providers:
+            # Check budget before making any API calls
+            try:
+                enforce_live_budget(budget, rate_limit)
+            except Exception as e:
+                log.error(f"Budget enforcement failed: {e}")
+                break
+                
             # Retry/backoff per provider
             for delay in backoff_attempts(int(getattr(cfg.limits, "max_retries", 2)) + 1):
                 try:
@@ -625,6 +864,26 @@ def main():
         log_state("fetch_assets", "OK", f"count={len(final_assets)}")
     
     log.info(f"Fetched/normalized assets: {len(final_assets)} -> {out_dir}")
+
+
+def main():
+    """Main entry point with testing mode branching"""
+    cfg = load_config()
+    guard_system(cfg)
+    env = load_env()
+
+    # Determine asset testing mode
+    testing_cfg = getattr(cfg, "testing", {})
+    asset_mode = env.get("TEST_ASSET_MODE", testing_cfg.get("asset_mode", "reuse"))
+    
+    if asset_mode == "reuse":
+        return main_reuse_mode(cfg, env)
+    elif asset_mode == "live":
+        return main_live_mode(cfg, env)
+    else:
+        log.error(f"Invalid asset_mode: {asset_mode}. Must be 'reuse' or 'live'")
+        log_state("fetch_assets", "ERROR", f"invalid_mode={asset_mode}")
+        return
 
 
 if __name__ == "__main__":

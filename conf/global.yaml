@@ -10,9 +10,9 @@ storage:
 
 pipeline:
   daily_videos: 1
-  video_length_seconds: 420
-  tone: "conversational"
-  niches: ["ai tools","raspberry pi tips","space trivia"]
+  video_length_seconds: 30
+  tone: "helpful"
+  niches: ["baby sleep regression tips","parenting advice"]
   category_ids: [27,28]
   enable_captions: true
   enable_thumbnails: true
@@ -62,3 +62,10 @@ upload:
 
 limits:
   max_retries: 2
+
+testing:
+  asset_mode: "reuse"               # reuse | live (DEFAULT: reuse for safety)
+  fixture_dir: "assets/fixtures"    # where test fixtures are stored
+  live_budget_per_run: 5            # hard cap on new downloads in live mode
+  live_rate_limit_per_min: 10       # API calls per minute limit in live mode
+  fail_on_live_without_keys: true   # fail live tests if API keys missing

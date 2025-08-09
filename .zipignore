@@ -1,0 +1,10 @@
+.venv/
+*.mp4
+*.mp3
+voiceovers/*.mp3
+videos/*.mp4
+data/cache/
+data/analytics/
+data/token_*.json
+__pycache__/
+.DS_Store

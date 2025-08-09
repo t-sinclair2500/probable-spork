@@ -156,6 +156,10 @@ def main():
     
     # WordPress posting - always dry run in tests
     os.environ["BLOG_DRY_RUN"] = "true"
+    
+    # Asset fetching - default to reuse mode unless explicitly set to live
+    if not os.environ.get("TEST_ASSET_MODE"):
+        os.environ["TEST_ASSET_MODE"] = "reuse"
     run_safe("python bin/blog_post_wp.py", required=True)
     run_safe("python bin/blog_ping_search.py", required=True)
     

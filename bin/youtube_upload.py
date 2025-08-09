@@ -10,10 +10,115 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from bin.core import BASE, get_logger, load_config, load_env, log_state, single_lock  # noqa: E402
+from bin.core import BASE, get_logger, get_publish_flags, load_config, load_env, log_state, single_lock  # noqa: E402
+from urllib.parse import urlencode  # noqa: E402
 
 
 log = get_logger("youtube_upload")
+
+
+def load_monetization_config() -> dict:
+    """Load monetization configuration"""
+    config_path = os.path.join(BASE, "conf", "monetization.yaml")
+    if not os.path.exists(config_path):
+        log.warning("No monetization.yaml found, using empty config")
+        return {}
+    
+    try:
+        import yaml
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f) or {}
+    except Exception as e:
+        log.warning(f"Failed to load monetization config: {e}")
+        return {}
+
+
+def build_utm_url(base_url: str, utm_params: dict) -> str:
+    """Build URL with UTM parameters"""
+    if not base_url or not utm_params:
+        return base_url
+    
+    # Filter out None values
+    clean_params = {k: v for k, v in utm_params.items() if v is not None}
+    if not clean_params:
+        return base_url
+    
+    separator = "&" if "?" in base_url else "?"
+    return f"{base_url}{separator}{urlencode(clean_params)}"
+
+
+def generate_monetized_description(original_desc: str, metadata: dict, monetization_config: dict) -> str:
+    """Generate a monetized YouTube description with CTAs, disclosures, and UTM links"""
+    if not monetization_config:
+        return original_desc
+    
+    youtube_config = monetization_config.get("youtube", {})
+    crosslink_config = monetization_config.get("crosslinks", {}).get("video_to_blog", {})
+    
+    # Start with original description
+    sections = [original_desc] if original_desc else []
+    
+    # Add chapters if available in metadata
+    if metadata.get("chapters"):
+        sections.append("\n🕒 CHAPTERS:")
+        for i, chapter in enumerate(metadata["chapters"]):
+            timestamp = chapter.get("timestamp", f"0:{i*10:02d}")
+            title = chapter.get("title", f"Chapter {i+1}")
+            sections.append(f"{timestamp} - {title}")
+    
+    # Add call-to-action
+    cta_text = youtube_config.get("cta_text")
+    if cta_text:
+        sections.append(f"\n{cta_text}")
+    
+    # Add blog link with UTM tracking
+    blog_link_text = youtube_config.get("blog_link_text", "📚 Read more on our blog")
+    if blog_link_text and crosslink_config:
+        # This would be the actual blog URL - for now using placeholder
+        blog_url = "https://yourdomain.com/blog"
+        utm_params = {
+            "utm_source": crosslink_config.get("utm_source", "youtube"),
+            "utm_medium": crosslink_config.get("utm_medium", "video_description"),
+            "utm_campaign": crosslink_config.get("utm_campaign", "traffic_from_video")
+        }
+        blog_url_with_utm = build_utm_url(blog_url, utm_params)
+        sections.append(f"\n{blog_link_text}: {blog_url_with_utm}")
+    
+    # Add end screen CTA
+    end_screen_cta = youtube_config.get("end_screen_cta")
+    if end_screen_cta:
+        sections.append(f"\n{end_screen_cta}")
+    
+    # Add affiliate disclosure
+    affiliate_disclosure = youtube_config.get("affiliate_disclosure")
+    if affiliate_disclosure:
+        sections.append(f"\n⚠️ DISCLOSURE:\n{affiliate_disclosure}")
+    
+    # Add hashtags
+    hashtags = youtube_config.get("default_hashtags", [])
+    if hashtags:
+        sections.append(f"\n{' '.join(hashtags)}")
+    
+    return "\n".join(sections)
+
+
+def generate_enhanced_title(original_title: str, metadata: dict) -> str:
+    """Generate an enhanced title with engagement hooks"""
+    if not original_title:
+        return "Untitled Video"
+    
+    # Remove file extensions and clean up
+    title = original_title.replace(".mp4", "").replace("_", " ").replace("-", " ")
+    
+    # Use metadata title if available (more descriptive)
+    if metadata.get("title") and len(metadata["title"]) > len(title):
+        title = metadata["title"]
+    
+    # Ensure title doesn't exceed YouTube's 100 character limit
+    if len(title) > 95:  # Leave room for potential additions
+        title = title[:92] + "..."
+    
+    return title
 
 
 def load_queue_item() -> dict:
@@ -163,6 +268,7 @@ def main():
 
     cfg = load_config()
     env = load_env()
+    monetization_config = load_monetization_config()
 
     # Load from upload queue or use CLI args
     item = load_queue_item()
@@ -172,8 +278,12 @@ def main():
     metadata = load_video_metadata(file_path)
     
     # Build video details with priority: CLI args > metadata > queue item > defaults
-    title = args.title or metadata.get("title") or item.get("title") or "Untitled"
-    desc = args.desc or metadata.get("description") or item.get("description") or ""
+    original_title = args.title or metadata.get("title") or item.get("title") or "Untitled"
+    original_desc = args.desc or metadata.get("description") or item.get("description") or ""
+    
+    # Generate enhanced title and monetized description
+    title = generate_enhanced_title(original_title, metadata)
+    desc = generate_monetized_description(original_desc, metadata, monetization_config)
     
     # Handle tags from various sources
     tags = []
@@ -224,9 +334,9 @@ def main():
         "file_size_mb": round(os.path.getsize(file_path) / 1024 / 1024, 1) if os.path.exists(file_path) else 0
     }
 
-    # Dry-run toggles
-    dry_env = (env.get("YOUTUBE_UPLOAD_DRY_RUN") or "1").lower() in ("1", "true", "yes")
-    dry = bool(args.dry_run or dry_env)
+    # Use centralized flag governance
+    flags = get_publish_flags(cli_dry_run=args.dry_run, target="youtube")
+    dry = flags["youtube_dry_run"]
     
     if dry:
         log_state("youtube_upload", "DRY_RUN", json.dumps(payload)[:200])
@@ -235,8 +345,9 @@ def main():
         print(json.dumps(payload, indent=2))
         print("\nTo perform actual upload:")
         print("1. Set YOUTUBE_UPLOAD_DRY_RUN=false in .env")
-        print("2. Or use --dry-run=false flag")
+        print("2. Or use without --dry-run flag")
         print("3. Ensure OAuth is set up with --auth-only first")
+        print("\nCurrent flags controlled by: CLI > ENV > defaults")
         return
 
     # Real upload

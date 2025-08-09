@@ -210,6 +210,15 @@ def load_env() -> dict:
     return env
 
 
+def load_blog_cfg():
+    """Load blog configuration from blog.yaml (with fallback to example)"""
+    p = os.path.join(BASE, "conf", "blog.yaml")
+    if not os.path.exists(p):
+        p = os.path.join(BASE, "conf", "blog.example.yaml")
+    import yaml
+    return yaml.safe_load(open(p, "r", encoding="utf-8"))
+
+
 def require_keys(env: dict, keys: List[str], feature_name: str):
     missing = [k for k in keys if not env.get(k)]
     if missing:
@@ -401,3 +410,107 @@ def schema_article(
         "datePublished": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     return json.dumps(data)
+
+
+# ---------------- Publish Flags & DRY_RUN Governance ----------------
+
+
+def get_publish_flags(cli_dry_run: bool = False, target: str = "both") -> Dict[str, bool]:
+    """
+    Centralized publish flag governance with clear precedence hierarchy.
+    
+    Args:
+        cli_dry_run: CLI --dry-run flag state
+        target: "youtube", "blog", or "both" - which publish flags to return
+        
+    Returns:
+        Dict with flags: {"youtube_dry_run": bool, "blog_dry_run": bool, "blog_publish_enabled": bool}
+        
+    Precedence (highest to lowest):
+        1. CLI flags (--dry-run)
+        2. Environment variables (YOUTUBE_UPLOAD_DRY_RUN, BLOG_DRY_RUN)
+        3. Config files (blog.yaml wordpress.publish_enabled)
+        4. Safe defaults (dry_run=True, publish_enabled=False)
+    """
+    env = load_env()
+    flags = {}
+    
+    # YouTube publish flags
+    if target in ("youtube", "both"):
+        if cli_dry_run:
+            # CLI override: force dry-run
+            flags["youtube_dry_run"] = True
+        else:
+            # Check environment variable (default to safe dry-run)
+            env_dry = env.get("YOUTUBE_UPLOAD_DRY_RUN", "true").lower() in ("1", "true", "yes")
+            flags["youtube_dry_run"] = env_dry
+    
+    # Blog publish flags  
+    if target in ("blog", "both"):
+        if cli_dry_run:
+            # CLI override: force dry-run
+            flags["blog_dry_run"] = True
+            flags["blog_publish_enabled"] = False
+        else:
+            # Check environment variable first
+            env_blog_dry = env.get("BLOG_DRY_RUN", "true").lower() in ("1", "true", "yes")
+            flags["blog_dry_run"] = env_blog_dry
+            
+            # Check blog config for publish_enabled (independent of dry_run)
+            try:
+                blog_cfg = load_blog_cfg()
+                publish_enabled = blog_cfg.get("wordpress", {}).get("publish_enabled", False)
+                flags["blog_publish_enabled"] = publish_enabled
+                
+                # If publish is disabled in config, force dry-run regardless of env
+                if not publish_enabled:
+                    flags["blog_dry_run"] = True
+                    
+            except Exception as e:
+                log.warning(f"Failed to load blog config for publish flags: {e}")
+                flags["blog_publish_enabled"] = False
+                flags["blog_dry_run"] = True
+    
+    return flags
+
+
+def should_publish_youtube(cli_dry_run: bool = False) -> bool:
+    """Check if YouTube upload should be live (not dry-run)"""
+    flags = get_publish_flags(cli_dry_run, target="youtube")
+    return not flags["youtube_dry_run"]
+
+
+def should_publish_blog(cli_dry_run: bool = False) -> bool:
+    """Check if blog post should be published to WordPress (not dry-run and enabled)"""
+    flags = get_publish_flags(cli_dry_run, target="blog")
+    return not flags["blog_dry_run"] and flags["blog_publish_enabled"]
+
+
+def get_publish_summary(cli_dry_run: bool = False) -> str:
+    """Get human-readable summary of current publish settings"""
+    flags = get_publish_flags(cli_dry_run, target="both")
+    
+    lines = []
+    lines.append("=== PUBLISH FLAGS SUMMARY ===")
+    
+    # YouTube
+    yt_status = "DRY-RUN" if flags["youtube_dry_run"] else "LIVE"
+    lines.append(f"YouTube Upload: {yt_status}")
+    
+    # Blog  
+    if not flags["blog_publish_enabled"]:
+        blog_status = "DISABLED (staging only)"
+    elif flags["blog_dry_run"]:
+        blog_status = "DRY-RUN"
+    else:
+        blog_status = "LIVE"
+    lines.append(f"Blog Publishing: {blog_status}")
+    
+    # Instructions
+    lines.append("")
+    lines.append("To change settings:")
+    lines.append("- CLI: Use --dry-run flag")
+    lines.append("- Env: Set YOUTUBE_UPLOAD_DRY_RUN=false, BLOG_DRY_RUN=false")
+    lines.append("- Config: Set wordpress.publish_enabled=true in conf/blog.yaml")
+    
+    return "\n".join(lines)
