@@ -1,0 +1,49 @@
+FULL EXECUTION PLAN FOR CURSOR AFTER PAUSE:
+
+TASKS BY FILE:
+
+1. bin/generate_captions.py  [PARTIAL]
+   - Integrate whisper.cpp for ASR.  [DONE — existing integration validated]
+   - Add CLI args for input audio file, output VTT/SRT.  [DONE]
+   - Normalize loudness via FFmpeg loudnorm filter.  [TODO]
+   - Implement fallback to OpenAI Whisper API if local fails.  [TODO]
+   - Log duration, WPM, and transcript confidence scores.  [TODO]
+
+2. bin/download_assets.py  [TODO]
+   - Implement Pixabay API downloader (images & videos).
+   - Implement Pexels API downloader (images & videos).
+   - Save license metadata in JSON alongside asset.
+   - Enforce resolution/format constraints from config.
+   - Deduplicate downloads via SHA1 hash.
+
+3. bin/seo_lint_gate.py  [DONE]
+   - Run SEO lint (title/meta length, slug, alt tags).  [DONE]
+   - Block publishing if failing thresholds.  [DONE]
+   - Log lint errors; allow override via CLI flag.  [TODO]
+
+4. bin/web_ui.py  [TODO]
+   - Flask-based UI with:
+     * Start new YouTube job
+     * Start new Blog job
+     * View logs (tail last 200 lines)
+     * Queue depth display
+     * Last run status
+   - Authentication via simple password from config.
+   - Lightweight HTML templates inline or in templates/ folder.
+
+PROMPTING STRATEGY FOR CURSOR:
+- Open each file above, follow the bullet specs.
+- Test locally after each implementation with `make run-once` or `make blog-once`.
+- Validate outputs (captions generated, assets downloaded, SEO gate works, UI reachable).
+- Commit after each file completion.
+
+---
+
+Additional progress completed in this session (outside this list):
+- llm_cluster: strict JSON parsing and top-10 trimming with timestamps.  [DONE]
+- llm_outline: tone + target length hints added to prompt; fallback JSON includes tone/target length.  [DONE]
+- llm_script: tone/target hints, plus offline fallback that expands outline to a usable script.  [DONE]
+- tts_generate: added loudness normalization (ffmpeg loudnorm) for placeholder VO.  [DONE]
+- assemble_video: optional background music with sidechain ducking when `assets/<topic>/bg.mp3` exists.  [DONE]
+- make_thumbnail: new 1280×720 thumbnail generator using Pillow.  [DONE]
+- blog_render_html: injects schema.org Article JSON-LD.  [DONE]

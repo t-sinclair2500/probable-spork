@@ -1,0 +1,5 @@
+Expand this outline into a 900-1200 word voiceover script.
+- Conversational sentences, mostly < 20 words.
+- Insert [B-ROLL: ...] every 2-3 lines aligned to beats.
+- Include a clear CTA near the end.
+Return PLAIN TEXT only (no JSON).

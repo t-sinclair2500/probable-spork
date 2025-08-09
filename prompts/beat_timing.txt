@@ -1,0 +1,4 @@
+Split this script into sequential beats with estimated duration seconds per beat (~160 wpm).
+Match each beat to the best [B-ROLL] tag.
+Return JSON: [{"text":"...", "sec": 3.5, "broll":"query"}, ...]
+Only JSON; no prose.

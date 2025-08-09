@@ -1,0 +1,31 @@
+# Blog lane configuration for the shared pipeline.
+wordpress:
+  base_url: "http://127.0.0.1"
+  api_user: "poster_user"
+  api_app_password: "REPLACE_WITH_APP_PASSWORD"
+  default_status: "publish"         # or "future"
+  default_category: "AI Tools"
+  default_tags: ["automation","raspberry pi","ai"]
+  author_id: null
+
+blog:
+  daily_posts: 1
+  min_words: 800
+  max_words: 1500
+  tone: "informative"               # dramatic | silly | authoritative | casual
+  include_faq: true
+  include_toc: true
+  include_disclaimer: true
+  inject_cta: "Subscribe to our newsletter for weekly tips."
+  featured_image_strategy: "first_asset"  # first_asset | best_match
+  avoid_repeat_days: 14
+
+images:
+  max_width: 1280
+  max_height: 720
+  compression_quality: 85
+  include_attribution_block: true
+
+sitemaps:
+  ping_google: true
+  ping_bing: false

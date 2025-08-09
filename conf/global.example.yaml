@@ -1,0 +1,65 @@
+# Master config. Edit this file to control the pipeline before each run.
+
+storage:
+  base_dir: "/home/pi/youtube_onepi_pipeline"
+  videos_dir: "videos"
+  assets_dir: "assets"
+  scripts_dir: "scripts"
+  voiceovers_dir: "voiceovers"
+  logs_dir: "logs"
+  data_dir: "data"
+  jobs_dir: "jobs"
+
+pipeline:
+  daily_videos: 1
+  video_length_seconds: 420      # target finished length
+  tone: "conversational"         # e.g., dramatic, silly, authoritative
+  niches: ["ai tools","raspberry pi tips","space trivia"]
+  category_ids: [27,28]          # YouTube Education, Science & Tech
+  enable_captions: true
+  enable_thumbnails: true
+  pacing_cooldown_seconds: 60    # sleep between heavy steps
+
+llm:
+  provider: "ollama"
+  model: "phi3:mini"             # default local model
+  endpoint: "http://127.0.0.1:11434/api/generate"
+  temperature: 0.7
+  max_tokens: 1200
+
+asr:
+  provider: "whisper_cpp"        # "whisper_cpp" or "openai"
+  whisper_cpp_path: "/home/pi/whisper.cpp/main"  # compiled binary path
+  model: "ggml-base.en.bin"      # or tiny for speed
+  openai_enabled: false
+
+tts:
+  provider: "coqui"              # "coqui" or "openai"
+  voice: "tts_models/en/ljspeech/tacotron2-DDC"
+  rate_wpm: 165
+  openai_enabled: false
+
+assets:
+  providers:
+    - "pixabay"
+    - "pexels"
+  max_per_section: 3
+
+render:
+  resolution: "1920x1080"
+  fps: 30
+  music_db: -22
+  duck_db: -15
+  xfade_ms: 250
+  target_bitrate: "4000k"
+
+licenses:
+  require_attribution: true
+
+upload:
+  auto_upload: false
+  visibility: "public"
+  schedule: null  # e.g., "2025-08-10T14:00:00Z"
+
+limits:
+  max_retries: 2

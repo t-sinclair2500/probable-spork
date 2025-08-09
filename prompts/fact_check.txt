@@ -1,0 +1,8 @@
+Given script text and optional context snippets, identify any claim likely to require a citation.
+Return JSON:
+{
+  "issues": [
+    {"line": 23, "claim":"...", "suggested":"Neutral phrasing here..."}
+  ]
+}
+If nothing found, return {"issues": []}.

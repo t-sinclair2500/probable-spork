@@ -1,0 +1,13 @@
+[Unit]
+Description=Pipeline Health Server
+After=network.target
+
+[Service]
+WorkingDirectory=/home/pi/youtube_onepi_pipeline
+ExecStart=/home/pi/youtube_onepi_pipeline/.venv/bin/python bin/health_server.py
+Restart=always
+User=pi
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target

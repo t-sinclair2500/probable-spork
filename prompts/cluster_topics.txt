@@ -1,0 +1,10 @@
+You cluster short video titles and tags into topics.
+Input: JSON array of items {title, tags, source}
+Output (JSON only):
+{
+  "topics": [
+    {"topic": "AI time-saving tools", "score": 0.82, "hook": "5 AI tools to save 10h/week", "keywords": ["ai tools","productivity","automation"]}
+  ]
+}
+Scoring = frequency x velocity x cross-source overlap.
+Only output valid JSON; no prose.

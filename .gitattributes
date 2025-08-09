@@ -1,0 +1,15 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Treat images and videos as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.mp4 binary
+*.mov binary
+*.wav binary
+*.mp3 binary
+
+# Merge strategy for lock/state files
+jobs/state.jsonl merge=union
+

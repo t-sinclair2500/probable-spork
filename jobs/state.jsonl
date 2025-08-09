@@ -1,0 +1,29 @@
+
+{"ts": "2025-08-09T01:11:13Z", "step": "niche_trends", "status": "OK", "notes": "seeded demo trends"}
+{"ts": "2025-08-09T01:12:35Z", "step": "niche_trends", "status": "OK", "notes": "seeded demo trends"}
+{"ts": "2025-08-09T01:12:36Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T01:13:57Z", "step": "niche_trends", "status": "OK", "notes": "seeded demo trends"}
+{"ts": "2025-08-09T01:13:58Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T01:13:59Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-08_ai-tools.outline.json"}
+{"ts": "2025-08-09T01:14:53Z", "step": "niche_trends", "status": "OK", "notes": "seeded demo trends"}
+{"ts": "2025-08-09T01:14:54Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T01:14:55Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-08_ai-tools.outline.json"}
+{"ts": "2025-08-09T01:14:56Z", "step": "llm_script", "status": "OK", "notes": "2025-08-08_ai-tools.txt"}
+{"ts": "2025-08-09T01:43:49Z", "step": "niche_trends", "status": "OK", "notes": "seeded demo trends"}
+{"ts": "2025-08-09T01:43:49Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T01:43:50Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-08_ai-tools.outline.json"}
+{"ts": "2025-08-09T01:43:50Z", "step": "llm_script", "status": "OK", "notes": "2025-08-08_ai-tools.txt"}
+{"ts": "2025-08-09T01:43:54Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-08_ai-tools.mp3"}
+{"ts": "2025-08-09T01:44:29Z", "step": "niche_trends", "status": "OK", "notes": "seeded demo trends"}
+{"ts": "2025-08-09T01:44:30Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T01:44:31Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-08_ai-tools.outline.json"}
+{"ts": "2025-08-09T01:44:32Z", "step": "llm_script", "status": "OK", "notes": "2025-08-08_ai-tools.txt"}
+{"ts": "2025-08-09T01:44:36Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-08_ai-tools.mp3"}
+{"ts": "2025-08-09T01:44:37Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp binary not found"}
+{"ts": "2025-08-09T01:44:51Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-08_ai-tools.mp4"}
+{"ts": "2025-08-09T01:44:52Z", "step": "upload_stage", "status": "OK", "notes": "2025-08-08_ai-tools.mp4"}
+{"ts": "2025-08-09T01:46:08Z", "step": "blog_pick_topics", "status": "OK", "notes": "ai tools"}
+{"ts": "2025-08-09T01:46:08Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-09T01:46:10Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-09T01:46:12Z", "step": "blog_post_wp", "status": "DRY_RUN", "notes": "{\"title\": \"Ai Tools\", \"status\": \"publish\", \"content\": \"<!doctype html><html><head>\\n<meta charset=\\\"utf-8\\\">\\n<title>Ai Tools</title>\\n<script type=\\\"application/ld+json\\\">{\\\"@context\\\": \\\"https://sch"}
+{"ts": "2025-08-09T01:46:14Z", "step": "blog_ping_search", "status": "OK", "notes": "google:404"}

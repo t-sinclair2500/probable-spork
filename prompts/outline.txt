@@ -1,0 +1,14 @@
+Given a {topic} and {seed_keywords}, output JSON:
+{
+  "title_options": ["...","...","..."],
+  "sections": [
+    {"id":1,"label":"Hook","beats":["...","..."],"broll":["..."]},
+    {"id":2,"label":"Point 1","beats":["..."],"broll":["..."]},
+    {"id":3,"label":"Point 2","beats":["..."],"broll":["..."]},
+    {"id":4,"label":"Point 3","beats":["..."],"broll":["..."]},
+    {"id":5,"label":"Recap","beats":["..."],"broll":["..."]},
+    {"id":6,"label":"CTA","beats":["..."],"broll":["..."]}
+  ],
+  "tags": ["...","..."]
+}
+Keep beats short (spoken). No prose; JSON only.

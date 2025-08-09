@@ -1,0 +1,79 @@
+CURSOR EXECUTION PLAN — FULL BORE
+
+Context:
+- Single Raspberry Pi 5 shared pipeline with YouTube + Blog lanes.
+- Local-first stack: Ollama (phi3:mini), whisper.cpp, Coqui TTS, FFmpeg/MoviePy.
+- Operator control: conf/global.yaml, conf/blog.yaml, .env
+- All scripts lock-aware and idempotent.
+
+PHASE A — VERIFY BASELINE
+1) Ensure venv & deps: `make install` (ARM-friendly pins).
+2) System services: run `scripts/install_systemd_and_logrotate.sh`.
+3) Start Ollama service: `sudo systemctl enable --now ollama`.
+4) Pull model: `ollama pull phi3:mini`.
+5) Build whisper.cpp and place model ggml-base.en.bin under `~/whisper.cpp/models/`.
+6) Copy configs: `cp conf/global.example.yaml conf/global.yaml`, `cp conf/blog.example.yaml conf/blog.yaml`, `cp .env.example .env`.
+7) Verify environment: `make check` (fix any warnings).
+8) Dry-run E2E: `make run-once` and `make blog-once` (blog is DRY_RUN).
+
+PHASE B — COMPLETE TODOs (IF NOT FULLY FINISHED)
+B1. Ingestion (`bin/niche_trends.py`)
+- Implement YouTube, Google Trends, Reddit pulls (robust backoff).
+- Write to SQLite `data/trending_topics.db`.
+
+B2. Clustering (`bin/llm_cluster.py`)
+- Strict JSON parse via core.parse_llm_json; top 10 topics saved to `data/topics_queue.json`.
+
+B3. Outline & Script (`bin/llm_outline.py`, `bin/llm_script.py`)
+- Respect tone & target length; produce outline JSON & script with [B-ROLL].
+
+B4. Assets (`bin/fetch_assets.py`)
+- Pixabay/Pexels downloaders implemented; license.json + sources_used.txt; normalized images.
+
+B5. TTS (`bin/tts_generate.py`)
+- Coqui voice from config; WAV → MP3 via ffmpeg; loudness normalized later.
+
+B6. Captions (`bin/generate_captions.py`)
+- whisper.cpp integrated; expects ggml model path; SRT written next to VO.
+
+B7. Assembly (`bin/assemble_video.py`)
+- Use LLM timing or fallback heuristic; crossfades, pan/zoom, ducking, export H.264.
+
+B8. Thumbnail (`bin/make_thumbnail.py`)
+- 1280×720 brand stripe + readable type; filename alongside video.
+
+B9. Blog Lane (`bin/blog_*`)
+- pick → generate → render → post (DRY_RUN) → ping.
+- Taxonomy sync + internal links in `blog_post_wp.py`.
+- SEO lint gate (blocks posting on title/meta violations).
+
+PHASE C — RELIABILITY
+C1. Locking & idempotency: already enforced; validate on re-runs.
+C2. Thermal/disk guards: in core.guard_system; call in heavy steps as needed.
+C3. Logrotate installed; check `/etc/logrotate.d/youtube_onepi`.
+C4. Backups: `make backup` or run `bin/backup_*.sh` nightly.
+
+PHASE D — UI & CRON
+D1. Health server: `systemctl status pipeline-health`; browse `http://PI:8088/health`.
+D2. Web UI: `python bin/web_ui.py` → `http://PI:8099`.
+D3. Install cron: `make cron-install`. Validate `logs/cron.log` growth.
+
+PHASE E — PROMPTS & LLM
+E1. Ensure all prompts in `/prompts/` are used with strict JSON outputs.
+E2. If JSON parse fails, re-prompt: “Return valid JSON only. No prose.”
+
+PHASE F — SEO & GOVERNANCE
+F1. Enforce license presence when `licenses.require_attribution: true`.
+F2. Add attribution block to blog HTML if any item requires credit.
+F3. Ensure slug rules, alt text for images, and meta descriptions meet thresholds.
+
+PHASE G — ACCEPTANCE
+G1. 3 consecutive unattended daily runs succeed (video + blog).
+G2. Each run produces: outline, script, assets, VO, SRT, MP4, thumbnail, staged upload; blog post rendered and either published or DRY_RUN output.
+G3. Health endpoint shows recent success; logs are rotated and readable.
+G4. Backups complete without error.
+
+NOTES FOR AGENTS
+- Use `bin/core.py` helpers for logging, JSON parsing, guards, and sanitization.
+- Keep everything configurable via YAML; never hardcode secrets.
+- Maintain idempotency: skip if artifacts already exist for a topic.
