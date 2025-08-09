@@ -41,3 +41,38 @@ health:
 test:
 	$(PY) -m unittest discover -s tests -p "test_*.py" -v
 	$(PY) bin/test_e2e.py
+
+# -------- Raspberry Pi Helpers --------
+PI_HOST ?= onepi
+PI_DIR ?= ~/youtube_onepi_pipeline
+SSH := ssh $(PI_HOST)
+RSYNC := rsync -az --delete
+RSYNC_EXCLUDES := \
+	--exclude '.git' \
+	--exclude '.venv' \
+	--exclude 'logs/' \
+	--exclude 'data/cache/' \
+	--exclude 'assets/' \
+	--exclude 'videos/' \
+	--exclude 'voiceovers/'
+
+pi-deploy:
+	@$(SSH) "set -e; cd $(PI_DIR) && git fetch --all && git reset --hard origin/main && python3 -m venv .venv && . .venv/bin/activate && pip -q install --upgrade pip && pip -q install -r requirements.txt && python bin/check_env.py"
+
+pi-run-once:
+	@$(SSH) "set -e; cd $(PI_DIR) && . .venv/bin/activate && make run-once"
+
+pi-blog-once:
+	@$(SSH) "set -e; cd $(PI_DIR) && . .venv/bin/activate && make blog-once"
+
+pi-sync:
+	@$(RSYNC) $(RSYNC_EXCLUDES) ./ $(PI_HOST):$(PI_DIR)/
+	@$(SSH) "set -e; cd $(PI_DIR) && python3 -m venv .venv && . .venv/bin/activate && pip -q install --upgrade pip && pip -q install -r requirements.txt && python bin/check_env.py"
+
+pull-artifacts:
+	@mkdir -p videos voiceovers
+	@$(RSYNC) $(PI_HOST):$(PI_DIR)/videos/ ./videos/ || true
+	@$(RSYNC) $(PI_HOST):$(PI_DIR)/voiceovers/ ./voiceovers/ || true
+
+pi-health:
+	@curl -s http://$(PI_HOST):8088/health | python -m json.tool || true

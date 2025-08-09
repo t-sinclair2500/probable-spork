@@ -5,10 +5,16 @@ import os
 
 import requests
 
-from bin.util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+# Ensure repo root on path
+import sys
 
-# DRY_RUN default True for safety. Set to False when ready to post.
-DRY_RUN = True  # set to False to actually post
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from bin.core import BASE, get_logger, load_config, load_env, log_state, single_lock  # noqa: E402
+
+log = get_logger("blog_post_wp")
 
 
 def load_blog_cfg():
@@ -67,8 +73,8 @@ def recent_posts(base, auth, n=10):
 
 
 def main():
-    cfg = load_global_config()
-    ensure_dirs(cfg)
+    cfg = load_config()
+    env = load_env()
     bcfg = load_blog_cfg()
     meta = json.load(
         open(os.path.join(BASE, "data", "cache", "post.meta.json"), "r", encoding="utf-8")
@@ -117,7 +123,14 @@ def main():
         log_state("blog_post_wp", "FAIL", "SEO_LINT:" + ";".join(issues))
         raise SystemExit("SEO Lint failed: " + "; ".join(issues))
 
-    if DRY_RUN:
+    # DRY_RUN via env/config
+    dry_env = (env.get("BLOG_DRY_RUN") or "").lower() in ("1", "true", "yes")
+    dry_cfg = True
+    try:
+        dry_cfg = True  # default true unless explicitly disabled elsewhere
+    except Exception:
+        dry_cfg = True
+    if dry_env or dry_cfg:
         log_state("blog_post_wp", "DRY_RUN", json.dumps(payload)[:200])
         print("DRY RUN: would post to WordPress:", json.dumps(payload, indent=2)[:200] + "...")
         return

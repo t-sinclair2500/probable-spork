@@ -1,48 +1,21 @@
 #!/usr/bin/env python3
-import os
-import sys
-
-from PIL import Image, ImageDraw, ImageFont
-
-BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-
-def make_thumb(text: str, out_path: str, size=(1280, 720)):
-    img = Image.new("RGB", size, (20, 20, 20))
-    draw = ImageDraw.Draw(img)
-    # Brand stripe
-    draw.rectangle([(0, 0), (size[0], 120)], fill=(230, 40, 55))
-    # Title text
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 72)
-    except Exception:
-        font = ImageFont.load_default()
-    text = (text[:50] + "…") if len(text) > 50 else text
-    tw, th = draw.textsize(text, font=font)
-    draw.text(((size[0] - tw) // 2, (120 - th) // 2), text, font=font, fill=(255, 255, 255))
-    img.save(out_path, format="PNG")
-
-
-def main():
-    title = sys.argv[1] if len(sys.argv) > 1 else "New Video"
-    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(BASE, "videos", "thumbnail.png")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    make_thumb(title, out)
-    print("Wrote thumbnail:", out)
-
-
-if __name__ == "__main__":
-    main()
-
 import json
-
-#!/usr/bin/env python3
 import os
 import re
 
 from PIL import Image, ImageDraw, ImageFont
 
-from bin.util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+# Ensure repo root on path
+import sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from bin.core import BASE, get_logger, load_config, log_state, single_lock  # noqa: E402
+
+
+log = get_logger("make_thumbnail")
 
 
 def safe_text(t, max_len=28):
@@ -51,8 +24,7 @@ def safe_text(t, max_len=28):
 
 
 def main():
-    cfg = load_global_config()
-    ensure_dirs(cfg)
+    cfg = load_config()
     scripts_dir = os.path.join(BASE, "scripts")
     files = [f for f in os.listdir(scripts_dir) if f.endswith(".metadata.json")]
     if not files:
@@ -73,9 +45,10 @@ def main():
     # Title text
     try:
         font = ImageFont.truetype("DejaVuSans-Bold.ttf", 72)
-    except:
+    except Exception:
         font = ImageFont.load_default()
     d.text((50, H - 110), title, fill=(0, 0, 0), font=font)
+    os.makedirs(os.path.dirname(out_png), exist_ok=True)
     img.save(out_png, "PNG")
     log_state("make_thumbnail", "OK", os.path.basename(out_png))
     print(f"Wrote thumbnail {out_png} (placeholder).")

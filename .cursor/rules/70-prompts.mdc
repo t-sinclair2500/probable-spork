@@ -1,0 +1,13 @@
+---
+description: "Prompts authoring: strict JSON outputs and constraints"
+globs: ["prompts/*.txt"]
+---
+
+- Prompts that require JSON must instruct: "Only output valid JSON; no prose." and include the exact schema.
+- Strip code fences in consumers and retry on parse errors.
+- Provide concise, deterministic instructions (avoid ambiguous phrasing or unnecessary creativity).
+- For `beat_timing.txt`, return an array of beats with `text`, `sec`, `broll` keys only.
+- For `cluster_topics.txt`, compute score = frequency × velocity × cross-source overlap.
+- Ensure tone and target length hints are included where relevant (outline/script).
+
+@prompts-authoring

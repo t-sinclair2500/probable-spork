@@ -1,0 +1,20 @@
+---
+description: "Assets & licensing: providers, normalization, and dedupe"
+alwaysApply: true
+---
+
+- Providers: `assets.providers` from config (pixabay, pexels; Unsplash if explicitly enabled) — keep config, docs, and code consistent.
+- API keys via `.env` only (e.g., `PIXABAY_API_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY`).
+- Parse `[B-ROLL: ...]` markers into search queries; cap per-section downloads (`assets.max_per_section`).
+- Save under `assets/<date>_<slug>/` with:
+  - `license.json` (provider, url, license terms, user/photographer, downloaded_at)
+  - `sources_used.txt` (plain URLs/providers)
+- Normalize media to `render.resolution` (downscale only), keep aspect, and transcode formats if needed.
+- Deduplicate by SHA1; don’t re-download existing files.
+- Respect provider rate limits; implement exponential backoff and jitter.
+
+Checks
+- A re-run of the same script does not create duplicates.
+- License metadata is always present for downloaded assets.
+
+@assets-licensing

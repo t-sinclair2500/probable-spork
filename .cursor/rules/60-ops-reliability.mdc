@@ -1,0 +1,13 @@
+---
+description: "Ops & reliability: locking, guards, cron, health, backups"
+alwaysApply: true
+---
+
+- All executable steps must acquire a single process lock (`bin.core.single_lock`).
+- Before heavy work, validate system health: `bin.core.guard_system(cfg)`.
+- Log each step to `jobs/state.jsonl` using `bin.core.log_state(step, status, notes)`.
+- Cron is the scheduler of record in production. Each step should SKIP gracefully if prerequisites are missing.
+- Expose health via `bin/health_server.py` and ensure logrotate is configured.
+- Provide `make` targets for install, run-once, blog-once, cron install, backup, health, and tests.
+
+@ops-reliability

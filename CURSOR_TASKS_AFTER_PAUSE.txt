@@ -1,49 +1,22 @@
-FULL EXECUTION PLAN FOR CURSOR AFTER PAUSE:
+FULL EXECUTION PLAN FOR CURSOR AFTER PAUSE (Superseded)
 
-TASKS BY FILE:
+NOTE: This file is superseded by MASTER_TODO.md. Refer there for the single source of truth.
 
-1. bin/generate_captions.py  [PARTIAL]
-   - Integrate whisper.cpp for ASR.  [DONE — existing integration validated]
-   - Add CLI args for input audio file, output VTT/SRT.  [DONE]
-   - Normalize loudness via FFmpeg loudnorm filter.  [TODO]
-   - Implement fallback to OpenAI Whisper API if local fails.  [TODO]
-   - Log duration, WPM, and transcript confidence scores.  [TODO]
+Status snapshot:
+1. bin/generate_captions.py  [DONE]
+   - whisper.cpp integration, CLI args, OpenAI fallback, metrics (WPM/duration).
 
-2. bin/download_assets.py  [TODO]
-   - Implement Pixabay API downloader (images & videos).
-   - Implement Pexels API downloader (images & videos).
-   - Save license metadata in JSON alongside asset.
-   - Enforce resolution/format constraints from config.
-   - Deduplicate downloads via SHA1 hash.
+2. bin/download_assets.py  [OPTIONAL]
+   - Logic consolidated in fetch_assets.py. Keep as helpers or remove.
 
 3. bin/seo_lint_gate.py  [DONE]
-   - Run SEO lint (title/meta length, slug, alt tags).  [DONE]
-   - Block publishing if failing thresholds.  [DONE]
-   - Log lint errors; allow override via CLI flag.  [TODO]
+   - Lint + --allow-fail override.
 
 4. bin/web_ui.py  [TODO]
-   - Flask-based UI with:
-     * Start new YouTube job
-     * Start new Blog job
-     * View logs (tail last 200 lines)
-     * Queue depth display
-     * Last run status
-   - Authentication via simple password from config.
-   - Lightweight HTML templates inline or in templates/ folder.
+   - Flask UI with auth, dashboard, logs, queue depth, job triggers.
 
-PROMPTING STRATEGY FOR CURSOR:
-- Open each file above, follow the bullet specs.
-- Test locally after each implementation with `make run-once` or `make blog-once`.
-- Validate outputs (captions generated, assets downloaded, SEO gate works, UI reachable).
-- Commit after each file completion.
-
----
-
-Additional progress completed in this session (outside this list):
-- llm_cluster: strict JSON parsing and top-10 trimming with timestamps.  [DONE]
-- llm_outline: tone + target length hints added to prompt; fallback JSON includes tone/target length.  [DONE]
-- llm_script: tone/target hints, plus offline fallback that expands outline to a usable script.  [DONE]
-- tts_generate: added loudness normalization (ffmpeg loudnorm) for placeholder VO.  [DONE]
-- assemble_video: optional background music with sidechain ducking when `assets/<topic>/bg.mp3` exists.  [DONE]
-- make_thumbnail: new 1280×720 thumbnail generator using Pillow.  [DONE]
-- blog_render_html: injects schema.org Article JSON-LD.  [DONE]
+Additional updates:
+- tts_generate: PARTIAL (Coqui-first + placeholder; loudness normalization)
+- assemble_video: DONE (MoviePy timeline, crossfades, Ken Burns, overlay, optional burn-in)
+- fetch_assets: DONE (images+videos, dedupe, normalization, licensing)
+- niche_trends: PARTIAL (real APIs; improve retries/evidence)

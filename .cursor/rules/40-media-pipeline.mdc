@@ -1,0 +1,25 @@
+---
+description: "Media pipeline: TTS, ASR, assembly, thumbnails"
+alwaysApply: true
+---
+
+TTS
+- Default Coqui TTS (configurable voice). Optional OpenAI fallback when enabled.
+- Generate WAV, loudness-normalize (`ffmpeg loudnorm`), encode to MP3.
+- Target pacing ~150–175 wpm; log duration.
+
+ASR (Captions)
+- Default whisper.cpp via configured binary + model path; skip gracefully when missing.
+- Optional OpenAI Whisper fallback if enabled.
+- Output `.srt` next to `.mp3`. Log duration, WPM estimate, and any available confidence.
+
+Assembly
+- Prefer LLM beat timing (`prompts/beat_timing.txt`), fallback to `bin.core.estimate_beats`.
+- Compose timeline with crossfades (`render.xfade_ms`), pan/zoom for stills, and music ducking under VO.
+- Export H.264 yuv420p, AAC, configured fps/resolution/bitrate.
+- If captions enabled, support optional burn-in.
+
+Thumbnails
+- Generate 1280×720 PNG; short, readable title; consistent brand stripe.
+
+@media-pipeline

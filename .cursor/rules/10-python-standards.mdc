@@ -1,0 +1,30 @@
+---
+description: "Python standards: style, typing, logging, config, and structure"
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+- Target Python 3.9+; code must run on ARM (Raspberry Pi 5).
+- Follow PEP 8 and prefer readable, multi-line code over dense one-liners.
+- Use `logging` (via `bin.core.get_logger`) not `print` in scripts (except short CLIs/tools).
+- Prefer explicit, descriptive names (no 1–2 character variables).
+- Minimize deep nesting; use guard clauses and early returns.
+- Public functions should have clear docstrings describing inputs/outputs and side effects.
+- Use `bin.core.load_config()` for configuration (Pydantic models) instead of ad-hoc YAML parsing.
+- For environment/secrets, rely on `.env` via `bin.core.load_env()`.
+- Ensure scripts are idempotent and lock-aware using `bin.core.single_lock()`.
+- For heavy steps (FFmpeg, ASR, TTS), call `bin.core.guard_system(cfg)` at start.
+- Use `bin.core.log_state(step, status, notes)` to record progress.
+
+Examples
+- Correct logging:
+  - `log = get_logger("assemble_video")`; `log.info("Building timeline")`.
+- Correct lock usage:
+  - `if __name__ == "__main__":\n    with single_lock():\n        main()`
+
+Checks
+- No new prints in core pipeline scripts; use logging.
+- Configuration is loaded once per script via `load_config()`.
+- Guard + lock are present in heavy steps.
+
+@python-standards

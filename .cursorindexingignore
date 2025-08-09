@@ -1,0 +1,15 @@
+# Exclude from Cursor background indexing (but still accessible when explicitly referenced)
+
+# Large or noisy directories
+assets/
+voiceovers/
+videos/
+
+# Example big data dirs (keep AI access on-demand)
+data/trending_topics.db
+
+# Documentation images or binary blobs (none currently)
+# docs/
+
+# Node/build (if introduced later)
+node_modules/

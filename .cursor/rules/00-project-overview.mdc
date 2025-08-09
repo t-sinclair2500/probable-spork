@@ -1,0 +1,17 @@
+---
+description: "Project overview and core principles for One-Pi shared pipeline"
+alwaysApply: true
+---
+
+- This repo targets a single Raspberry Pi 5 (8GB), local-first stack: Ollama, whisper.cpp, Coqui TTS, FFmpeg/MoviePy, Python.
+- Heavy tasks must run sequentially and be lock-aware (single lane).
+- Idempotence required: re-running any step should short-circuit if outputs already exist.
+- Operator control lives in `conf/global.yaml` and `conf/blog.yaml`; secrets in `.env`.
+- Licensing: record and respect provider license terms; include attribution when required.
+- Shared artifacts power multiple lanes (YouTube + Blog) from the same source of truth.
+
+Verify
+- Changes do not introduce parallel heavy work that violates the single-lane constraint.
+- No hardcoded secrets or device-specific paths slipped into code.
+
+@project-overview

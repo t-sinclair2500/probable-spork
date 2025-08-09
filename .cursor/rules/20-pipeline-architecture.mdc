@@ -1,0 +1,24 @@
+---
+description: "Shared pipeline: contracts, sequencing, and artifacts"
+alwaysApply: true
+---
+
+Contracts (must maintain)
+- `data/topics_queue.json`: top-10 topics (FIFO), each with `topic`, `score`, `keywords`, `created_at`.
+- Outline `.outline.json`: has `title_options`, 6 `sections` with `beats` and `broll`, `tags`, `tone`, `target_len_sec`.
+- Script `.txt`: plain text with frequent `[B-ROLL: ...]` markers.
+- Script metadata `.metadata.json`: `title`, `description`, `tags`, optional `chapters`.
+- Assets folder `assets/<date>_<slug>/`: normalized media + `license.json` and `sources_used.txt`.
+- Upload queue `data/upload_queue.json`: entries with file + metadata.
+
+Sequencing (strict)
+- Ingestion: `niche_trends.py` → `llm_cluster.py` → `topics_queue.json`.
+- YouTube lane: outline → script → assets → TTS → captions → assemble → thumbnail → stage.
+- Blog lane: pick → generate → render → SEO gate → post → ping.
+
+Rules
+- Do not change file locations or schema without updating all consumers.
+- Idempotence: re-runs should skip if outputs exist.
+- Both lanes should reuse shared assets when possible.
+
+@pipeline-architecture

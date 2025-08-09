@@ -1,0 +1,21 @@
+---
+description: "Blog lane: generation, rendering, SEO, posting"
+alwaysApply: true
+---
+
+Generation
+- Rewrite script to Markdown honoring `blog.tone`, word bounds, and `include_faq` and CTA.
+- Prefer reusing shared assets for inline images; include alt text.
+
+Rendering
+- Sanitize HTML, inject schema.org Article JSON-LD, optionally add attribution block.
+
+SEO
+- Enforce title ≤ 65 chars, meta ≤ 160 chars, clean slug. Provide `--allow-fail` override for gate when developing.
+
+Posting
+- Use WordPress REST with non-admin poster user and Application Password.
+- Upload media (featured + inline). Choose featured per `featured_image_strategy`.
+- Dry-run default; enable live posting only when explicitly configured.
+
+@blog-lane

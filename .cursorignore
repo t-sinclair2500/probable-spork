@@ -1,0 +1,38 @@
+# Cursor should not index these files/dirs by default
+
+# Environment & credentials
+.env
+.env.*
+
+# Virtual environments & caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Logs and temp
+logs/
+*.log
+*.tmp
+*.temp
+
+# Build & distribution artifacts
+build/
+dist/
+site/
+
+# Editor/IDE configs
+.vscode/
+.idea/
+
+# Data caches
+data/cache/
+
+# Tests output (if any)
+.coverage
+.pytest_cache/
+htmlcov/
+
+# OS junk
+.DS_Store
+._*

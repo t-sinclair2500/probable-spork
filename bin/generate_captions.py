@@ -12,7 +12,8 @@ import time
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from bin.core import BASE, get_logger, load_config, log_state, single_lock
+from bin.core import BASE, get_logger, guard_system, load_config, load_env, log_state, single_lock
+import requests
 
 log = get_logger("generate_captions")
 
@@ -39,6 +40,7 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config()
+    guard_system(cfg)
     if args.input:
         mp3 = args.input
         if not args.output:
@@ -64,16 +66,35 @@ def main():
         if os.path.isabs(cfg.asr.model)
         else os.path.join(os.path.expanduser("~"), "whisper.cpp", "models", cfg.asr.model)
     )
-    if not os.path.exists(bin_path):
-        log_state("generate_captions", "SKIP", "whisper.cpp binary not found")
-        print("Skipping captions: whisper.cpp binary not found at", bin_path)
-        return
-    if not os.path.exists(model_path):
-        # Try to fetch tiny/base English if not present
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        # Do not auto-download. Skip to keep pipeline running.
-        log_state("generate_captions", "SKIP", "ASR model not found")
-        print("Skipping captions: ASR model not found at", model_path)
+    env = load_env()
+    if not os.path.exists(bin_path) or not os.path.exists(model_path):
+        # Optional OpenAI Whisper fallback
+        if getattr(cfg.asr, "openai_enabled", False) and env.get("OPENAI_API_KEY"):
+            try:
+                # OpenAI Whisper REST API (audio/transcriptions)
+                with open(mp3, "rb") as f:
+                    files = {"file": (os.path.basename(mp3), f, "audio/mpeg")}
+                    data = {"model": "whisper-1"}
+                    headers = {"Authorization": f"Bearer {env['OPENAI_API_KEY']}"}
+                    r = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, data=data, files=files, timeout=600)
+                if r.ok:
+                    txt = r.json().get("text", "")
+                    # Write simple SRT with one block as fallback
+                    with open(srt, "w", encoding="utf-8") as f:
+                        f.write("1\n00:00:00,000 --> 00:59:59,000\n" + txt.strip() + "\n")
+                    log_state("generate_captions", "OK", os.path.basename(srt))
+                    print(f"Generated SRT via OpenAI Whisper: {srt}")
+                    return
+                else:
+                    log_state("generate_captions", "SKIP", f"openai_whisper_http_{r.status_code}")
+                    print("OpenAI Whisper failed:", r.status_code, r.text[:200])
+                    return
+            except Exception as e:
+                log_state("generate_captions", "SKIP", f"openai_whisper_err:{e}")
+                print("OpenAI Whisper error:", e)
+                return
+        log_state("generate_captions", "SKIP", "whisper.cpp missing or model not found")
+        print("Skipping captions: whisper.cpp binary or model missing")
         return
 
     cmd, wav_tmp = whisper_cpp_cmd(bin_path, model_path, mp3, srt)
@@ -95,6 +116,25 @@ def main():
 
     try:
         os.remove(wav_tmp)
+    except Exception:
+        pass
+
+    # Metrics: duration and WPM estimate
+    try:
+        # duration from mp3 via ffprobe
+        p = subprocess.run(
+            f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{mp3}"',
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        dur = float((p.stdout or "0").strip() or 0)
+        raw = open(srt, "r", encoding="utf-8").read()
+        # Remove indices and timestamps
+        content = re.sub(r"\d+\n\d{2}:\d{2}:\d{2},\d{3} --> .*\n", "", raw)
+        words = len(re.findall(r"\b\w+\b", content))
+        wpm = round((words / max(dur, 1.0)) * 60.0)
+        log_state("generate_captions", "METRIC", f"dur={round(dur,1)}s;wpm={wpm}")
     except Exception:
         pass
 

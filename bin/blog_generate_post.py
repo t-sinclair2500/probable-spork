@@ -4,7 +4,14 @@ import os
 import re
 import time
 
-from bin.util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+# Ensure repo root on path
+import sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock  # noqa: E402
 
 
 def load_blog_cfg():
@@ -26,9 +33,12 @@ def choose_script_for_topic(topic):
     return os.path.join(sdir, cand[0]) if cand else None
 
 
+log = get_logger("blog_generate_post")
+
+
 def main():
-    cfg = load_global_config()
-    ensure_dirs(cfg)
+    cfg = load_config()
+    guard_system(cfg)
     bcfg = load_blog_cfg()
     work = os.path.join(BASE, "data", "cache", "blog_topic.json")
     if not os.path.exists(work):
@@ -42,15 +52,28 @@ def main():
         print("No scripts")
         return
     text = open(sfile, "r", encoding="utf-8").read()
-    # Minimal rewrite: convert to markdown with simple structure (placeholder).
+    # Minimal rewrite: convert to markdown using tone and word bounds
+    tone = "informative"
+    try:
+        tone = getattr(cfg, "blog", None) and getattr(cfg.blog, "tone", "informative") or "informative"
+    except Exception:
+        pass
+    target_words = 900
+    try:
+        mn = getattr(cfg.blog, "min_words", 800)
+        mx = getattr(cfg.blog, "max_words", 1500)
+        target_words = int((mn + mx) / 2)
+    except Exception:
+        pass
+    intro = text.splitlines()[0:20]
     md = (
         f"# {topic}\n\n"
-        f"> Generated from video script on {time.strftime('%Y-%m-%d')}.\n\n"
+        f"> {tone.title()} article generated from the video script on {time.strftime('%Y-%m-%d')}.\n\n"
         f"## Introduction\n\n"
-        f"{text[:600]}\n\n"
-        f"## Key Points\n\n- Point A\n- Point B\n- Point C\n\n"
-        f"## FAQ\n\n- **Q:** What is this?\n  **A:** Auto-generated blog draft.\n\n"
-        f"## Conclusion\n\nThanks for reading."
+        + "\n".join(intro)[:600]
+        + "\n\n## Key Points\n\n- Point A\n- Point B\n- Point C\n\n"
+        + "## FAQ\n\n- **Q:** What is this?\n  **A:** Auto-generated blog draft.\n\n"
+        + "## Conclusion\n\nThanks for reading."
     )
     out_md = os.path.join(BASE, "data", "cache", "post.md")
     meta = {
