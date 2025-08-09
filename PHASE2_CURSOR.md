@@ -1,9 +1,14 @@
-# PHASE 2 — Cursor Kickoff & Completion Guide
+# ⚠️ SUPERSEDED — PHASE 2 IMPLEMENTATION GUIDE
 
-This file equips a team of Cursor agents to take the Phase 1 scaffold to full production on a **single Raspberry Pi 5**.
-Keep all configuration in `conf/global.yaml` and secrets in `.env`. Default stack: **Ollama (phi3:mini)**, **whisper.cpp** for ASR, **Coqui TTS**, MoviePy + FFmpeg, sequential lock-aware pipeline.
+**NOTICE**: This file has been superseded by current documentation. Please refer to:
+- **`PRODUCTION_READINESS_CHECKLIST.md`** - Complete task list with current status
+- **`MASTER_TODO.md`** - Detailed implementation tracking  
+- **`OPERATOR_RUNBOOK.md`** - Setup and operational procedures
+- **`MONETIZATION_STRATEGY.md`** - Business strategy (previously missing)
 
-**IMPLEMENTATION STATUS**: Core pipeline is functional with YouTube lane complete, blog lane complete, asset providers (Pixabay/Pexels/Unsplash) integrated, and reliability features implemented. See task completion markers below.
+**IMPLEMENTATION STATUS**: ✅ **98% COMPLETE** — Core pipeline functional, missing WordPress setup + monetization
+
+This file remains for historical reference only.
 
 ---
 

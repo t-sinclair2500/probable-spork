@@ -1,8 +1,14 @@
 # Blog lane configuration for the shared pipeline.
+# IMPORTANT: WordPress setup required before using blog pipeline!
+# Options: 
+#   1. Cloud hosting (Bluehost, SiteGround, etc.) - Easiest
+#   2. Local Pi installation - See OPERATOR_RUNBOOK.md  
+#   3. Docker on Pi - See OPERATOR_RUNBOOK.md
+#   4. WordPress.com (API limitations on free plans)
 wordpress:
-  base_url: "http://127.0.0.1"
-  api_user: "poster_user"
-  api_app_password: "REPLACE_WITH_APP_PASSWORD"
+  base_url: "http://192.168.1.XXX"       # Replace XXX with your Pi's local IP address
+  api_user: "poster_user"               # WordPress user with publishing rights
+  api_app_password: "REPLACE_WITH_APP_PASSWORD"  # Generate in WP Admin > Users > Application Passwords
   default_status: "publish"         # or "future"
   default_category: "AI Tools"
   default_tags: ["automation","raspberry pi","ai"]

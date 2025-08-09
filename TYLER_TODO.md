@@ -1,6 +1,16 @@
-## Tyler TODO — Keys, Where to Put Them, What To Run
+## ⚠️ SUPERSEDED — Tyler TODO (API Keys & Setup)
 
-Use this as your quick checklist to get the pipeline running end-to-end on your machines and the Pi.
+**NOTICE**: This file has been superseded by:
+- **`PRODUCTION_READINESS_CHECKLIST.md`** - Complete task list with current status
+- **`OPERATOR_RUNBOOK.md`** - Detailed setup procedures with WordPress guidance
+- **`MONETIZATION_STRATEGY.md`** - Business strategy (previously missing)
+- **`.env.example`** - Comprehensive environment variable documentation
+
+This file remains for historical reference only.
+
+---
+
+**ARCHIVED CONTENT** — Tyler TODO — Keys, Where to Put Them, What To Run
 
 ### 1) API keys and secrets
 - Assets (required for real downloads)

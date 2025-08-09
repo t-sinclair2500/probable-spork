@@ -113,9 +113,27 @@ python bin/upload_stage.py
 - **Provider Reliability**: Automated tracking and optimization recommendations
 - **Real-Time Monitoring**: Background file watching with intelligent change detection
 
+## Monetization Strategy
+
+⚠️ **Important**: This pipeline generates high-quality content but **does not include monetization mechanisms**. See `MONETIZATION_STRATEGY.md` for:
+- YouTube Partner Program setup
+- WordPress advertising integration  
+- Affiliate marketing automation
+- Revenue tracking and optimization
+- Domain setup for public WordPress access
+
+## 📋 Red Team Review
+
+**🔍 For Red Team**: See `RED_TEAM_BRIEFING.md` for investigation focus areas and `PRODUCTION_READINESS_CHECKLIST.md` for complete task status.
+
+**Key Issues Identified**:
+- WordPress setup gap (technical integration complete, deployment missing)
+- Monetization void (no revenue generation strategy)
+- Documentation fragmentation (now consolidated)
+
 ## Support
 
-This scaffold includes production-ready enhancements for content quality, SEO optimization, and real-time monitoring. Use the Phase 2 onboarding docs and Cursor prompts to extend features further.
+This scaffold includes production-ready enhancements for content quality, SEO optimization, and real-time monitoring. See consolidated documentation for current project status.
 
 
 ---
@@ -124,13 +142,23 @@ This scaffold includes production-ready enhancements for content quality, SEO op
 
 This repo also includes a **blog lane** that reuses shared artifacts (topics, scripts, assets) to publish posts to WordPress via REST.
 
+### Prerequisites: WordPress Setup Required
+
+**⚠️ You need a WordPress site before using the blog pipeline.** Options:
+
+1. **Cloud hosting** (Easiest): Bluehost, SiteGround, WP Engine (~$3-20/month)
+2. **Local Pi installation**: Full LAMP stack setup (see OPERATOR_RUNBOOK.md)
+3. **Docker on Pi**: Containerized WordPress (see OPERATOR_RUNBOOK.md)
+4. **WordPress.com**: Limited API access on free plans
+
 ### Setup
-1) Copy the blog config:
+1) **Set up WordPress** using one of the options above
+2) Copy the blog config:
 ```bash
 cp conf/blog.example.yaml conf/blog.yaml
 ```
-2) Edit `conf/blog.yaml` (set WordPress base URL, poster user, and Application Password).
-3) Ensure WordPress is installed on the Pi and you created a **non-admin** poster user with an **Application Password**.
+3) Edit `conf/blog.yaml` with your WordPress URL and credentials
+4) Create a **non-admin** poster user in WordPress with an **Application Password**
 
 ### Manual run (first time)
 ```bash
