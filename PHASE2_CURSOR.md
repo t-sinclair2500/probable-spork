@@ -3,6 +3,8 @@
 This file equips a team of Cursor agents to take the Phase 1 scaffold to full production on a **single Raspberry Pi 5**.
 Keep all configuration in `conf/global.yaml` and secrets in `.env`. Default stack: **Ollama (phi3:mini)**, **whisper.cpp** for ASR, **Coqui TTS**, MoviePy + FFmpeg, sequential lock-aware pipeline.
 
+**IMPLEMENTATION STATUS**: Core pipeline is functional with YouTube lane complete, blog lane complete, asset providers (Pixabay/Pexels/Unsplash) integrated, and reliability features implemented. See task completion markers below.
+
 ---
 
 ## 0) Operator Setup (Recap)
@@ -60,7 +62,7 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 - Keep top 10 topics; save to `data/topics_queue.json`.
 
 **Acceptance**
-- Always valid JSON. Logs show count + sample topics.  [IN PROGRESS]
+- Always valid JSON. Logs show count + sample topics.  [DONE — LLM clustering with JSON validation]
 - Scores reflect frequency × velocity × cross-source overlap.
 
 ---
@@ -73,8 +75,8 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 - If `daily_videos > 1`, process multiple topics FIFO.
 
 **Acceptance**
-- Outline JSON schema valid.  [IN PROGRESS — tone/length included]
-- Script conversational, concise sentences, clear CTA.  [IN PROGRESS — offline fallback added]
+- Outline JSON schema valid.  [DONE — 6-section outline with beats and b-roll suggestions]
+- Script conversational, concise sentences, clear CTA.  [DONE — 900-1200 word scripts with frequent B-ROLL markers]
 
 ---
 
@@ -91,12 +93,13 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 ### E) Asset Fetcher — `bin/fetch_assets.py`
 **Tasks**
 - Parse `[B-ROLL]` → search queries.
-- Pixabay/Pexels integration, `assets.max_per_section` respected.
+- Pixabay/Pexels/Unsplash integration, `assets.max_per_section` respected.
 - Save per-file `license.json` + `sources_used.txt`.
 - Normalize resolution to `render.resolution` (e.g., 1920×1080).
+- Deduplicate by SHA1 hash; video normalization to standard format.
 
 **Acceptance**
-- ~10–20 assets per 1000-word script.
+- ~10–20 assets per 1000-word script.  [DONE — Pixabay/Pexels/Unsplash providers, dedupe, normalization, licensing]
 - No TOS violations; exponential backoff.
 
 ---
@@ -108,7 +111,7 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 - Normalize loudness, target ~150–175 wpm.
 
 **Acceptance**
-- Clean, intelligible VO; no clipping; correct duration.  [IN PROGRESS — loudness norm added]
+- Clean, intelligible VO; no clipping; correct duration.  [DONE — Coqui TTS primary + OpenAI fallback, loudness normalization]
 
 ---
 
@@ -118,7 +121,7 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 - Optional OpenAI Whisper fallback if enabled.
 
 **Acceptance**
-- SRT aligned; stored next to VO. Burn-in if `pipeline.enable_captions: true`.  [DONE — CLI args + loudness norm + fallback]
+- SRT aligned; stored next to VO. Burn-in if `pipeline.enable_captions: true`.  [DONE — whisper.cpp primary + OpenAI fallback, metrics, CLI args]
 
 ---
 
@@ -130,7 +133,7 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 - Export 1080p H.264 yuv420p, AAC, `render.target_bitrate`.
 
 **Acceptance**
-- Final length within ±10% of target; A/V sync within 100ms.  [IN PROGRESS — baseline and ducking added]
+- Final length within ±10% of target; A/V sync within 100ms.  [DONE — MoviePy timeline, beat timing, crossfades, Ken Burns, music ducking]
 
 ---
 
@@ -140,14 +143,14 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 - Save beside video; reference in metadata.
 
 **Acceptance**
-- Thumbnail created and referenced in `upload_queue.json`.  [IN PROGRESS — generator added]
+- Thumbnail created and referenced in `upload_queue.json`.  [DONE — 1280×720 PNG generator with brand stripe]
 ### L) Blog Render — `bin/blog_render_html.py`
 **Tasks**
 - Convert Markdown to HTML, insert ToC and schema.org Article JSON-LD.
 - Insert attribution block if licenses require it.
 
 **Acceptance**
-- HTML contains sanitized content, ToC, JSON-LD; attribution when needed.  [IN PROGRESS — JSON-LD added]
+- HTML contains sanitized content, ToC, JSON-LD; attribution when needed.  [DONE — Markdown to HTML, schema.org JSON-LD, attribution blocks]
 
 ---
 

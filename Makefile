@@ -3,12 +3,65 @@ VENV := .venv
 PY := $(VENV)/bin/python
 export PYTHONPATH := $(CURDIR)
 
+.PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health
+
 install:
 	python3 -m venv $(VENV)
 	. $(VENV)/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
 check:
 	$(PY) bin/check_env.py
+
+docs:
+	@echo "=========================================="
+	@echo "📚 One-Pi Content Pipeline Documentation"
+	@echo "=========================================="
+	@echo ""
+	@echo "🚀 QUICK START & SETUP:"
+	@echo "  README.md               - Project overview and installation"
+	@echo "  OPERATOR_RUNBOOK.md     - Complete operational guide"
+	@echo "  .env.example           - Environment variables setup"
+	@echo ""
+	@echo "🔧 DEVELOPMENT & TASKS:"
+	@echo "  MASTER_TODO.md         - Current development tasks and priorities"
+	@echo "  PHASE2_CURSOR.md       - Implementation guide with status"
+	@echo "  tests/                 - Test suite and validation"
+	@echo ""
+	@echo "📋 CONFIGURATION:"
+	@echo "  conf/global.yaml       - Master pipeline configuration"
+	@echo "  conf/blog.yaml         - Blog-specific settings"
+	@echo "  .env                   - API keys and secrets (create from .env.example)"
+	@echo ""
+	@echo "📊 MONITORING & HEALTH:"
+	@echo "  make health            - Start health monitoring server"
+	@echo "  make web-ui            - Start real-time web dashboard (port 8099)"
+	@echo "  make analytics         - Generate comprehensive analytics report"
+	@echo "  jobs/state.jsonl       - Pipeline execution logs"
+	@echo "  logs/                  - Detailed application logs"
+	@echo ""
+	@echo "🧪 TESTING & VALIDATION:"
+	@echo "  make test              - Run full test suite"
+	@echo "  make check             - Validate environment setup"
+	@echo "  make quick-run         - Test pipeline with short durations"
+	@echo "  make fact-check FILE=  - Fact-check markdown content"
+	@echo "  make asset-quality     - Analyze asset quality and relevance"
+	@echo ""
+	@echo "🎬 PIPELINE OPERATIONS:"
+	@echo "  make run-once          - Full YouTube pipeline execution"
+	@echo "  make blog-once         - Full blog pipeline execution"
+	@echo "  make backup            - Backup WordPress and repository"
+	@echo ""
+	@echo "📱 RASPBERRY PI DEPLOYMENT:"
+	@echo "  make pi-deploy         - Deploy to Raspberry Pi"
+	@echo "  make pi-health         - Check Pi health status"
+	@echo "  make pull-artifacts    - Retrieve generated content from Pi"
+	@echo ""
+	@echo "📚 ADDITIONAL RESOURCES:"
+	@echo "  DOC_MAP.md             - Complete documentation index"
+	@echo "  docs/archive/          - Historical documentation"
+	@echo "  PURPOSE_SUMMARY.md     - Project goals and architecture"
+	@echo ""
+	@echo "For development tasks and current priorities, see: MASTER_TODO.md"
 
 run-once:
 	$(PY) bin/niche_trends.py
@@ -50,6 +103,23 @@ backup:
 
 health:
 	$(PY) bin/health_server.py
+
+web-ui:
+	$(PY) bin/web_ui.py
+
+analytics:
+	$(PY) bin/analytics_collector.py
+
+fact-check:
+	@echo "Usage: make fact-check FILE=path/to/content.md"
+	@if [ -z "$(FILE)" ]; then echo "Please specify FILE=path/to/content.md"; exit 1; fi
+	$(PY) bin/fact_check.py $(FILE)
+
+asset-quality:
+	@echo "Usage: make asset-quality FILE=path/to/asset QUERY='search query'"
+	@if [ -z "$(FILE)" ]; then echo "Please specify FILE=path/to/asset"; exit 1; fi
+	@if [ -z "$(QUERY)" ]; then echo "Please specify QUERY='search terms'"; exit 1; fi
+	$(PY) bin/asset_quality.py $(FILE) --query "$(QUERY)"
 
 test:
 	$(PY) -m unittest discover -s tests -p "test_*.py" -v

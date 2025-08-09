@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import random
 import requests
@@ -29,6 +29,7 @@ from bin.core import (  # noqa: E402
     single_lock,
     slugify,
 )
+from bin.asset_quality import AssetQualityAnalyzer, QualityMetrics  # noqa: E402
 
 
 log = get_logger("fetch_assets")
@@ -41,6 +42,8 @@ class ProviderResult:
     file_path: str
     license: str
     author: str
+    quality_metrics: Optional[QualityMetrics] = None
+    provider_metadata: Optional[Dict[str, Any]] = None
 
 
 def ensure_dir(path: str):
@@ -246,6 +249,16 @@ def download_pexels(query: str, out_dir: str, per_query_max: int, env: dict) -> 
                 content = http_get_bytes(src, headers=headers)
                 with open(fp, "wb") as f:
                     f.write(content)
+                # Build metadata for quality analysis
+                metadata = {
+                    "description": photo.get("alt", ""),
+                    "tags": [query] + (photo.get("tags", []) if isinstance(photo.get("tags"), list) else []),
+                    "width": photo.get("width", 0),
+                    "height": photo.get("height", 0),
+                    "url": page,
+                    "photographer": author
+                }
+                
                 items.append(
                     ProviderResult(
                         provider="pexels",
@@ -253,6 +266,7 @@ def download_pexels(query: str, out_dir: str, per_query_max: int, env: dict) -> 
                         file_path=fp,
                         license="Pexels License — Free to use",
                         author=author,
+                        provider_metadata=metadata
                     )
                 )
             except Exception:
@@ -285,13 +299,26 @@ def download_pexels(query: str, out_dir: str, per_query_max: int, env: dict) -> 
                 content = http_get_bytes(src, headers=headers)
                 with open(fp, "wb") as f:
                     f.write(content)
+                # Build video metadata for quality analysis
+                author = video.get("user", {}).get("name", "") if isinstance(video.get("user"), dict) else (video.get("user") or "")
+                video_metadata = {
+                    "description": "",  # Pexels videos don't have descriptions
+                    "tags": [query],
+                    "width": sel.get("width", 0),
+                    "height": sel.get("height", 0),
+                    "duration": video.get("duration", 0),
+                    "url": page,
+                    "photographer": author
+                }
+                
                 items.append(
                     ProviderResult(
                         provider="pexels",
                         url=str(page or src),
                         file_path=fp,
                         license="Pexels License — Free to use",
-                        author=video.get("user", {}).get("name", "") if isinstance(video.get("user"), dict) else (video.get("user") or ""),
+                        author=author,
+                        provider_metadata=video_metadata
                     )
                 )
             except Exception:
@@ -411,8 +438,14 @@ def main():
     # Build existing hashes for dedupe
     hashes = existing_hashes(out_dir)
 
+    # Initialize quality analyzer
+    quality_analyzer = AssetQualityAnalyzer()
+    
+    # Track quality metrics for all downloaded assets
+    all_quality_metrics = []
+
     providers = [p.lower() for p in getattr(cfg.assets, "providers", ["pixabay", "pexels"])]
-    per_query_max = 1  # fetch one asset per query to diversify
+    per_query_max = 3  # Fetch more assets for quality selection
 
     for q in queries:
         fetched: List[ProviderResult] = []
@@ -436,7 +469,8 @@ def main():
             time.sleep(random.uniform(0.2, 0.6))
             if fetched:
                 break
-        # Dedupe and normalize
+        # Analyze quality for all fetched assets
+        quality_assessed_assets = []
         for it in fetched:
             try:
                 h = sha1_file(it.file_path)
@@ -447,32 +481,94 @@ def main():
                     except Exception:
                         pass
                     continue
-                hashes[h] = os.path.basename(it.file_path)
-                # Normalize image/video
-                lower = it.file_path.lower()
-                if lower.endswith(('.jpg', '.jpeg', '.png', '.webp')):
-                    downscale_image_inplace(it.file_path, cfg.render.resolution)
-                elif lower.endswith(('.mp4', '.mov', '.mkv', '.webm')):
-                    norm_out = os.path.splitext(it.file_path)[0] + "_norm.mp4"
-                    normalize_video(it.file_path, norm_out, cfg.render.resolution, int(cfg.render.fps))
-                    if os.path.exists(norm_out):
-                        try:
-                            os.remove(it.file_path)
-                        except Exception:
-                            pass
-                        it.file_path = norm_out
-                # Record license entry
-                ledger["items"].append(
-                    {
-                        "provider": it.provider,
-                        "url": it.url,
-                        "file": os.path.basename(it.file_path),
-                        "license": it.license,
-                        "user": it.author,
-                    }
+                
+                # Analyze quality before normalization
+                log.info(f"Analyzing quality for {os.path.basename(it.file_path)}")
+                quality_metrics = quality_analyzer.analyze_asset(
+                    it.file_path, q, it.provider_metadata or {}
                 )
-            except Exception:
+                it.quality_metrics = quality_metrics
+                quality_assessed_assets.append(it)
+                
+            except Exception as e:
+                log.warning(f"Quality analysis failed for {it.file_path}: {e}")
                 continue
+        
+        # Rank assets by quality and select the best one for this query
+        if quality_assessed_assets:
+            ranked_assets = quality_analyzer.rank_assets(
+                [asset.quality_metrics for asset in quality_assessed_assets], 
+                max_count=1  # Select only the best asset per query
+            )
+            
+            if ranked_assets:
+                # Find the corresponding asset
+                best_quality = ranked_assets[0]
+                best_asset = next(
+                    (asset for asset in quality_assessed_assets 
+                     if asset.file_path == best_quality.file_path), 
+                    None
+                )
+                
+                if best_asset:
+                    # Process the selected high-quality asset
+                    try:
+                        h = sha1_file(best_asset.file_path)
+                        hashes[h] = os.path.basename(best_asset.file_path)
+                        
+                        # Normalize image/video
+                        lower = best_asset.file_path.lower()
+                        if lower.endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                            downscale_image_inplace(best_asset.file_path, cfg.render.resolution)
+                        elif lower.endswith(('.mp4', '.mov', '.mkv', '.webm')):
+                            norm_out = os.path.splitext(best_asset.file_path)[0] + "_norm.mp4"
+                            normalize_video(best_asset.file_path, norm_out, cfg.render.resolution, int(cfg.render.fps))
+                            if os.path.exists(norm_out):
+                                try:
+                                    os.remove(best_asset.file_path)
+                                except Exception:
+                                    pass
+                                best_asset.file_path = norm_out
+                                # Update quality metrics with new path
+                                best_asset.quality_metrics.file_path = norm_out
+                        
+                        # Store quality metrics for analytics
+                        all_quality_metrics.append(best_asset.quality_metrics)
+                        
+                        # Record enhanced license entry with quality data
+                        license_entry = {
+                            "provider": best_asset.provider,
+                            "url": best_asset.url,
+                            "file": os.path.basename(best_asset.file_path),
+                            "license": best_asset.license,
+                            "user": best_asset.author,
+                            "quality": {
+                                "overall_score": best_quality.overall_score,
+                                "relevance_score": best_quality.relevance_score,
+                                "resolution": f"{best_quality.resolution[0]}x{best_quality.resolution[1]}",
+                                "file_type": best_quality.file_type,
+                                "quality_issues": best_quality.quality_issues,
+                                "keywords": best_quality.semantic_keywords[:5]
+                            }
+                        }
+                        ledger["items"].append(license_entry)
+                        
+                        log.info(f"Selected asset {os.path.basename(best_asset.file_path)} "
+                                f"(score: {best_quality.overall_score:.1f}, "
+                                f"relevance: {best_quality.relevance_score:.1f})")
+                        
+                    except Exception as e:
+                        log.error(f"Failed to process selected asset: {e}")
+                        continue
+                    
+                    # Clean up non-selected assets
+                    for asset in quality_assessed_assets:
+                        if asset != best_asset and os.path.exists(asset.file_path):
+                            try:
+                                os.remove(asset.file_path)
+                                log.debug(f"Removed lower-quality asset: {os.path.basename(asset.file_path)}")
+                            except Exception:
+                                pass
 
         # Stop if we have enough assets
         current_assets = [f for f in os.listdir(out_dir) if os.path.isfile(os.path.join(out_dir, f)) and not f.endswith(".json") and not f.endswith(".txt")]
@@ -511,7 +607,23 @@ def main():
         pass
 
     final_assets = [f for f in os.listdir(out_dir) if os.path.isfile(os.path.join(out_dir, f)) and not f.endswith(".json") and not f.endswith(".txt")]
-    log_state("fetch_assets", "OK", f"count={len(final_assets)}")
+    
+    # Log quality analytics
+    if all_quality_metrics:
+        avg_overall_score = sum(m.overall_score for m in all_quality_metrics) / len(all_quality_metrics)
+        avg_relevance_score = sum(m.relevance_score for m in all_quality_metrics) / len(all_quality_metrics)
+        
+        quality_issues_count = sum(len(m.quality_issues) for m in all_quality_metrics)
+        
+        log.info(f"Quality Analytics: {len(all_quality_metrics)} assets analyzed, "
+                f"avg_overall={avg_overall_score:.1f}, avg_relevance={avg_relevance_score:.1f}, "
+                f"total_issues={quality_issues_count}")
+        
+        log_state("fetch_assets", "OK", 
+                 f"count={len(final_assets)},avg_quality={avg_overall_score:.1f}")
+    else:
+        log_state("fetch_assets", "OK", f"count={len(final_assets)}")
+    
     log.info(f"Fetched/normalized assets: {len(final_assets)} -> {out_dir}")
 
 

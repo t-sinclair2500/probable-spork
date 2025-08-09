@@ -1,6 +1,6 @@
-# One-Pi YouTube Automation Pipeline
+# One-Pi Content Automation Pipeline
 
-Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts with a local LLM (Ollama), performs TTS, fetches royalty-free assets, assembles videos (MoviePy + FFmpeg), and stages for upload. Includes local ASR via `whisper.cpp`. Optional cloud fallbacks for TTS/ASR are wired but OFF by default.
+Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts with a local LLM (Ollama), performs TTS, fetches royalty-free assets, assembles videos (MoviePy + FFmpeg), and stages for upload. Includes local ASR via `whisper.cpp` and dual-lane content production (YouTube + WordPress blog). Features real-time monitoring, asset quality assessment, fact-checking, and enhanced SEO optimization. Optional cloud fallbacks for TTS/ASR are wired but OFF by default.
 
 ## Quick Start
 
@@ -72,9 +72,50 @@ python bin/upload_stage.py
 - Asset fetcher records license info per asset directory. You must respect each source’s license terms.
 - Cloud services are optional and OFF by default; enabling them may incur costs.
 
+## Enhanced Features
+
+### 🎯 Asset Quality Assessment
+- **Intelligent Asset Selection**: Quality-based ranking with resolution, compression, and relevance scoring
+- **Provider Performance Tracking**: Analytics on asset provider quality and success rates
+- **Semantic Matching**: Keyword expansion and relevance scoring against B-roll queries
+- **Quality Metrics**: Comprehensive analysis including brightness, contrast, sharpness for images; duration, bitrate for videos
+
+### 📊 Real-Time Analytics Dashboard
+- **Live Monitoring**: WebSocket-based real-time updates with graceful fallback to polling
+- **Performance Metrics**: CPU, memory, disk usage with 24-hour trending charts
+- **Pipeline Analytics**: Success rates, error tracking, and bottleneck identification per step
+- **Alert System**: Configurable thresholds with severity-based notifications
+- **Asset Analytics**: Provider performance, quality trends, and usage optimization
+
+### 🔍 Fact-Checking Integration
+- **Automated Validation**: LLM-powered fact-checking with configurable severity levels
+- **Content Gating**: Optional blocking/warning modes for content with fact-check issues
+- **Citation Suggestions**: Automated recommendations for claims requiring sources
+- **Quality Metrics**: Integrated scoring in blog validation pipeline
+
+### 🚀 Enhanced SEO & Metadata
+- **Comprehensive Meta Tags**: Auto-generated Open Graph, Twitter Cards, and schema.org markup
+- **Smart Descriptions**: Automated meta description generation from content
+- **Reading Time**: Calculation and display of estimated reading time
+- **Keyword Extraction**: Automated keyword analysis with stop-word filtering
+- **Featured Images**: Intelligent image selection from assets with proper alt text
+- **Breadcrumbs**: Automatic navigation structure generation
+
+### 🌐 Web Interface
+- **Real-Time Dashboard**: Live pipeline monitoring at `http://localhost:8099`
+- **Analytics View**: Advanced metrics and performance analysis at `http://localhost:8099/analytics`
+- **WebSocket Support**: Instant updates without page refresh, automatic fallback to polling
+- **Multi-Client Support**: Connection management for multiple simultaneous users
+
+### 📈 Quality & Performance
+- **Asset Deduplication**: SHA1-based duplicate detection with quality-based selection
+- **Content Validation**: Multi-layered validation including structure, readability, and fact-checking
+- **Provider Reliability**: Automated tracking and optimization recommendations
+- **Real-Time Monitoring**: Background file watching with intelligent change detection
+
 ## Support
 
-This scaffold is a first-pass implementation. Use the Phase 2 onboarding docs and Cursor prompts to finish/extend features.
+This scaffold includes production-ready enhancements for content quality, SEO optimization, and real-time monitoring. Use the Phase 2 onboarding docs and Cursor prompts to extend features further.
 
 
 ---
@@ -95,11 +136,18 @@ cp conf/blog.example.yaml conf/blog.yaml
 ```bash
 source .venv/bin/activate
 python bin/blog_pick_topics.py
-python bin/blog_generate_post.py
-python bin/blog_render_html.py
+python bin/blog_generate_post.py  # Includes fact-checking and quality validation
+python bin/blog_render_html.py    # Enhanced with SEO metadata and schema.org
 python bin/blog_post_wp.py
 python bin/blog_ping_search.py
 ```
+
+### Enhanced Blog Features
+- **Fact-Checking**: Automated validation with configurable gating modes (off/warn/block)
+- **SEO Optimization**: Comprehensive meta tags, Open Graph, Twitter Cards, and schema.org markup
+- **Content Analysis**: Reading time calculation, keyword extraction, and quality scoring
+- **Asset Integration**: Intelligent featured image selection from quality-assessed assets
+- **Structured Data**: Enhanced breadcrumbs and article markup for better search visibility
 
 > By default, posting uses a **dry-run** mode (prints JSON) until you toggle `DRY_RUN=False` in `bin/blog_post_wp.py`.
 > Prefer setting `BLOG_DRY_RUN=false` in `.env` instead of editing code.

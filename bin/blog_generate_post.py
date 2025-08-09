@@ -13,6 +13,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock, parse_llm_json  # noqa: E402
+from bin.fact_check import fact_check_content, should_gate_content  # noqa: E402
 
 
 def load_blog_cfg():
@@ -130,13 +131,15 @@ def validate_content_quality(markdown_content, target_keywords=None):
     }
 
 
-def validate_blog_post(markdown_content, min_words, max_words, include_faq=True):
-    """Comprehensive blog post validation."""
+def validate_blog_post(markdown_content, min_words, max_words, include_faq=True, 
+                       fact_check_config=None, global_config=None):
+    """Comprehensive blog post validation with optional fact-checking."""
     validation_result = {
         'valid': True,
         'issues': [],
         'warnings': [],
-        'metrics': {}
+        'metrics': {},
+        'fact_check': None
     }
     
     # Word count validation
@@ -167,6 +170,47 @@ def validate_blog_post(markdown_content, min_words, max_words, include_faq=True)
         validation_result['warnings'].append("Call-to-action not detected")
     
     validation_result['issues'].extend(quality_result['issues'])
+    
+    # Fact-checking validation (if enabled)
+    if fact_check_config and fact_check_config.get('enabled', False) and global_config:
+        try:
+            log.info("Running fact-checking validation...")
+            fact_check_result = fact_check_content(markdown_content, global_config)
+            validation_result['fact_check'] = fact_check_result
+            
+            # Process fact-check issues
+            fact_issues = fact_check_result.get('issues', [])
+            summary = fact_check_result.get('summary', {})
+            
+            # Add fact-check issues to validation
+            for issue in fact_issues:
+                severity = issue.get('severity', 'info')
+                claim = issue.get('claim', '')
+                
+                if severity == 'error':
+                    validation_result['issues'].append(f"Fact-check error: {claim[:100]}...")
+                elif severity == 'warning':
+                    validation_result['warnings'].append(f"Fact-check warning: {claim[:100]}...")
+            
+            # Check if content should be gated
+            gate_mode = fact_check_config.get('gate_mode', 'warn')
+            severity_threshold = fact_check_config.get('severity_threshold', 'warning')
+            
+            should_block = should_gate_content(fact_check_result, gate_mode, severity_threshold)
+            
+            if should_block:
+                validation_result['valid'] = False
+                validation_result['issues'].append(
+                    f"Content blocked by fact-checker: {summary.get('highest_severity', 'unknown')} "
+                    f"severity issues found (threshold: {severity_threshold}, mode: {gate_mode})"
+                )
+                log.warning(f"Content blocked by fact-checker: {len(fact_issues)} issues found")
+            elif fact_issues:
+                log.info(f"Fact-check completed: {len(fact_issues)} issues found (mode: {gate_mode})")
+                
+        except Exception as e:
+            log.error(f"Fact-checking failed: {e}")
+            validation_result['warnings'].append(f"Fact-checking failed: {str(e)}")
     
     return validation_result
 
@@ -247,8 +291,11 @@ def main():
 
     md = md3 or ("# " + topic + "\n\n" + text[:800])
 
+    # Get fact-checking configuration
+    fact_check_config = bcfg.get('fact_check', {})
+    
     # Validate the generated content
-    validation_result = validate_blog_post(md, mn, mx, include_faq)
+    validation_result = validate_blog_post(md, mn, mx, include_faq, fact_check_config, cfg)
     
     # Log validation results
     if validation_result['valid']:
@@ -263,9 +310,21 @@ def main():
     
     # Log detailed metrics
     metrics = validation_result['metrics']
-    log.info(f"Content metrics: words={metrics.get('word_count', 0)}, "
-             f"faq={metrics.get('has_faq', False)}, cta={metrics.get('has_cta', False)}, "
-             f"avg_sentence_len={metrics.get('avg_sentence_length', 0):.1f}")
+    fact_check_result = validation_result.get('fact_check')
+    
+    metric_log = (f"Content metrics: words={metrics.get('word_count', 0)}, "
+                  f"faq={metrics.get('has_faq', False)}, cta={metrics.get('has_cta', False)}, "
+                  f"avg_sentence_len={metrics.get('avg_sentence_length', 0):.1f}")
+    
+    if fact_check_result:
+        fact_metrics = fact_check_result.get('metrics', {})
+        severity_counts = fact_metrics.get('severity_counts', {})
+        metric_log += (f", fact_check_issues={fact_metrics.get('total_issues', 0)} "
+                      f"(errors={severity_counts.get('error', 0)}, "
+                      f"warnings={severity_counts.get('warning', 0)}, "
+                      f"info={severity_counts.get('info', 0)})")
+    
+    log.info(metric_log)
 
     # Inline image reuse from assets folder when available
     try:

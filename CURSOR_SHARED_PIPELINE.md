@@ -1,4 +1,15 @@
-# CURSOR SHARED CORE PIPELINE — Master Prompt
+# ⚠️ SUPERSEDED — CURSOR SHARED CORE PIPELINE
+
+**NOTICE**: This file is superseded by current authoritative documentation. Please refer to:
+- **`MASTER_TODO.md`** - Current development tasks and priorities
+- **`PHASE2_CURSOR.md`** - Updated implementation guide with current status
+- **`OPERATOR_RUNBOOK.md`** - Operational procedures and deployment
+
+This file remains for historical reference only.
+
+---
+
+# CURSOR SHARED CORE PIPELINE — Master Prompt (ARCHIVED)
 
 **Goal:** Implement a **shared, core pipeline** that powers multiple outputs from one Raspberry Pi 5:
 - **YouTube lane** (video scripts → VO → assets → render → stage/upload)
