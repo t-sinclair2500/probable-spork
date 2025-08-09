@@ -1,0 +1,10 @@
+{
+  "snapshot": "POPULATED_FROM_SETTINGS",
+  "install": "sudo apt update && sudo apt install -y python3-full python3-venv python3-pip ffmpeg git jq sqlite3 build-essential cmake && python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt",
+  "terminals": [
+    {
+      "name": "Health Check",
+      "command": ". .venv/bin/activate && python bin/check_env.py"
+    }
+  ]
+}
