@@ -37,9 +37,11 @@ def ffprobe_duration(path: str) -> float:
         return 0.0
 
 
-def synthesize_placeholder_wav(text: str, wav_out: str):
+def synthesize_placeholder_wav(text: str, wav_out: str, max_seconds: int | None = None):
     # Lightweight placeholder: generate a short tone via ffmpeg (no extra deps)
     dur_sec = max(3, min(10, int(len(text.split()) / 3) or 3))
+    if max_seconds:
+        dur_sec = max(1, min(dur_sec, int(max_seconds)))
     # 220 Hz sine tone
     subprocess.run(
         f'ffmpeg -y -f lavfi -i sine=frequency=220:sample_rate=22050:duration={dur_sec} "{wav_out}"',
@@ -48,16 +50,17 @@ def synthesize_placeholder_wav(text: str, wav_out: str):
     )
 
 
-def loudnorm_to_mp3(wav_in: str, mp3_out: str):
+def loudnorm_to_mp3(wav_in: str, mp3_out: str, max_seconds: int | None = None):
     norm_wav = wav_in.replace(".wav", ".norm.wav")
+    tflag = f" -t {int(max_seconds)}" if max_seconds else ""
     subprocess.run(
-        f'ffmpeg -y -i "{wav_in}" -af loudnorm=I=-16:TP=-1.5:LRA=11 "{norm_wav}"',
+        f'ffmpeg -y -i "{wav_in}" -af loudnorm=I=-16:TP=-1.5:LRA=11{tflag} "{norm_wav}"',
         shell=True,
         check=False,
     )
     src = norm_wav if os.path.exists(norm_wav) else wav_in
     subprocess.run(
-        f'ffmpeg -y -i "{src}" -codec:a libmp3lame -qscale:a 2 "{mp3_out}"',
+        f'ffmpeg -y -i "{src}"{tflag} -codec:a libmp3lame -qscale:a 2 "{mp3_out}"',
         shell=True,
         check=False,
     )
@@ -72,6 +75,12 @@ def main():
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
+    short_secs = None
+    try:
+        _ss = int(env.get("SHORT_RUN_SECS", "0") or 0)
+        short_secs = _ss if _ss > 0 else None
+    except Exception:
+        short_secs = None
 
     scripts_dir = os.path.join(BASE, "scripts")
     files = [f for f in os.listdir(scripts_dir) if f.endswith(".txt")]
@@ -81,7 +90,13 @@ def main():
         return
     files.sort(reverse=True)
     sfile = os.path.join(scripts_dir, files[0])
-    text = open(sfile, "r", encoding="utf-8").read()
+    # Convert any bracketed stage directions to natural narration hints or remove them.
+    raw_text = open(sfile, "r", encoding="utf-8").read()
+    # Replace B-ROLL markers like [B-ROLL: ...] with brief pauses; strip other bracketed cues
+    import re as _re
+    text = _re.sub(r"\[B-ROLL:[^\]]+\]", " ", raw_text)
+    text = _re.sub(r"\[[^\]]+\]", " ", text)
+    text = _re.sub(r"\s+", " ", text).strip()
     voice_dir = os.path.join(BASE, "voiceovers")
     os.makedirs(voice_dir, exist_ok=True)
     out_mp3 = os.path.join(voice_dir, files[0].replace(".txt", ".mp3"))
@@ -106,7 +121,7 @@ def main():
                 tts.tts_to_file(text=text, file_path=wav_tmp)
                 used = "coqui"
             except Exception:
-                synthesize_placeholder_wav(text, wav_tmp)
+                synthesize_placeholder_wav(text, wav_tmp, max_seconds=short_secs)
         elif (provider == "openai" or getattr(cfg.tts, "openai_enabled", False)) and env.get("OPENAI_API_KEY"):
             try:
                 # Use OpenAI speech synthesis REST API to produce MP3 directly
@@ -138,6 +153,19 @@ def main():
                         shell=True,
                         check=False,
                     )
+                    if short_secs:
+                        # Trim in-place to short duration
+                        trimmed = out_mp3 + ".trim.mp3"
+                        subprocess.run(
+                            f'ffmpeg -y -i "{out_mp3}" -t {int(short_secs)} -codec:a libmp3lame -qscale:a 2 "{trimmed}"',
+                            shell=True,
+                            check=False,
+                        )
+                        if os.path.exists(trimmed):
+                            try:
+                                os.replace(trimmed, out_mp3)
+                            except Exception:
+                                pass
                     try:
                         os.remove(out_mp3_tmp)
                     except Exception:
@@ -149,17 +177,17 @@ def main():
                     print(f"Wrote VO {out_mp3} via {used} ({round(dur,1)}s)")
                     return
                 else:
-                    synthesize_placeholder_wav(text, wav_tmp)
+                    synthesize_placeholder_wav(text, wav_tmp, max_seconds=short_secs)
                     used = "placeholder"
             except Exception:
-                synthesize_placeholder_wav(text, wav_tmp)
+                synthesize_placeholder_wav(text, wav_tmp, max_seconds=short_secs)
                 used = "placeholder"
         else:
-            synthesize_placeholder_wav(text, wav_tmp)
+            synthesize_placeholder_wav(text, wav_tmp, max_seconds=short_secs)
     except Exception:
-        synthesize_placeholder_wav(text, wav_tmp)
+        synthesize_placeholder_wav(text, wav_tmp, max_seconds=short_secs)
 
-    loudnorm_to_mp3(wav_tmp, out_mp3)
+    loudnorm_to_mp3(wav_tmp, out_mp3, max_seconds=short_secs)
     try:
         os.remove(wav_tmp)
     except Exception:

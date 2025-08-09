@@ -41,7 +41,7 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 
 ### A) Trend Ingestion — `bin/niche_trends.py`
 **Tasks**
-- YouTube Data API: trending + category IDs in `conf/global.yaml`/`conf/sources.yaml`.
+- YouTube Data API: trending + category IDs in `conf/global.yaml` (keys from `.env`).
 - Google Trends via `pytrends` for configured `niches` (daily).
 - Reddit (top/day) for configured subreddits.
 - Normalize `{title, tags, source}`; write to `data/trending_topics.db`.
@@ -112,13 +112,13 @@ Edit `conf/global.yaml` (tone, length, niches). Add any API keys to `.env`.
 
 ---
 
-### G) Captions — `bin/generate_captions.py` (NEW)
+### G) Captions — `bin/generate_captions.py`
 **Tasks**
 - Run whisper.cpp (`asr.whisper_cpp_path`) to produce SRT from VO.
 - Optional OpenAI Whisper fallback if enabled.
 
 **Acceptance**
-- SRT aligned; stored next to VO. Burn-in if `pipeline.enable_captions: true`.  [IN PROGRESS — CLI args added]
+- SRT aligned; stored next to VO. Burn-in if `pipeline.enable_captions: true`.  [DONE — CLI args + loudness norm + fallback]
 
 ---
 

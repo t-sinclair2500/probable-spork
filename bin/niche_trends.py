@@ -84,6 +84,10 @@ def fetch_youtube(env: dict, cfg) -> int:
             "https://www.googleapis.com/youtube/v3/videos?"
             f"part=snippet&chart=mostPopular&regionCode=US&maxResults=25&videoCategoryId={cat}&key={key}"
         )
+        fallback_url = (
+            "https://www.googleapis.com/youtube/v3/videos?"
+            f"part=snippet&chart=mostPopular&regionCode=US&maxResults=25&key={key}"
+        )
         for delay in backoff_delays(int(getattr(cfg.limits, "max_retries", 2))):
             try:
                 data = http_get_json(url, timeout=30)
@@ -98,8 +102,36 @@ def fetch_youtube(env: dict, cfg) -> int:
                             total += 1
                 break
             except Exception as e:
-                log_state("niche_trends_youtube", "WARN", f"cat={cat};retrying:{e}")
-                time.sleep(delay)
+                # If category-specific call 404s, try without category as a fallback
+                try:
+                    import requests as _rq  # local alias to check HTTPError type safely
+                    is_http_err = isinstance(e, _rq.exceptions.HTTPError)
+                    status = getattr(getattr(e, "response", None), "status_code", None)
+                except Exception:
+                    is_http_err = False
+                    status = None
+
+                if is_http_err and status == 404:
+                    try:
+                        data = http_get_json(fallback_url, timeout=30)
+                        items = data.get("items", [])
+                        with db_connect() as con:
+                            for it in items:
+                                sn = it.get("snippet", {})
+                                title = sn.get("title", "").strip()
+                                tags = ",".join(sn.get("tags", [])[:10]) if sn.get("tags") else ""
+                                if title:
+                                    insert_row(con, "youtube", title, tags)
+                                    total += 1
+                        log_state("niche_trends_youtube", "INFO", f"cat={cat};fallback_no_category_used")
+                        break
+                    except Exception as fe:
+                        log_state("niche_trends_youtube", "WARN", f"cat={cat};fallback_err:{fe}")
+                        time.sleep(delay)
+                        continue
+                else:
+                    log_state("niche_trends_youtube", "WARN", f"cat={cat};retrying:{e}")
+                    time.sleep(delay)
     return total
 
 

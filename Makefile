@@ -16,9 +16,22 @@ run-once:
 	$(PY) bin/llm_outline.py
 	$(PY) bin/llm_script.py
 	$(PY) bin/fetch_assets.py
-	$(PY) bin/tts_generate.py
-	$(PY) bin/generate_captions.py
-	$(PY) bin/assemble_video.py
+	SHORT_RUN_SECS=0 $(PY) bin/tts_generate.py
+	SHORT_RUN_SECS=0 $(PY) bin/generate_captions.py
+	SHORT_RUN_SECS=0 $(PY) bin/assemble_video.py
+	$(PY) bin/upload_stage.py
+
+# Quick test run with capped durations (SHORT_RUN_SECS, default 25s)
+quick-run:
+	SHORT_RUN_SECS?=25; export SHORT_RUN_SECS; \
+	$(PY) bin/niche_trends.py; \
+	$(PY) bin/llm_cluster.py; \
+	$(PY) bin/llm_outline.py; \
+	$(PY) bin/llm_script.py; \
+	$(PY) bin/fetch_assets.py; \
+	$(PY) bin/tts_generate.py; \
+	$(PY) bin/generate_captions.py; \
+	$(PY) bin/assemble_video.py; \
 	$(PY) bin/upload_stage.py
 
 blog-once:

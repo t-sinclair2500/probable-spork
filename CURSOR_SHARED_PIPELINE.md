@@ -23,7 +23,7 @@
 /home/pi/youtube_onepi_pipeline/            # primary pipeline repo
   ├── conf/
   │   ├── global.yaml                       # operator control (tone, length, cadence, toggles)
-  │   ├── sources.yaml                      # API keys (read by both lanes)
+  │   ├── sources.yaml                      # (deprecated) API keys — use .env instead
   │   └── render.yaml                       # video render defaults
   ├── data/
   │   ├── trending_topics.db                # SQLite: raw trend rows (yt/reddit/trends)

@@ -4,22 +4,30 @@ Use this as your quick checklist to get the pipeline running end-to-end on your 
 
 ### 1) API keys and secrets
 - Assets (required for real downloads)
-  - PIXABAY_API_KEY → put in `.env`
-  - PEXELS_API_KEY → put in `.env`
+  - PIXABAY_API_KEY → `.env` (now see `.env.example`)
+  - PEXELS_API_KEY → `.env`
   - (Optional) UNSPLASH_ACCESS_KEY → `.env` (only if we add Unsplash later)
 
-- Optional fallbacks (enable only if you want cloud usage)
-  - OPENAI_API_KEY → `.env` (used for future TTS/Whisper fallbacks)
+- Ingestion (optional but recommended)
+  - YOUTUBE_API_KEY or GOOGLE_API_KEY → `.env` (used by `bin/niche_trends.py`)
+  - REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT → `.env` (used by `bin/niche_trends.py`)
+
+- Optional cloud fallbacks (OFF by default)
+  - OPENAI_API_KEY → `.env` (used by optional TTS/Whisper fallbacks)
 
 - WordPress (blog lane live posting)
   - Keep WordPress credentials in `conf/blog.yaml` (poster user + Application Password)
   - Dry-run is controlled by env `BLOG_DRY_RUN=true` in `.env` (defaults to true)
 
 ### 2) Where to plug them in
-- Create `.env` at repo root (copy from `.env.example` if present on your machine)
+- Create `.env` at repo root (copy from `.env.example` now in repo)
   - PIXABAY_API_KEY=...
   - PEXELS_API_KEY=...
   - OPENAI_API_KEY=... (optional)
+  - YOUTUBE_API_KEY=... (optional, or GOOGLE_API_KEY=...)
+  - REDDIT_CLIENT_ID=... (optional)
+  - REDDIT_CLIENT_SECRET=... (optional)
+  - REDDIT_USER_AGENT=yt-pipeline/0.1 by pi (optional)
   - BLOG_DRY_RUN=true
 
 - Configure blog settings in `conf/blog.yaml` (copied from `conf/blog.example.yaml`)

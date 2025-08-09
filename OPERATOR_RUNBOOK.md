@@ -44,3 +44,4 @@ make backup
 - Check `logs/pipeline.log` and `jobs/state.jsonl`.
 - Ensure GPU split low and swap on SSD.
 - If CPU temp > 75°C, pipeline defers heavy steps.
+ - Missing API keys: copy `.env.example` → `.env` and fill provider keys (PIXABAY/PEXELS). `make check` reports missing keys. `conf/sources.yaml` is deprecated.

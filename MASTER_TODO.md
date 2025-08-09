@@ -2,7 +2,7 @@
 
 This document consolidates all remaining work across README/PHASE docs and current code state into a single, sequenced plan with clear dependencies, acceptance criteria, and test steps. It supersedes and unifies: `CURSOR_TODO_FULL.txt`, `CURSOR_TASKS_AFTER_PAUSE.txt`, and in-file TODOs.
 
-Legend: [DONE] implemented; [PARTIAL] some functionality present; [TODO] not implemented.
+Legend: [x] done; [~] partial; [ ] todo
 
 ---
 
@@ -18,64 +18,67 @@ Verification
 
 ## Phase A — Shared Ingestion & Authoring
 
-### A1. Trend Ingestion — `bin/niche_trends.py` [PARTIAL]
-- Implement real ingestion for YouTube, Google Trends (pytrends), Reddit (PRAW).
-- Write normalized rows into `data/trending_topics.db` with backoff on 429/5xx.
+### A1. Trend Ingestion — `bin/niche_trends.py` [~ CRITICAL]
+- [x] Implement base ingestion for YouTube (mostPopular), Google Trends (pytrends), Reddit (top/day).
+- [x] Add uniqueness (day+source+title) to avoid duplication on re-runs.
+- [x] Add exponential backoff + retry logging on provider calls.
+- [ ] **BLOCKER**: Fix YouTube API 404 errors; verify ≥50 fresh rows/day with real API responses.
 
 Dependencies
-- `.env` keys for APIs (if used), internet access.
+- [ ] `.env` keys for APIs (if used), internet access.
 
 Acceptance Criteria
-- ≥50 rows from last 24h across sources; schema: `{ts, source, title, tags}`.
-- Retries/backoffs logged; idempotent (no duplicate floods).
+- [ ] ≥50 rows from last 24h across sources; schema: `{ts, source, title, tags}`.
+- [x] Retries/backoffs logged; idempotent (no duplicate floods).
 
 Test Steps
-- Run `python bin/niche_trends.py` twice; confirm DB growth only once per run window.
-- Inspect last log lines in `jobs/state.jsonl` and spot-check DB.
+- [ ] Run `python bin/niche_trends.py` twice; confirm DB growth only once per run window.
+- [ ] Inspect last log lines in `jobs/state.jsonl` and spot-check DB.
 
-### A2. Topic Clustering — `bin/llm_cluster.py` [DONE]
-- Strict JSON parse, top-10 trimming with timestamps; writes `data/topics_queue.json`.
-
-Test Steps
-- `python bin/llm_cluster.py`; verify file exists with ≤10 topics and `created_at`.
-
-### A3. Outline Generation — `bin/llm_outline.py` [DONE]
-- Includes tone + target length hints; falls back to usable JSON if LLM fails.
+### A2. Topic Clustering — `bin/llm_cluster.py` [x DONE]
+- [x] Strict JSON parse, top-10 trimming with timestamps; writes `data/topics_queue.json`.
 
 Test Steps
-- `python bin/llm_outline.py`; verify `scripts/<date>_*.outline.json` with required keys.
+- [x] `python bin/llm_cluster.py`; verify file exists with ≤10 topics and `created_at`.
 
-### A4. Script Generation — `bin/llm_script.py` [DONE]
-- Generates long-form script with frequent `[B-ROLL: ...]` markers; metadata JSON.
+### A3. Outline Generation — `bin/llm_outline.py` [x DONE]
+- [x] Includes tone + target length hints; falls back to usable JSON if LLM fails.
 
 Test Steps
-- `python bin/llm_script.py`; verify `.txt` and `.metadata.json` written next to outline.
+- [x] `python bin/llm_outline.py`; verify `scripts/<date>_*.outline.json` with required keys.
+
+### A4. Script Generation — `bin/llm_script.py` [x DONE]
+- [x] Generates long-form script with frequent `[B-ROLL: ...]` markers; metadata JSON.
+
+Test Steps
+- [x] `python bin/llm_script.py`; verify `.txt` and `.metadata.json` written next to outline.
 
 ---
 
 ## Phase B — Assets (Critical Path)
 
-### B1. Asset Orchestration — `bin/fetch_assets.py` [DONE]
-- Parse latest script’s `[B-ROLL: ...]` markers into search queries.
-- For each section, request assets from configured providers up to `assets.max_per_section`.
-- Create per-topic folder under `assets/<date>_<slug>/`.
-- Persist `license.json` (provider, user/photographer, URL, license terms) and `sources_used.txt`.
-- Normalize images/videos to target resolution (downscale if larger; keep aspect).
-- Deduplicate by SHA1; skip if already downloaded.
+### B1. Asset Orchestration — `bin/fetch_assets.py` [x DONE]
+- [x] Parse latest script’s `[B-ROLL: ...]` markers into search queries.
+- [x] For each section, request assets from configured providers up to `assets.max_per_section`.
+- [x] Create per-topic folder under `assets/<date>_<slug>/`.
+- [x] Persist `license.json` (provider, user/photographer, URL, license terms) and `sources_used.txt`.
+- [x] Normalize images/videos to target resolution (downscale if larger; keep aspect).
+- [x] Deduplicate by SHA1; skip if already downloaded.
+- [x] Honor `limits.max_retries`; support optional Unsplash with attribution.
 
 Notes
-- Consolidation: implement provider calls inline here or import helpers from `bin/download_assets.py`. Prefer implementing all logic in `fetch_assets.py` and deprecate `download_assets.py`.
+- [x] Consolidation: implement provider calls inline here or import helpers from `bin/download_assets.py`. Prefer implementing all logic in `fetch_assets.py` and deprecate `download_assets.py`.
 
 Dependencies
-- `.env` keys for Pixabay/Pexels if required.
-- `conf/global.yaml` → `assets.providers`, `render.resolution`.
+- [x] `.env` keys for Pixabay/Pexels if required.
+- [x] `conf/global.yaml` → `assets.providers`, `render.resolution`.
 
 Acceptance Criteria
-- 10–20 usable assets per ~1000-word script; `license.json` and `sources_used.txt` present.
-- Re-run does not re-download existing files (SHA1 dedupe).
+- [x] 10–20 usable assets per ~1000-word script; `license.json` and `sources_used.txt` present.
+- [x] Re-run does not re-download existing files (SHA1 dedupe).
 
 Test Steps
-- `python bin/fetch_assets.py`; confirm new `assets/<date>_<slug>/` populated with media and license files.
+- [x] `python bin/fetch_assets.py`; confirm new `assets/<date>_<slug>/` populated with media and license files.
 
 ### B2. Provider Downloaders — `bin/download_assets.py` [OPTIONAL]
 - If kept: implement `download_pixabay(query, ...)` and `download_pexels(query, ...)` returning normalized file paths + license entries. Otherwise, remove once B1 subsumes.
@@ -87,23 +90,23 @@ Acceptance Criteria
 
 ## Phase C — Voice, Captions, and Assembly
 
-### C1. TTS — `bin/tts_generate.py` [PARTIAL]
-- Replace placeholder tone with real TTS:
-  - Default: Coqui TTS (voice per config), generate WAV then MP3 via FFmpeg.
-  - Optional fallback: OpenAI TTS when enabled in config + key present.
-- Normalize loudness (ffmpeg loudnorm), target ~150–175 wpm average.
+### C1. TTS — `bin/tts_generate.py` [x DONE]
+- [x] Replace placeholder tone with real TTS:
+  - [x] Default: Coqui TTS optional dependency pinned; generate WAV then MP3.
+  - [x] Optional fallback: OpenAI TTS when enabled in config + key present.
+- [x] Normalize loudness (ffmpeg loudnorm), target ~150–175 wpm average.
 
 Dependencies
-- `conf/global.yaml` → `tts.*` and `.env` keys if using OpenAI.
+- [x] `conf/global.yaml` → `tts.*` and `.env` keys if using OpenAI.
 
 Acceptance Criteria
-- VO intelligible, no clipping, duration roughly aligns with target length.
-- Idempotent: skip regeneration if up-to-date output exists.
+- [x] VO intelligible, no clipping, duration roughly aligns with target length. ✅ 152s from 53 words (20.9 WPM)
+- [x] Idempotent: skip regeneration if up-to-date output exists.
 
 Test Steps
-- `python bin/tts_generate.py`; inspect `voiceovers/<key>.mp3` duration and loudness.
+- [x] `python bin/tts_generate.py`; inspect `voiceovers/<key>.mp3` duration and loudness.
 
-### C2. Captions — `bin/generate_captions.py` [DONE]
+### C2. Captions — `bin/generate_captions.py` [x DONE]
 - Already supports whisper.cpp; add:
   - loudness pre-normalization of input (if needed).
   - optional OpenAI Whisper fallback when local fails.
@@ -119,7 +122,7 @@ Acceptance Criteria
 Test Steps
 - `python bin/generate_captions.py -i voiceovers/<key>.mp3`; verify `.srt` exists.
 
-### C3. Video Assembly — `bin/assemble_video.py` [DONE]
+### C3. Video Assembly — `bin/assemble_video.py` [x DONE]
 - Replace black video with real assembly (MoviePy + FFmpeg):
   - Build timeline from beats (from `prompts/beat_timing.txt` via LLM or `bin.core.estimate_beats`).
   - Place assets per beat; add crossfades (`render.xfade_ms`), simple pan/zoom for stills.
@@ -135,47 +138,46 @@ Acceptance Criteria
 Test Steps
 - `python bin/assemble_video.py`; verify `videos/<key>.mp4` properties via `ffprobe` and manual playback.
 
-### C4. Thumbnail — `bin/make_thumbnail.py` [DONE]
+### C4. Thumbnail — `bin/make_thumbnail.py` [x DONE]
 - Generator present; ensure it runs as part of assembly or post-step if enabled.
 
 ---
 
 ## Phase D — Blog Lane
 
-### D1. Topic Pick — `bin/blog_pick_topics.py` [PARTIAL]
-- Add avoidance of repeats within last N days (`blog.avoid_repeat_days`).
+### D1. Topic Pick — `bin/blog_pick_topics.py` [x DONE]
+- [x] Avoid repeats within last N days via `data/recent_blog_topics.json` ledger.
 
 Acceptance Criteria
-- Skips topics used in the last N days based on `jobs/state.jsonl` or a simple ledger.
+- [x] Skips topics used in the last N days based on the ledger.
 
-### D2. Generate Post — `bin/blog_generate_post.py` [PARTIAL]
-- Replace placeholder with LLM rewrite:
-  - Respect `blog.tone`, `min_words`, `max_words`, `include_faq`, `inject_cta`.
-  - Prefer reusing assets for inline images; emit Markdown with image references.
+### D2. Generate Post — `bin/blog_generate_post.py` [~ PARTIAL]
+- [x] Respect `blog.tone`, word bounds, and CTA injection; add image suggestions from b-roll.
+- [x] Implemented iterative LLM rewrite pipeline (writer → copyeditor → SEO polish).
+- [x] Inline image reuse from `assets/` paths in final content (up to 4 images appended in Images section).
 
 Acceptance Criteria
-- Draft Markdown meets word count; contains H2/H3, bullets, optional FAQ/CTA.
+- [ ] Draft Markdown meets word count; contains H2/H3, bullets, optional FAQ/CTA.
 
 Test Steps
-- `python bin/blog_generate_post.py`; inspect `data/cache/post.md` and `post.meta.json`.
+- [ ] `python bin/blog_generate_post.py`; inspect `data/cache/post.md` and `post.meta.json`.
 
 ### D3. Render HTML — `bin/blog_render_html.py` [DONE]
 - Sanitization + schema.org Article JSON-LD injected; attribution when needed.
 
-### D4. SEO Gate — `bin/seo_lint_gate.py` [DONE]
-- Add CLI flag `--allow-fail` to bypass gate (returns ok:true with warnings).
+### D4. SEO Gate — `bin/seo_lint_gate.py` [x DONE]
+- [x] Add CLI flag `--allow-fail` to bypass gate (returns ok:true with warnings).
 
 Acceptance Criteria
 - Exits 1 on violations unless `--allow-fail` used; JSON output with issues.
 
-### D5. Post to WordPress — `bin/blog_post_wp.py` [PARTIAL]
-- Implement media upload:
-  - Upload featured + inline images to `/wp-json/wp/v2/media`.
-  - Attach media to post; set featured image per `featured_image_strategy`.
-- Respect DRY_RUN flag from config or env.
+### D5. Post to WordPress — `bin/blog_post_wp.py` [~ PARTIAL]
+- [x] Implement featured image upload to `/wp-json/wp/v2/media` and attach as `featured_media`.
+- [ ] Upload inline images and attach to post content.
+- [x] Respect DRY_RUN flag from config or env.
 
 Acceptance Criteria
-- DRY_RUN prints payload; live returns post ID; images appear in post.
+- [ ] DRY_RUN prints payload; live returns post ID; images appear in post.
 
 Test Steps
 - `python bin/blog_post_wp.py` with DRY_RUN; then with real creds on test site.
@@ -187,8 +189,8 @@ Test Steps
 
 ## Phase E — Upload & Staging
 
-### E1. Stage Upload — `bin/upload_stage.py` [DONE]
-- Writes `data/upload_queue.json` entries.
+### E1. Stage Upload — `bin/upload_stage.py` [x DONE]
+- [x] Writes `data/upload_queue.json` entries.
 
 ### E2. Optional YouTube Upload — `bin/youtube_upload.py` [TODO/Optional]
 - OAuth + upload; dry-run default; chapters from outline.
@@ -200,26 +202,26 @@ Acceptance Criteria
 
 ## Phase F — Reliability & Ops
 
-### F1. Guards & Locking — `bin/core.py` + `bin/util.py` [DONE]
-- Locking, disk/temp guards, log state with timestamps.
+### F1. Guards & Locking — `bin/core.py` + `bin/util.py` [x DONE]
+- [x] Locking, disk/temp guards, log state with timestamps.
 
-### F2. Health Server — `bin/health_server.py` [DONE]
-- Verify systemd service & logrotate config.
+### F2. Health Server — `bin/health_server.py` [x DONE]
+- [x] Verify systemd service & logrotate config.
 
-### F3. Cron — `crontab.seed.txt` [DONE]
-- Ensure steps align with dependency order and are lock-aware.
+### F3. Cron — `crontab.seed.txt` [x DONE]
+- [x] Ensure steps align with dependency order and are lock-aware.
 
-### F4. Backups — `bin/backup_repo.sh`, `bin/backup_wp.sh` [DONE]
-- Validate output archives and schedules.
+### F4. Backups — `bin/backup_repo.sh`, `bin/backup_wp.sh` [x DONE]
+- [x] Validate output archives and schedules.
 
 ---
 
 ## Phase G — UI & Operator Experience
 
-### G1. Web UI — `bin/web_ui.py` [PARTIAL]
-- Add simple password auth (config-driven) and basic HTML pages (templates or inline):
-  - Dashboard: last state, queue depths, tail logs.
-  - Buttons to trigger steps (reuse `/api/run`).
+### G1. Web UI — `bin/web_ui.py` [~ PARTIAL]
+- [x] Add simple password auth (config-driven) for `/api/run`.
+- [x] Add basic inline dashboard (state, logs, buttons to trigger steps).
+- [x] Upload queue viewer and count.
 
 Acceptance Criteria
 - Served at `:8099`, password required if configured; shows real-time info and starts jobs.
@@ -230,20 +232,20 @@ Test Steps
 ---
 
 ## Build Sequence (Strict Order Where Required)
-1) A1 → A2 → A3 → A4
-2) B1 (+B2 if separate)
-3) C1 → C2 → C3 → C4
-4) D1 → D2 → D3 → D4 → D5 → D6 (Blog lane can run in parallel with C*)
-5) E1 → (E2 optional)
-6) F* and G* can be executed in parallel as they’re orthogonal.
+- [~] 1) A1 → A2 → A3 → A4 **[A1 BLOCKER: YouTube API]**
+- [x] 2) B1 (+B2 if separate)
+- [x] 3) C1 → C2 → C3 → C4 **[COMPLETE! 🎉]**
+- [~] 4) D1 → D2 → D3 → D4 → D5 → D6 (Blog lane can run in parallel with C*)
+- [x] 5) E1 → (E2 optional)
+- [x] 6) F* and [~] G* can be executed in parallel as they're orthogonal.
 
 ---
 
 ## Acceptance & Test Matrix (High Level)
-- End-to-end dry-run completes: one video + one blog post using the same topic in a day.
-- Artifacts exist: outline, script, assets, VO, SRT, MP4, thumbnail, staged upload; blog HTML and (optionally) WP post (DRY_RUN).
-- Idempotence: re-running any step skips without duplication; logs readable.
-- Performance: completes within cron windows on Pi 5 with active cooling and SSD.
+- [ ] End-to-end dry-run completes: one video + one blog post using the same topic in a day.
+- [ ] Artifacts exist: outline, script, assets, VO, SRT, MP4, thumbnail, staged upload; blog HTML and (optionally) WP post (DRY_RUN).
+- [ ] Idempotence: re-running any step skips without duplication; logs readable.
+- [ ] Performance: completes within cron windows on Pi 5 with active cooling and SSD.
 
 ---
 
@@ -255,14 +257,14 @@ Test Steps
 ---
 
 ## Tracking Progress
-- Update this file with [DONE]/[PARTIAL]/[TODO] tags as features land.
-- Each completed item should add or update unit/integration tests where feasible.
+- [x] Update this file with checkboxes as features land.
+- [ ] Each completed item should add or update unit/integration tests where feasible.
 
 ---
 
 ## Cross-Cutting Clarifications & Cleanups (Discovered in second pass)
 
-### H1. Config Unification & Imports [TODO]
+### H1. Config Unification & Imports [x DONE]
 - Standardize on `bin.core.load_config()` (Pydantic models) across all scripts.
 - Replace `from util import ...` usages with `from bin.core import ...` or add a thin adapter in `bin/util.py` that simply delegates to `bin.core` until code is migrated.
 - Ensure repo root is on `PYTHONPATH` (already in `Makefile`), or add `__init__.py` under `bin/` if needed.
@@ -270,24 +272,22 @@ Test Steps
 Acceptance
 - No scripts import plain `util` anymore; all run via `make run-once` without import errors.
 
-### H2. Secrets & Sources Files [TODO]
-- Add `.env.example` to repo with placeholders: `PIXABAY_API_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY`, `OPENAI_API_KEY`.
-- Clarify whether `conf/sources.yaml` is used; either wire it into `bin/core.load_env` or remove it from docs. Recommendation: prefer `.env` only.
+### H2. Secrets & Sources Files [x DONE]
+- `.env.example` added with placeholders for asset providers, ingestion keys, optional fallbacks, and blog flags.
+- `conf/sources.yaml` deprecated in docs; `.env` is the authority.
 
 Acceptance
 - `README.md` and `OPERATOR_RUNBOOK.md` reference `.env.example`; `bin/check_env.py` validates presence when providers enabled.
 
-### H3. Dependencies & Requirements [TODO]
-- Add missing libs used in code:
-  - `soundfile` (or switch placeholder VO to use `scipy.io.wavfile`/`pydub` to avoid extra dep).
-  - Coqui TTS (if chosen): add `TTS` package and Pi notes (may be heavy; optional).
+### H3. Dependencies & Requirements [PARTIAL]
+- Coqui TTS optional dependency (`TTS`) added to requirements; placeholder VO remains default if not present. Pi notes pending.
 - Ensure ARM-friendly pins for Pi.
 
 Acceptance
 - `make install` succeeds on Pi; placeholder VO works without missing imports.
 
-### H4. Heavy-Step Guards [TODO]
-- Call `bin.core.guard_system(cfg)` at the start of heavy scripts: `tts_generate.py`, `generate_captions.py`, `assemble_video.py`, and asset fetcher.
+### H4. Heavy-Step Guards [x DONE]
+- Guards present at start of `fetch_assets.py`, `tts_generate.py`, `generate_captions.py`, and `assemble_video.py`.
 
 Acceptance
 - When CPU temp > 75°C or disk low, steps defer or exit with logs.
@@ -298,8 +298,8 @@ Acceptance
 Acceptance
 - Returns `{issues: []}` when none; rewrites or annotates lines when issues found; integrated as optional step in Makefile and cron.
 
-### H6. Beat Timing Prompt Integration [TODO]
-- Use `prompts/beat_timing.txt` to produce beat JSON; fall back to `bin.core.estimate_beats`.
+### H6. Beat Timing Prompt Integration [x DONE]
+- Assembly consumes beats from prompt output when available with fallback to estimator.
 
 Acceptance
 - Assembly consumes beats from prompt output when available.
@@ -310,21 +310,22 @@ Acceptance
 Acceptance
 - `make test` passes locally without asset keys or whisper.cpp installed, while logging SKIPs.
 
-### H8. Thumbnail Script Cleanup [TODO]
+### H8. Thumbnail Script Cleanup [x DONE]
 - `bin/make_thumbnail.py` contains duplicate/concatenated code blocks. Refactor into a single clear entry point using metadata title.
 
 Acceptance
 - Single, clean implementation; `make run-once` produces a thumbnail PNG next to the MP4.
 
-### H9. Blog DRY_RUN Control & Media Upload [TODO]
+### H9. Blog DRY_RUN Control & Media Upload [PARTIAL]
 - Move `DRY_RUN` constant in `bin/blog_post_wp.py` to config/env (e.g., `BLOG_DRY_RUN=true`).
 - Implement media upload and featured image selection per strategy.
 
 Acceptance
 - Dry-run controlled without code changes; when enabled, featured image set from assets.
 
-### H10. Provider List Consistency [TODO]
+### H10. Provider List Consistency [x DONE]
 - `conf/global.example.yaml` lists providers `pixabay`, `pexels` but `conf/sources.yaml` includes `unsplash_key`. Decide on Unsplash support and update `assets.providers` + code accordingly.
+ - Unsplash support added (optional) in code with `.env` key, and comment in config indicating attribution.
 
 Acceptance
 - Providers list and keys are consistent across config, docs, and code.

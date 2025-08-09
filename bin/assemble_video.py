@@ -18,6 +18,7 @@ from bin.core import (  # noqa: E402
     get_logger,
     guard_system,
     load_config,
+    load_env,
     log_state,
     single_lock,
     estimate_beats,
@@ -30,14 +31,27 @@ from moviepy.editor import (
     CompositeVideoClip,
     ColorClip,
     ImageClip,
+    VideoClip,
     VideoFileClip,
 )
 
 import requests
 from rapidfuzz import fuzz
+from moviepy.video.fx import all as vfx
+from proglog import ProgressBarLogger
 
 
 log = get_logger("assemble_video")
+
+
+# Compatibility shim: Pillow 10+ removed Image.ANTIALIAS which MoviePy 1.0.3 expects
+try:
+    from PIL import Image as _PILImage  # type: ignore
+
+    if not hasattr(_PILImage, "ANTIALIAS") and hasattr(_PILImage, "Resampling"):
+        _PILImage.ANTIALIAS = _PILImage.Resampling.LANCZOS  # type: ignore[attr-defined]
+except Exception:
+    pass
 
 
 def ffprobe_duration(path: str) -> float:
@@ -79,30 +93,16 @@ def fit_clip_to_frame(clip, W: int, H: int):
 
 
 def ken_burns_imageclip(path: str, duration: float, W: int, H: int):
-    # Simple zoom & pan over time without ImageMagick
-    img = ImageClip(path)
-    iw, ih = img.size
-    # Start/End scales (slight zoom)
-    start_scale = 1.05
-    end_scale = 1.15
-    # Compute scaled sizes
-    def make_frame(t):
-        # progress 0..1
-        p = max(0.0, min(1.0, t / max(duration, 0.01)))
-        scale = start_scale + (end_scale - start_scale) * p
-        w = int(iw * scale)
-        h = int(ih * scale)
-        frame = img.resize((w, h)).get_frame(0)
-        # Pan from left-top to center
-        x = int((w - W) * p * 0.5)
-        y = int((h - H) * p * 0.5)
-        x = max(0, min(x, max(0, w - W)))
-        y = max(0, min(y, max(0, h - H)))
-        sub = frame[y : y + H, x : x + W]
-        return sub
+    # Simple zoom over time using MoviePy's resize fx, then letterbox-fit
+    base = ImageClip(path).set_duration(duration)
+    # Zoom from 1.05x to ~1.15x across duration
+    def zoom_factor(t: float):
+        p = 0.0 if duration <= 0 else max(0.0, min(1.0, t / duration))
+        return 1.05 + (1.15 - 1.05) * p
 
-    kb = ImageClip(make_frame, duration=duration)
-    return kb
+    zoomed = base.fx(vfx.resize, zoom_factor)
+    fitted = fit_clip_to_frame(zoomed, W, H)
+    return fitted
 
 
 def maybe_llm_beats(text: str, cfg) -> list:
@@ -131,9 +131,36 @@ def maybe_llm_beats(text: str, cfg) -> list:
     return beats
 
 
+class TenSecProgressLogger(ProgressBarLogger):
+    """Minimal progress logger that emits a heartbeat ~every 10s.
+
+    MoviePy uses proglog; we subclass to periodically print overall percent.
+    """
+
+    def __init__(self, emit_interval_seconds: float = 10.0):
+        super().__init__()
+        self.emit_interval_seconds = emit_interval_seconds
+        self._last_emit_ts = 0.0
+
+    def bars_callback(self, bar, attr, value, old_value=None):  # type: ignore[override]
+        try:
+            now = time.time()
+            bar_state = self.bars.get(bar) or {}
+            total = float(bar_state.get("total") or 0.0) or 0.0
+            index = float(bar_state.get("index") or 0.0)
+            pct = 0.0 if total <= 0.0 else round((index / total) * 100.0, 1)
+            if (now - self._last_emit_ts) >= self.emit_interval_seconds or (total > 0 and index >= total):
+                log_state("assemble_video_progress", "OK", f"{pct}% ({bar})")
+                print(f"Encoding progress: {pct}% ({bar})")
+                self._last_emit_ts = now
+        except Exception:
+            pass
+
+
 def main():
     cfg = load_config()
     guard_system(cfg)
+    env = load_env()
     scripts_dir = os.path.join(BASE, "scripts")
     vdir = os.path.join(BASE, "videos")
     vodir = os.path.join(BASE, "voiceovers")
@@ -169,26 +196,47 @@ def main():
     timeline_clips = []
     t_cursor = 0.0
     used_assets = set()
-    for b in beats:
+    last_heartbeat = time.time()
+    total_beats = max(len(beats), 1)
+    # Optional short run seconds cap via env SHORT_RUN_SECS
+    short_secs = None
+    try:
+        _ss = int(env.get("SHORT_RUN_SECS", "0") or 0)
+        short_secs = _ss if _ss > 0 else None
+    except Exception:
+        short_secs = None
+
+    for i, b in enumerate(beats, start=1):
         sec = float(b.get("sec", 3.0) or 3.0)
+        if short_secs:
+            remaining = max(float(short_secs) - t_cursor, 0.0)
+            if remaining <= 0.05:
+                break
+            sec = min(sec, remaining)
         bq = (b.get("broll") or "").strip()
         asset = best_asset_for_query(topic_assets_dir, bq, used_assets)
         clip = None
         try:
             if asset and asset.lower().endswith((".mp4", ".mov", ".mkv", ".webm")):
-                v = VideoFileClip(os.path.join(topic_assets_dir, os.path.basename(asset))).without_audio()
+                log_state("assemble_pick", "OK", f"beat={i};type=video;asset={os.path.basename(asset)};q={bq}")
+                print(f"Beat {i}: video {os.path.basename(asset)}")
+                v = VideoFileClip(asset).without_audio()
                 v = v.subclip(0, min(sec, max(0.5, v.duration)))
                 v = fit_clip_to_frame(v, W, H)
                 clip = v
             elif asset:
-                img_path = os.path.join(topic_assets_dir, os.path.basename(asset))
+                log_state("assemble_pick", "OK", f"beat={i};type=image;asset={os.path.basename(asset)};q={bq}")
+                print(f"Beat {i}: image {os.path.basename(asset)}")
                 # Ken Burns for stills
-                clip = ken_burns_imageclip(img_path, sec, W, H)
+                clip = ken_burns_imageclip(asset, sec, W, H)
             else:
                 # Fallback: black frame
                 black = ColorClip(size=(W, H), color=(0, 0, 0)).set_duration(sec)
                 clip = black
-        except Exception:
+        except Exception as e:
+            err = f"{type(e).__name__}: {str(e)[:120]}"
+            log_state("assemble_pick", "WARN", f"beat={i};fallback=black;asset={os.path.basename(asset) if asset else ''};err={err}")
+            print(f"Beat {i}: fallback black ({err})")
             black = ColorClip(size=(W, H), color=(0, 0, 0)).set_duration(sec)
             clip = black
         used_assets.add(os.path.basename(asset) if asset else f"black_{len(timeline_clips)}")
@@ -199,6 +247,13 @@ def main():
             clip = clip.set_start(t_cursor)
         t_cursor += sec
         timeline_clips.append(clip)
+
+        # Heartbeat during timeline construction
+        if (time.time() - last_heartbeat) >= 10.0 or i == total_beats:
+            pct = round((i / float(total_beats)) * 100.0, 1)
+            log_state("assemble_timeline_progress", "OK", f"{pct}% beats")
+            print(f"Timeline build: {pct}% ({i}/{total_beats})")
+            last_heartbeat = time.time()
 
     base_video = CompositeVideoClip(timeline_clips, size=(W, H))
 
@@ -228,6 +283,8 @@ def main():
 
     # Audio: VO + optional background music
     vo_clip = AudioFileClip(vo)
+    if short_secs:
+        vo_clip = vo_clip.subclip(0, min(float(short_secs), float(getattr(vo_clip, "duration", 0.0) or 0.0)))
     bg_path = os.path.join(topic_assets_dir, "bg.mp3")
     audio = vo_clip
     if os.path.exists(bg_path):
@@ -252,8 +309,8 @@ def main():
         bitrate=cfg.render.target_bitrate,
         threads=2,
         ffmpeg_params=["-pix_fmt", "yuv420p"],
-        verbose=False,
-        logger=None,
+        verbose=True,
+        logger=TenSecProgressLogger(emit_interval_seconds=10.0),
     )
 
     # Optional caption burn-in via ffmpeg (no ImageMagick dependency)
