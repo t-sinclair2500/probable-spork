@@ -1,10 +1,29 @@
 ## One-Pi Pipeline — Master Build Plan (Single Source of Truth)
 
-This document consolidates all remaining work across README/PHASE docs and current code state into a single, sequenced plan with clear dependencies, acceptance criteria, and test steps. It supersedes and unifies: `CURSOR_TODO_FULL.txt`, `CURSOR_TASKS_AFTER_PAUSE.txt`, and in-file TODOs.
+This document consolidates all remaining work across README/PHASE docs and current code state into a single, sequenced plan with clear dependencies, acceptance criteria, and test steps. It supersedes and unifies: `docs/archive/CURSOR_TODO_FULL.txt`, `docs/archive/CURSOR_TASKS_AFTER_PAUSE.txt`, and in-file TODOs.
 
 Legend: [x] done; [~] partial; [ ] todo
 
 ---
+
+### Status Board — Parallel Work Tracks
+
+**Track A: Data Integration & Testing (Agent A)**
+- P0: [ ] A1: Fix YouTube ingestion (resolve 404s; graceful fallbacks)
+- P0: [ ] H7: E2E test robustness (skip when deps missing)
+- P0: [ ] H2: Create .env.example file at repo root
+- P1: [ ] E2: YouTube uploader dry-run + auth flow
+- P1: [ ] F2: Healthcheck enhancements (last successful step + queue depths)
+
+**Track B: WordPress & Content Generation (Agent B)**
+- P0: [ ] D2: Blog generate acceptance checks (structure/word count) 
+- P0: [ ] D5: WP inline image uploads (attach to content)
+- P0: [ ] H9: Blog DRY_RUN env control & media upload polish
+- P1: [ ] G1: Web UI enhancements (logs tail, auth hardening)
+- P2: [ ] Unsplash optional provider with attribution
+
+**Shared Documentation Tasks (Both)**
+- P0: [ ] D-Docs.1-6: README/OPERATOR_RUNBOOK updates; Makefile docs target
 
 ### 0) Prerequisites & Ground Rules
 - Ensure Pi services installed: Ollama, whisper.cpp, FFmpeg, Python venv.
@@ -175,6 +194,8 @@ Acceptance Criteria
 - [x] Implement featured image upload to `/wp-json/wp/v2/media` and attach as `featured_media`.
 - [ ] Upload inline images and attach to post content.
 - [x] Respect DRY_RUN flag from config or env.
+- [ ] Robust retry/backoff on 429/5xx; idempotent media re-use by SHA1.
+- [ ] Draft vs publish toggle; category/tags mapping from config.
 
 Acceptance Criteria
 - [ ] DRY_RUN prints payload; live returns post ID; images appear in post.
@@ -272,9 +293,9 @@ Test Steps
 Acceptance
 - No scripts import plain `util` anymore; all run via `make run-once` without import errors.
 
-### H2. Secrets & Sources Files [x DONE]
-- `.env.example` added with placeholders for asset providers, ingestion keys, optional fallbacks, and blog flags.
-- `conf/sources.yaml` deprecated in docs; `.env` is the authority.
+### H2. Secrets & Sources Files [~ PARTIAL]
+- `.env.example` to be added with placeholders for asset providers, ingestion keys, optional fallbacks, and blog flags.
+- `conf/sources.yaml` archived (was deprecated); `.env` is the authority.
 
 Acceptance
 - `README.md` and `OPERATOR_RUNBOOK.md` reference `.env.example`; `bin/check_env.py` validates presence when providers enabled.
@@ -324,8 +345,7 @@ Acceptance
 - Dry-run controlled without code changes; when enabled, featured image set from assets.
 
 ### H10. Provider List Consistency [x DONE]
-- `conf/global.example.yaml` lists providers `pixabay`, `pexels` but `conf/sources.yaml` includes `unsplash_key`. Decide on Unsplash support and update `assets.providers` + code accordingly.
- - Unsplash support added (optional) in code with `.env` key, and comment in config indicating attribution.
+- `conf/global.example.yaml` lists providers `pixabay`, `pexels` and `conf/sources.yaml` (now archived) included `unsplash_key`. Unsplash support added (optional) in code with `.env` key, and comment in config indicating attribution.
 
 Acceptance
 - Providers list and keys are consistent across config, docs, and code.
@@ -338,6 +358,7 @@ Acceptance
 - Add instruction to create `.env` from `.env.example`; include list of required/optional keys.
 - Clarify Raspberry Pi prerequisites: active cooling recommended; use USB SSD; note ARM-friendly pins.
 - Reference `MASTER_TODO.md` as the single source of truth for build tasks.
+- Link to `RUN_BOOK.md` for copy/paste commands and smoke tests.
 
 ### D-Docs.2 OPERATOR_RUNBOOK.md [TODO]
 - After bootstrap, add `make check` step and interpretation of common warnings (e.g., missing API keys => assets skipped).
@@ -352,7 +373,34 @@ Acceptance
 
 ### D-Docs.5 conf/* examples [TODO]
 - Add `.env.example` file to repo (keys per H2).
-- If `conf/sources.yaml` is retained, document how it’s loaded; else remove from docs and repo.
+- `conf/sources.yaml` archived; update any remaining references to point to `.env` setup.
 
 ### D-Docs.6 Makefile [TODO]
 - Add a `docs` target that echoes where to find `MASTER_TODO.md` and how to run tests.
+
+---
+
+## V2 Roadmap — “More human, less AI” Content Engine
+
+Goals: improve voice, style, and readability with guardrails and evaluation.
+
+### V2.1 Persona & Audience Controls [Planned]
+- Add `blog.tone`, persona, and audience knobs; thread through prompts.
+- Acceptance: scripts and posts reflect persona/audience choices in style and examples.
+- Evidence: prompts in `prompts/outline.txt` and `prompts/script_writer.txt` include new variables.
+
+### V2.2 Prompt Structuring & Few-shot Curation [Planned]
+- Curate 3–5 high-quality few-shot examples per lane; enforce strict JSON outputs.
+- Acceptance: >95% first-try JSON parses; reduced rewrite iterations.
+
+### V2.3 Evaluation Harness [Planned]
+- Implement readability scoring (e.g., Flesch), jargon detection, and sentence-length variance.
+- Acceptance: CI/`make test` reports scores; fail or warn thresholds configurable.
+
+### V2.4 Post-processing Heuristics [Planned]
+- Shorten sentences, vary rhythm, enforce scannable headings and bullets.
+- Acceptance: transformed output passes target readability and heading density checks.
+
+### V2.5 Human-in-the-loop & WP Preview [Planned]
+- Draft posts as `status:draft`; open preview links; round-trip edits before publish.
+- Acceptance: flow toggled via config; preview URL logged; publish only after human ack.

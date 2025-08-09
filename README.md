@@ -138,7 +138,7 @@ Each script is lock-aware and exits if another heavy step is in progress.
   - `assets.providers` currently supports `pixabay`, `pexels`.
   - To add Unsplash, enable in config and add key to `.env` (code support TBD).
 
-- `conf/sources.yaml` is deprecated; use `.env` for keys.
+- `conf/sources.yaml` has been archived; use `.env` for keys.
 After running `scripts/install_systemd_and_logrotate.sh`, visit:
 ```
 http://<pi-lan-ip>:8088/health

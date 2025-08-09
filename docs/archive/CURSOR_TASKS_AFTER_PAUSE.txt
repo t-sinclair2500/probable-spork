@@ -1,0 +1,24 @@
+ARCHIVED — canonical tasks now live in MASTER_TODO.md
+
+FULL EXECUTION PLAN FOR CURSOR AFTER PAUSE (Superseded)
+
+NOTE: This file is superseded by MASTER_TODO.md. Refer there for the single source of truth.
+
+Status snapshot:
+1. bin/generate_captions.py  [DONE]
+   - whisper.cpp integration, CLI args, OpenAI fallback, metrics (WPM/duration).
+
+2. bin/download_assets.py  [OPTIONAL]
+   - Logic consolidated in fetch_assets.py. Keep as helpers or remove.
+
+3. bin/seo_lint_gate.py  [DONE]
+   - Lint + --allow-fail override.
+
+4. bin/web_ui.py  [TODO]
+   - Flask UI with auth, dashboard, logs, queue depth, job triggers.
+
+Additional updates:
+- tts_generate: PARTIAL (Coqui-first + placeholder; loudness normalization)
+- assemble_video: DONE (MoviePy timeline, crossfades, Ken Burns, overlay, optional burn-in)
+- fetch_assets: DONE (images+videos, dedupe, normalization, licensing)
+- niche_trends: PARTIAL (real APIs; improve retries/evidence)

@@ -416,3 +416,39 @@
 {"ts": "2025-08-09T07:47:26Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3"}
 {"ts": "2025-08-09T07:47:27Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
 {"ts": "2025-08-09T07:47:28Z", "step": "upload_stage", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}
+{"ts": "2025-08-09T07:49:38Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-09T07:49:45Z", "step": "niche_trends", "status": "OK", "notes": "rows=132"}
+{"ts": "2025-08-09T07:49:45Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-09T07:49:55Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-09_ai-tools.outline.json"}
+{"ts": "2025-08-09T07:50:14Z", "step": "llm_script", "status": "OK", "notes": "2025-08-09_ai-tools.txt"}
+{"ts": "2025-08-09T07:50:15Z", "step": "fetch_assets", "status": "OK", "notes": "exists:19"}
+{"ts": "2025-08-09T08:01:02Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-09_ai-tools.mp3;prov=coqui;dur=30.0s"}
+{"ts": "2025-08-09T08:01:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=1;type=video;asset=pexels_subscribe-button_3822778_norm.mp4;q=query"}
+{"ts": "2025-08-09T08:01:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=2;type=image;asset=pexels_typing_1181208.jpeg;q=big promise"}
+{"ts": "2025-08-09T08:01:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=3;type=image;asset=pexels_monitor_1029757.jpeg;q=big promise"}
+{"ts": "2025-08-09T08:01:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=4;type=image;asset=pexels_checklist_1226398.jpeg;q=big promise"}
+{"ts": "2025-08-09T08:01:48Z", "step": "assemble_pick", "status": "OK", "notes": "beat=5;type=video;asset=pexels_typing_946146_norm.mp4;q=tip 1"}
+{"ts": "2025-08-09T08:01:49Z", "step": "assemble_pick", "status": "OK", "notes": "beat=6;type=image;asset=pexels_clock-ticking-away_359989.jpeg;q=tip 1"}
+{"ts": "2025-08-09T08:01:49Z", "step": "assemble_pick", "status": "OK", "notes": "beat=7;type=image;asset=pexels_keyboard_1772123.jpeg;q=keyboard"}
+{"ts": "2025-08-09T08:01:49Z", "step": "assemble_pick", "status": "OK", "notes": "beat=8;type=image;asset=pexels_typing-on-a-keyboard_9551663.jpeg;q=tip 1"}
+{"ts": "2025-08-09T08:01:49Z", "step": "assemble_pick", "status": "OK", "notes": "beat=9;type=video;asset=pexels_typing-on-a-keyboard_19162270_norm.mp4;q=keyboard"}
+{"ts": "2025-08-09T08:01:49Z", "step": "assemble_video_progress", "status": "OK", "notes": "-0.2% (chunk)"}
+{"ts": "2025-08-09T08:01:50Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (chunk)"}
+{"ts": "2025-08-09T08:02:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "9.2% (t)"}
+{"ts": "2025-08-09T08:02:10Z", "step": "assemble_video_progress", "status": "OK", "notes": "16.0% (t)"}
+{"ts": "2025-08-09T08:02:20Z", "step": "assemble_video_progress", "status": "OK", "notes": "22.4% (t)"}
+{"ts": "2025-08-09T08:02:30Z", "step": "assemble_video_progress", "status": "OK", "notes": "28.6% (t)"}
+{"ts": "2025-08-09T08:02:40Z", "step": "assemble_video_progress", "status": "OK", "notes": "34.0% (t)"}
+{"ts": "2025-08-09T08:02:50Z", "step": "assemble_video_progress", "status": "OK", "notes": "38.4% (t)"}
+{"ts": "2025-08-09T08:03:00Z", "step": "assemble_video_progress", "status": "OK", "notes": "43.2% (t)"}
+{"ts": "2025-08-09T08:03:10Z", "step": "assemble_video_progress", "status": "OK", "notes": "47.9% (t)"}
+{"ts": "2025-08-09T08:03:21Z", "step": "assemble_video_progress", "status": "OK", "notes": "52.2% (t)"}
+{"ts": "2025-08-09T08:03:31Z", "step": "assemble_video_progress", "status": "OK", "notes": "56.8% (t)"}
+{"ts": "2025-08-09T08:03:41Z", "step": "assemble_video_progress", "status": "OK", "notes": "61.6% (t)"}
+{"ts": "2025-08-09T08:03:51Z", "step": "assemble_video_progress", "status": "OK", "notes": "66.7% (t)"}
+{"ts": "2025-08-09T08:04:01Z", "step": "assemble_video_progress", "status": "OK", "notes": "73.5% (t)"}
+{"ts": "2025-08-09T08:04:11Z", "step": "assemble_video_progress", "status": "OK", "notes": "81.0% (t)"}
+{"ts": "2025-08-09T08:04:21Z", "step": "assemble_video_progress", "status": "OK", "notes": "88.9% (t)"}
+{"ts": "2025-08-09T08:04:31Z", "step": "assemble_video_progress", "status": "OK", "notes": "97.3% (t)"}
+{"ts": "2025-08-09T08:04:34Z", "step": "assemble_video_progress", "status": "OK", "notes": "100.0% (t)"}
+{"ts": "2025-08-09T08:04:36Z", "step": "assemble_video", "status": "OK", "notes": "2025-08-09_ai-tools.mp4"}

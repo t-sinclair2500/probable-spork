@@ -23,7 +23,7 @@
 /home/pi/youtube_onepi_pipeline/            # primary pipeline repo
   ├── conf/
   │   ├── global.yaml                       # operator control (tone, length, cadence, toggles)
-  │   ├── sources.yaml                      # (deprecated) API keys — use .env instead
+  │   ├── [archived: sources.yaml]         # API keys now in .env
   │   └── render.yaml                       # video render defaults
   ├── data/
   │   ├── trending_topics.db                # SQLite: raw trend rows (yt/reddit/trends)
@@ -172,7 +172,7 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 **Tasks**
 - Implement YouTube Data API by configured category IDs and region.
 - Implement pytrends queries for `pipeline.niches` daily.
-- Implement Reddit top/day for `sources.yaml` subreddits.
+- Implement Reddit top/day for configured subreddits (credentials via `.env`).
 - Write rows into `data/trending_topics.db` with timestamp, source, title, tags.
 
 **Acceptance**

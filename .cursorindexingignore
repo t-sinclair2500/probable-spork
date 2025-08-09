@@ -13,3 +13,6 @@ data/trending_topics.db
 
 # Node/build (if introduced later)
 node_modules/
+
+# Archive directory (superseded docs)
+docs/archive/
