@@ -1,59 +1,43 @@
-import fcntl
 import json
 import os
-import pathlib
 import subprocess
 import sys
 import time
 from contextlib import contextmanager
 
-import yaml
-from rich import print
+# Ensure repo root is on sys.path so `bin.core` is importable when scripts are
+# invoked directly (not via Makefile that sets PYTHONPATH)
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
-BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# Delegate to bin.core for shared functionality to keep behavior consistent
+from bin.core import (  # type: ignore
+    BASE as CORE_BASE,
+    load_config as core_load_config,
+    log_state as core_log_state,
+    single_lock as core_single_lock,
+)
+
+BASE = CORE_BASE
 
 
 def load_global_config():
-    p = os.path.join(BASE, "conf", "global.yaml")
-    if not os.path.exists(p):
-        p = os.path.join(BASE, "conf", "global.example.yaml")
-    with open(p, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def env(key, default=""):
-    return os.environ.get(key, default)
-
-
-@contextmanager
-def single_lock():
-    lock_path = os.path.join(BASE, "jobs", "lock")
-    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR)
+    """Compatibility wrapper returning a dict, backed by bin.core.load_config()."""
+    cfg = core_load_config()
     try:
-        fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        yield
-    except BlockingIOError:
-        print("[yellow]Another job is running. Exiting.[/yellow]")
-        sys.exit(0)
-    finally:
-        try:
-            fcntl.lockf(fd, fcntl.LOCK_UN)
-            os.close(fd)
-            os.remove(lock_path)
-        except Exception:
-            pass
+        return cfg.model_dump()
+    except Exception:
+        # Fallback: shallow conversion
+        return json.loads(cfg.json())  # type: ignore
+
+
+def single_lock():  # type: ignore[override]
+    return core_single_lock()
 
 
 def log_state(step, status="OK", notes=""):
-    state_path = os.path.join(BASE, "jobs", "state.jsonl")
-    rec = {
-        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "step": step,
-        "status": status,
-        "notes": notes,
-    }
-    with open(state_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(rec) + "\n")
+    return core_log_state(step, status, notes)
 
 
 def paced_sleep(cfg, label="cooldown"):

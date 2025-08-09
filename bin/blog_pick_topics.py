@@ -40,26 +40,38 @@ def main():
     except Exception:
         pass
 
-    cutoff_ts = time.time() - (avoid_days * 86400)
-    recent_topics = set()
-    state_path = os.path.join(BASE, "jobs", "state.jsonl")
-    if os.path.exists(state_path):
-        with open(state_path, "r", encoding="utf-8") as f:
-            for line in f:
-                try:
-                    rec = json.loads(line)
-                    if rec.get("step") == "blog_post_wp":
-                        t = rec.get("ts")
-                        # crude check: keep recent topics by time cutoff if present in notes
-                        # not strictly reliable but avoids repeat often
-                except Exception:
-                    continue
+    cutoff = time.time() - (avoid_days * 86400)
+    recent = set()
+    ledger_path = os.path.join(BASE, "data", "recent_blog_topics.json")
+    if os.path.exists(ledger_path):
+        try:
+            recent_data = json.load(open(ledger_path, "r", encoding="utf-8"))
+            for item in recent_data:
+                if float(item.get("ts", 0)) >= cutoff:
+                    recent.add(item.get("topic", "").strip().lower())
+        except Exception:
+            recent = set()
 
-    pick = topics[0]
+    pick = None
+    for cand in topics:
+        t = (cand.get("topic") or "").strip().lower()
+        if t and t not in recent:
+            pick = cand
+            break
+    pick = pick or topics[0]
     work_dir = os.path.join(BASE, "data", "cache")
     os.makedirs(work_dir, exist_ok=True)
     out = os.path.join(work_dir, "blog_topic.json")
     json.dump(pick, open(out, "w", encoding="utf-8"), indent=2)
+    # Append to recent ledger
+    try:
+        data = []
+        if os.path.exists(ledger_path):
+            data = json.load(open(ledger_path, "r", encoding="utf-8"))
+        data.append({"ts": time.time(), "topic": pick.get("topic", "")})
+        json.dump(data[-100:], open(ledger_path, "w", encoding="utf-8"), indent=2)
+    except Exception:
+        pass
     log_state("blog_pick_topics", "OK", pick.get("topic", "(unknown)"))
     print(f"Picked topic: {pick.get('topic')} -> {out}")
 

@@ -17,7 +17,7 @@ def main():
     md_path = os.path.join(BASE, "data", "cache", "post.md")
     meta_path = os.path.join(BASE, "data", "cache", "post.meta.json")
     if not (os.path.exists(md_path) and os.path.exists(meta_path)):
-        print("No draft to render")
+        # Skip quietly in automated runs
         return
     md = open(md_path, "r", encoding="utf-8").read()
     html = markdown.markdown(md, extensions=["extra", "sane_lists", "toc"])

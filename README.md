@@ -28,7 +28,8 @@ ollama pull phi3:mini
 4) **Build whisper.cpp (optional for captions)**
 ```bash
 git clone https://github.com/ggerganov/whisper.cpp.git ~/whisper.cpp
-cd ~/whisper.cpp && make -j4
+cd ~/whisper.cpp && cmake -B build && cmake --build build -j --config Release
+bash models/download-ggml-model.sh base.en
 ```
 
 5) **Copy config and set values**
@@ -36,7 +37,8 @@ cd ~/whisper.cpp && make -j4
 cp conf/global.example.yaml conf/global.yaml
 cp .env.example .env
 # Edit conf/global.yaml to set niches, tone, video length, etc.
-# Edit .env for API keys if you plan to use any optional cloud services.
+# Edit .env (from .env.example) for API keys (assets providers, ingestion, optional fallbacks).
+# Note: Paths auto-detect based on your environment (Mac dev vs Pi production)
 ```
 
 6) **Seed cron (optional)**
@@ -98,6 +100,7 @@ python bin/blog_ping_search.py
 ```
 
 > By default, posting uses a **dry-run** mode (prints JSON) until you toggle `DRY_RUN=False` in `bin/blog_post_wp.py`.
+> Prefer setting `BLOG_DRY_RUN=false` in `.env` instead of editing code.
 
 
 ## Cron (Unified Seed)
@@ -121,6 +124,21 @@ Each script is lock-aware and exits if another heavy step is in progress.
 - `make health` — start local health server
 
 ## Health server
+## Configuration reference
+
+- `.env` (copy from `.env.example`)
+  - PIXABAY_API_KEY, PEXELS_API_KEY (assets)
+  - Optional: UNSPLASH_ACCESS_KEY (only if enabled later)
+  - Optional ingestion: YOUTUBE_API_KEY or GOOGLE_API_KEY; REDDIT_CLIENT_ID/SECRET/USER_AGENT
+  - Optional fallbacks: OPENAI_API_KEY
+  - BLOG_DRY_RUN=true|false
+
+- `conf/global.yaml`
+  - `limits.max_retries` controls API backoff retries for providers.
+  - `assets.providers` currently supports `pixabay`, `pexels`.
+  - To add Unsplash, enable in config and add key to `.env` (code support TBD).
+
+- `conf/sources.yaml` is deprecated; use `.env` for keys.
 After running `scripts/install_systemd_and_logrotate.sh`, visit:
 ```
 http://<pi-lan-ip>:8088/health

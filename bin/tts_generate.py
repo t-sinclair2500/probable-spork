@@ -42,7 +42,7 @@ def synthesize_placeholder_wav(text: str, wav_out: str):
     dur_sec = max(3, min(10, int(len(text.split()) / 3) or 3))
     # 220 Hz sine tone
     subprocess.run(
-        f'ffmpeg -y -f lavfi -i synthesis=sin(220):sample_rate=22050:duration={dur_sec} "{wav_out}"',
+        f'ffmpeg -y -f lavfi -i sine=frequency=220:sample_rate=22050:duration={dur_sec} "{wav_out}"',
         shell=True,
         check=False,
     )
@@ -92,11 +92,12 @@ def main():
         print("Voiceover already exists; skipping.")
         return
 
-    # Try Coqui TTS if available and configured
+    # Try Coqui TTS if available and configured; otherwise optional OpenAI TTS; else placeholder
     wav_tmp = out_mp3.replace(".mp3", ".wav")
     used = "placeholder"
     try:
-        if getattr(cfg.tts, "provider", "coqui").lower() == "coqui":
+        provider = getattr(cfg.tts, "provider", "coqui").lower()
+        if provider == "coqui":
             try:
                 from TTS.api import TTS  # type: ignore
 
@@ -106,10 +107,53 @@ def main():
                 used = "coqui"
             except Exception:
                 synthesize_placeholder_wav(text, wav_tmp)
-        elif getattr(cfg.tts, "provider", "").lower() == "openai" and env.get("OPENAI_API_KEY"):
-            # Minimal fallback via placeholder to keep pipeline moving when not implemented
-            synthesize_placeholder_wav(text, wav_tmp)
-            used = "openai"
+        elif (provider == "openai" or getattr(cfg.tts, "openai_enabled", False)) and env.get("OPENAI_API_KEY"):
+            try:
+                # Use OpenAI speech synthesis REST API to produce MP3 directly
+                import requests
+
+                api_key = env.get("OPENAI_API_KEY")
+                voice = "alloy"
+                out_mp3_tmp = out_mp3 + ".tmp.mp3"
+                r = requests.post(
+                    "https://api.openai.com/v1/audio/speech",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "gpt-4o-mini-tts",
+                        "voice": voice,
+                        "input": text,
+                        "format": "mp3",
+                    },
+                    timeout=600,
+                )
+                if r.ok:
+                    with open(out_mp3_tmp, "wb") as f:
+                        f.write(r.content)
+                    # Normalize to final MP3 via loudnorm
+                    subprocess.run(
+                        f'ffmpeg -y -i "{out_mp3_tmp}" -af loudnorm=I=-16:TP=-1.5:LRA=11 -codec:a libmp3lame -qscale:a 2 "{out_mp3}"',
+                        shell=True,
+                        check=False,
+                    )
+                    try:
+                        os.remove(out_mp3_tmp)
+                    except Exception:
+                        pass
+                    used = "openai"
+                    # Clean up and return early since MP3 written
+                    dur = ffprobe_duration(out_mp3)
+                    log_state("tts_generate", "OK", f"{os.path.basename(out_mp3)};prov={used};dur={round(dur,1)}s")
+                    print(f"Wrote VO {out_mp3} via {used} ({round(dur,1)}s)")
+                    return
+                else:
+                    synthesize_placeholder_wav(text, wav_tmp)
+                    used = "placeholder"
+            except Exception:
+                synthesize_placeholder_wav(text, wav_tmp)
+                used = "placeholder"
         else:
             synthesize_placeholder_wav(text, wav_tmp)
     except Exception:

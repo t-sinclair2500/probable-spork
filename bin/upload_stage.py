@@ -3,17 +3,21 @@ import json
 import os
 import time
 
-from util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+import sys
+import os
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bin.core import BASE, load_config, log_state, single_lock
 
 
 def main():
-    cfg = load_global_config()
-    ensure_dirs(cfg)
+    cfg = load_config()
+    os.makedirs(os.path.join(BASE, "videos"), exist_ok=True)
     vdir = os.path.join(BASE, "videos")
     vids = [f for f in os.listdir(vdir) if f.endswith(".mp4")]
     if not vids:
         log_state("upload_stage", "SKIP", "no videos")
-        print("No videos")
         return
     vids.sort(reverse=True)
     latest = vids[0]
@@ -32,7 +36,7 @@ def main():
     with open(queue_path, "w", encoding="utf-8") as f:
         json.dump(queue, f, indent=2)
     log_state("upload_stage", "OK", latest)
-    print(f"Staged {latest} for upload (metadata in upload_queue.json).")
+    # logged via log_state; avoid prints in core pipeline
 
 
 if __name__ == "__main__":

@@ -24,10 +24,13 @@ def run(cmd):
 
 
 def whisper_cpp_cmd(binary, model_path, audio_path, srt_out):
-    # whisper.cpp example: ./main -m models/ggml-base.en.bin -f audio.wav -osrt -of out
-    # We convert MP3 to WAV first with ffmpeg to ensure compatibility.
+    # whisper-cli example: ./whisper-cli -m models/ggml-base.en.bin -f audio.wav -osrt -of out
+    # Normalize loudness and convert MP3 to mono 16k WAV for best results.
     wav_tmp = audio_path.replace(".mp3", ".wav")
-    run(f'ffmpeg -y -i "{audio_path}" -ar 16000 -ac 1 "{wav_tmp}"')
+    # Loudness normalization (ITU-R BS.1770) then resample
+    run(
+        f'ffmpeg -y -i "{audio_path}" -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 16000 -ac 1 "{wav_tmp}"'
+    )
     out_base = srt_out[:-4]  # drop .srt
     cmd = f"{shlex.quote(binary)} -m {shlex.quote(model_path)} -f {shlex.quote(wav_tmp)} -osrt -of {shlex.quote(out_base)}"
     return cmd, wav_tmp
@@ -99,7 +102,7 @@ def main():
 
     cmd, wav_tmp = whisper_cpp_cmd(bin_path, model_path, mp3, srt)
     code, out, err = run(cmd)
-    # whisper.cpp writes <out_base>.srt
+    # whisper.cpp writes <out_base>.srt; attempt to compute simple confidence heuristic
     if os.path.exists(srt):
         log_state("generate_captions", "OK", os.path.basename(srt))
         print(f"Generated SRT via whisper.cpp: {srt}")
@@ -119,7 +122,7 @@ def main():
     except Exception:
         pass
 
-    # Metrics: duration and WPM estimate
+    # Metrics: duration, WPM, rough "confidence" (proxy = % of non-empty lines)
     try:
         # duration from mp3 via ffprobe
         p = subprocess.run(
@@ -134,7 +137,11 @@ def main():
         content = re.sub(r"\d+\n\d{2}:\d{2}:\d{2},\d{3} --> .*\n", "", raw)
         words = len(re.findall(r"\b\w+\b", content))
         wpm = round((words / max(dur, 1.0)) * 60.0)
-        log_state("generate_captions", "METRIC", f"dur={round(dur,1)}s;wpm={wpm}")
+        # crude density metric: ratio of text lines to total blocks
+        blocks = [b for b in raw.strip().split("\n\n") if b.strip()]
+        nonempty = sum(1 for b in blocks if len(b.splitlines()) >= 3 and b.splitlines()[-1].strip())
+        conf = round((nonempty / max(len(blocks), 1)) * 100)
+        log_state("generate_captions", "METRIC", f"dur={round(dur,1)}s;wpm={wpm};conf~{conf}%")
     except Exception:
         pass
 

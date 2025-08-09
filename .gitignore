@@ -166,6 +166,7 @@ cython_debug/
 
 # Project specific
 data/cache/
+data/upload_queue.json
 logs/
 *.tmp
 *.temp

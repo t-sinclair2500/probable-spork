@@ -301,6 +301,43 @@ def download_pexels(query: str, out_dir: str, per_query_max: int, env: dict) -> 
     return items
 
 
+def download_unsplash(query: str, out_dir: str, per_query_max: int, env: dict) -> List[ProviderResult]:
+    key = env.get("UNSPLASH_ACCESS_KEY", "")
+    if not key:
+        return []
+    items: List[ProviderResult] = []
+    headers = {"Authorization": f"Client-ID {key}"}
+    url = f"https://api.unsplash.com/search/photos?query={requests.utils.quote(query)}&per_page={per_query_max}"
+    try:
+        data = http_get_json(url, headers=headers)
+        for photo in data.get("results", []) or []:
+            src = (photo.get("urls") or {}).get("regular") or (photo.get("urls") or {}).get("full")
+            page = photo.get("links", {}).get("html") or src
+            author = (photo.get("user") or {}).get("name", "")
+            if not src:
+                continue
+            ext = os.path.splitext((src.split("?")[0]) or "")[1] or ".jpg"
+            fname = f"unsplash_{slugify(query)}_{photo.get('id', int(time.time()))}{ext}"
+            fp = os.path.join(out_dir, fname)
+            try:
+                content = http_get_bytes(src, headers=headers)
+                with open(fp, "wb") as f:
+                    f.write(content)
+                items.append(
+                    ProviderResult(
+                        provider="unsplash",
+                        url=str(page or src),
+                        file_path=fp,
+                        license="Unsplash License — Free to use (Attribution required)",
+                        author=author,
+                    )
+                )
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return items
+
 def load_outline_for_slug(slug: str) -> Optional[dict]:
     sdir = os.path.join(BASE, "scripts")
     # Find matching outline file by slug prefix
@@ -387,6 +424,8 @@ def main():
                         fetched = download_pixabay(q, out_dir, per_query_max, env)
                     elif p == "pexels":
                         fetched = download_pexels(q, out_dir, per_query_max, env)
+                    elif p == "unsplash":
+                        fetched = download_unsplash(q, out_dir, per_query_max, env)
                     else:
                         fetched = []
                     break

@@ -72,6 +72,34 @@ def recent_posts(base, auth, n=10):
     return r.json()
 
 
+def find_assets_for_slug(slug: str):
+    # Try to locate assets folder named like <date>_<slug>
+    import glob
+
+    pattern = os.path.join(BASE, "assets", f"*_{slug}")
+    folders = sorted(glob.glob(pattern), reverse=True)
+    if not folders:
+        return []
+    adir = folders[0]
+    files = []
+    for f in sorted(os.listdir(adir)):
+        if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            files.append(os.path.join(adir, f))
+    return files
+
+
+def upload_media(base, auth, file_path):
+    import mimetypes
+
+    url = f"{base}/wp-json/wp/v2/media"
+    mime = mimetypes.guess_type(file_path)[0] or "image/jpeg"
+    with open(file_path, "rb") as f:
+        files = {"file": (os.path.basename(file_path), f, mime)}
+        r = requests.post(url, auth=auth, files=files, timeout=120)
+    r.raise_for_status()
+    return r.json().get("id")
+
+
 def main():
     cfg = load_config()
     env = load_env()
@@ -112,6 +140,17 @@ def main():
         payload["categories"] = [cat_id]
         if tag_ids:
             payload["tags"] = tag_ids
+    except Exception:
+        pass
+
+    # Attempt to upload a featured image from assets if present
+    try:
+        base, auth = wp_auth(bcfg)
+        assets = find_assets_for_slug(meta.get("slug", ""))
+        if assets:
+            mid = upload_media(base, auth, assets[0])
+            if mid:
+                payload["featured_media"] = mid
     except Exception:
         pass
 

@@ -186,10 +186,10 @@ def main():
                 clip = ken_burns_imageclip(img_path, sec, W, H)
             else:
                 # Fallback: black frame
-                black = ImageClip(color=(0, 0, 0), size=(W, H)).set_duration(sec)
+                black = ColorClip(size=(W, H), color=(0, 0, 0)).set_duration(sec)
                 clip = black
         except Exception:
-            black = ImageClip(color=(0, 0, 0), size=(W, H)).set_duration(sec)
+            black = ColorClip(size=(W, H), color=(0, 0, 0)).set_duration(sec)
             clip = black
         used_assets.add(os.path.basename(asset) if asset else f"black_{len(timeline_clips)}")
 
@@ -238,7 +238,10 @@ def main():
             audio = CompositeAudioClip([vo_clip, music.volumex(gain)])
         except Exception:
             pass
-    video = video.set_audio(audio).set_duration(max(vo_clip.duration, video.duration))
+    # Clamp final duration to avoid seeking past end of audio due to float rounding.
+    safe_audio_dur = max(0.0, float(getattr(vo_clip, "duration", 0.0)) - 0.05)
+    target_dur = max(0.0, min(float(getattr(video, "duration", 0.0)), safe_audio_dur)) or float(getattr(video, "duration", 0.0))
+    video = video.set_audio(audio).set_duration(target_dur)
 
     # Export
     video.write_videofile(

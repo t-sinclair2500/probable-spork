@@ -76,10 +76,48 @@ class StorageCfg(BaseModel):
     jobs_dir: str = "jobs"
 
 
+def _default_whisper_paths():
+    """Smart defaults for whisper.cpp paths based on platform"""
+    import platform
+    home = os.path.expanduser("~")
+    
+    # Check common whisper.cpp locations
+    possible_paths = [
+        f"{home}/whisper.cpp/build/bin/whisper-cli",  # Standard user install
+        "/usr/local/bin/whisper-cli",                 # System install
+        "/opt/whisper.cpp/build/bin/whisper-cli",     # Alternative location
+    ]
+    
+    possible_models = [
+        f"{home}/whisper.cpp/models/ggml-base.en.bin",
+        "/usr/local/share/whisper.cpp/models/ggml-base.en.bin",
+        "/opt/whisper.cpp/models/ggml-base.en.bin",
+    ]
+    
+    # Find first existing binary
+    binary_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            binary_path = path
+            break
+    
+    # Find first existing model
+    model_path = None
+    for path in possible_models:
+        if os.path.exists(path):
+            model_path = path
+            break
+    
+    # Fallback to standard Pi paths if nothing found
+    return {
+        "binary": binary_path or f"{home}/whisper.cpp/build/bin/whisper-cli",
+        "model": model_path or f"{home}/whisper.cpp/models/ggml-base.en.bin"
+    }
+
 class ASRCfg(BaseModel):
     provider: str = "whisper_cpp"
-    whisper_cpp_path: str = "/home/pi/whisper.cpp/main"
-    model: str = "ggml-base.en.bin"
+    whisper_cpp_path: str = Field(default_factory=lambda: _default_whisper_paths()["binary"])
+    model: str = Field(default_factory=lambda: _default_whisper_paths()["model"])
     openai_enabled: bool = False
 
 
@@ -114,6 +152,10 @@ class LicensesCfg(BaseModel):
     require_attribution: bool = True
 
 
+class LimitsCfg(BaseModel):
+    max_retries: int = 2
+
+
 class GlobalCfg(BaseModel):
     storage: StorageCfg
     pipeline: PipelineCfg
@@ -124,6 +166,7 @@ class GlobalCfg(BaseModel):
     render: RenderCfg
     upload: UploadCfg
     licenses: LicensesCfg
+    limits: LimitsCfg = Field(default_factory=LimitsCfg)
 
 
 def load_yaml(path: str) -> dict:
@@ -136,6 +179,20 @@ def load_config() -> GlobalCfg:
     if not os.path.exists(path):
         path = os.path.join(BASE, "conf", "global.example.yaml")
     raw = load_yaml(path)
+    
+    # Handle auto-detection for whisper.cpp paths
+    if raw.get("asr", {}).get("whisper_cpp_path") == "auto":
+        defaults = _default_whisper_paths()
+        raw["asr"]["whisper_cpp_path"] = defaults["binary"]
+    
+    if raw.get("asr", {}).get("model") == "auto":
+        defaults = _default_whisper_paths()
+        raw["asr"]["model"] = defaults["model"]
+    
+    # Handle relative base_dir
+    if raw.get("storage", {}).get("base_dir") == ".":
+        raw["storage"]["base_dir"] = BASE
+    
     try:
         cfg = GlobalCfg(**raw)
     except ValidationError as e:

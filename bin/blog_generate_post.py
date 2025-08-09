@@ -11,7 +11,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock  # noqa: E402
+from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock, parse_llm_json  # noqa: E402
 
 
 def load_blog_cfg():
@@ -43,38 +43,94 @@ def main():
     work = os.path.join(BASE, "data", "cache", "blog_topic.json")
     if not os.path.exists(work):
         log_state("blog_generate_post", "SKIP", "no topic")
-        print("No topic")
         return
     topic = json.load(open(work, "r", encoding="utf-8")).get("topic", "AI tools that save time")
     sfile = choose_script_for_topic(topic)
     if not sfile:
         log_state("blog_generate_post", "SKIP", "no scripts")
-        print("No scripts")
         return
     text = open(sfile, "r", encoding="utf-8").read()
-    # Minimal rewrite: convert to markdown using tone and word bounds
-    tone = "informative"
-    try:
-        tone = getattr(cfg, "blog", None) and getattr(cfg.blog, "tone", "informative") or "informative"
-    except Exception:
-        pass
-    target_words = 900
-    try:
-        mn = getattr(cfg.blog, "min_words", 800)
-        mx = getattr(cfg.blog, "max_words", 1500)
-        target_words = int((mn + mx) / 2)
-    except Exception:
-        pass
-    intro = text.splitlines()[0:20]
-    md = (
-        f"# {topic}\n\n"
-        f"> {tone.title()} article generated from the video script on {time.strftime('%Y-%m-%d')}.\n\n"
-        f"## Introduction\n\n"
-        + "\n".join(intro)[:600]
-        + "\n\n## Key Points\n\n- Point A\n- Point B\n- Point C\n\n"
-        + "## FAQ\n\n- **Q:** What is this?\n  **A:** Auto-generated blog draft.\n\n"
-        + "## Conclusion\n\nThanks for reading."
+    # Iterative LLM rewrite pipeline with separate roles: writer -> copyeditor -> SEO polish
+    tone = getattr(getattr(cfg, "blog", object()), "tone", "informative")
+    mn = int(getattr(getattr(cfg, "blog", object()), "min_words", 800))
+    mx = int(getattr(getattr(cfg, "blog", object()), "max_words", 1500))
+    include_faq = bool(getattr(getattr(cfg, "blog", object()), "include_faq", True))
+    cta = getattr(getattr(cfg, "blog", object()), "inject_cta", "Thanks for reading.")
+
+    import requests
+    # Stage 1: Draft writer
+    writer_prompt = (
+        "You are a content strategist. Rewrite the given video script into a polished blog post in Markdown.\n\n"
+        "Requirements:\n"
+        "- Use the specified tone.\n"
+        "- Target total words between MIN_WORDS and MAX_WORDS.\n"
+        "- Structure: H1 title, intro, H2/H3 sections, bullets, optional FAQ, clear CTA.\n"
+        "- Add natural subheadings and short paragraphs (2–4 sentences).\n"
+        "- Do NOT include any front matter. Return PLAIN MARKDOWN only.\n\n"
+        f"TONE: {tone}\nMIN_WORDS: {mn}\nMAX_WORDS: {mx}\nINCLUDE_FAQ: {str(include_faq).lower()}\nINJECT_CTA: {cta}\n\n"
+        "SCRIPT:\n" + text
     )
+    writer_payload = {"model": cfg.llm.model, "prompt": writer_prompt, "stream": False}
+    md1 = None
+    try:
+        r = requests.post(cfg.llm.endpoint, json=writer_payload, timeout=600)
+        if r.ok:
+            md1 = r.json().get("response", "").strip()
+    except Exception:
+        md1 = None
+
+    # Stage 2: Copyediting pass (grammar, flow, tone consistency)
+    md2 = md1
+    if md1:
+        ce_prompt = (
+            "You are a copyediting agent. Improve grammar, clarity, and flow. Keep the original structure and headings.\n"
+            "Return PLAIN MARKDOWN only.\n\n"
+            "ARTICLE:\n" + md1
+        )
+        try:
+            r2 = requests.post(cfg.llm.endpoint, json={"model": cfg.llm.model, "prompt": ce_prompt, "stream": False}, timeout=600)
+            if r2.ok:
+                md2 = r2.json().get("response", "").strip()
+        except Exception:
+            md2 = md1
+
+    # Stage 3: SEO polish (title length, meta description suggestion inline as comments)
+    md3 = md2
+    if md2:
+        seo_prompt = (
+            "You are an SEO copywriter. Tighten the title (≤65 chars) and ensure concise subheads.\n"
+            "Insert a one-line meta description suggestion as an HTML comment at the top.\n"
+            "Return PLAIN MARKDOWN only.\n\n"
+            "ARTICLE:\n" + md2
+        )
+        try:
+            r3 = requests.post(cfg.llm.endpoint, json={"model": cfg.llm.model, "prompt": seo_prompt, "stream": False}, timeout=600)
+            if r3.ok:
+                md3 = r3.json().get("response", "").strip()
+        except Exception:
+            md3 = md2
+
+    md = md3 or ("# " + topic + "\n\n" + text[:800])
+
+    # Inline image reuse from assets folder when available
+    try:
+        base_key = os.path.basename(sfile).replace(".txt", "")
+        assets_dir = os.path.join(BASE, "assets", base_key)
+        if os.path.isdir(assets_dir):
+            imgs = [f for f in os.listdir(assets_dir) if f.lower().endswith((".jpg",".jpeg",".png",".webp"))]
+            imgs.sort()
+            if imgs:
+                inject = []
+                for f in imgs[: min(4, len(imgs))]:
+                    alt = os.path.splitext(os.path.basename(f))[0].replace("-"," ")
+                    inject.append(f"![{alt}](assets/{base_key}/{f})")
+                # Append an Images section if not already present
+                if "\n## Images\n" not in md:
+                    md = md + "\n\n## Images\n\n" + "\n".join(inject) + "\n"
+                else:
+                    md = md + "\n" + "\n".join(inject) + "\n"
+    except Exception:
+        pass
     out_md = os.path.join(BASE, "data", "cache", "post.md")
     meta = {
         "title": topic.title(),
@@ -90,7 +146,7 @@ def main():
     )
     open(out_md, "w", encoding="utf-8").write(md)
     log_state("blog_generate_post", "OK", os.path.basename(out_md))
-    print(f"Wrote {out_md} and post.meta.json (placeholder).")
+    log.info(f"Wrote {out_md} and post.meta.json (placeholder).")
 
 
 if __name__ == "__main__":

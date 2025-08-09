@@ -6,7 +6,12 @@ import sqlite3
 import time
 
 import requests
-from util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+import sys
+import os
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bin.core import BASE, load_config, log_state, single_lock
 
 try:
     from bin.core import parse_llm_json  # when repo root is on sys.path
@@ -36,8 +41,8 @@ def call_ollama(prompt, cfg):
 
 
 def main():
-    cfg = load_global_config()
-    ensure_dirs(cfg)
+    cfg = load_config()
+    os.makedirs(os.path.join(BASE, "data"), exist_ok=True)
     # Collect recent titles/tags from sqlite
     db_path = os.path.join(BASE, "data", "trending_topics.db")
     rows = []

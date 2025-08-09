@@ -5,12 +5,17 @@ import re
 import time
 
 import requests
-from util import BASE, ensure_dirs, load_global_config, log_state, single_lock
+import sys
+import os
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from bin.core import BASE, load_config, log_state, single_lock
 
 
 def call_ollama(prompt, cfg):
-    url = cfg["llm"]["endpoint"]
-    model = cfg["llm"]["model"]
+    url = cfg.llm.endpoint
+    model = cfg.llm.model
     payload = {"model": model, "prompt": prompt, "stream": False}
     r = requests.post(url, json=payload, timeout=1200)
     r.raise_for_status()
@@ -18,8 +23,8 @@ def call_ollama(prompt, cfg):
 
 
 def main():
-    cfg = load_global_config()
-    ensure_dirs(cfg)
+    cfg = load_config()
+    os.makedirs(os.path.join(BASE, "scripts"), exist_ok=True)
     qpath = os.path.join(BASE, "data", "topics_queue.json")
     topics = json.load(open(qpath, "r")) if os.path.exists(qpath) else []
     topic = topics[0]["topic"] if topics else "AI tools that save time"
@@ -27,8 +32,8 @@ def main():
     with open(os.path.join(BASE, "prompts", "outline.txt"), "r", encoding="utf-8") as f:
         template = f.read()
     # Include tone and target duration hints from config to steer the outline
-    tone = cfg.get("pipeline", {}).get("tone", "informative")
-    target_len_sec = int(cfg.get("pipeline", {}).get("video_length_seconds", 420))
+    tone = cfg.pipeline.tone
+    target_len_sec = cfg.pipeline.video_length_seconds
     prompt = (
         template.replace("{topic}", topic).replace("{seed_keywords}", ", ".join(seed_keywords))
         + f"\nTone: {tone}. Target length (sec): {target_len_sec}."
