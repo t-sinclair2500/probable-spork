@@ -8,6 +8,7 @@ Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts
 - **Required**: Python 3.9, 3.10, or 3.11
 - **NOT Supported**: Python 3.12+ (breaks MoviePy compatibility)
 - **Recommended**: Python 3.11 (optimal performance and compatibility)
+- **macOS Note**: Always use `venv/bin/python` for compatibility (Python 3.11)
 
 1) **Install system deps**
 ```bash
@@ -58,13 +59,24 @@ cp .env.example .env
 **Environment Setup Note**: `.env` files are excluded from version control for security. The comprehensive `.env.example` file documents all available environment variables with examples and setup instructions. Copy it to `.env` and configure your actual API keys and credentials.
 
 6) **Seed cron (optional)**
-See `crontab.seed.txt`. Apply with:
+See `ops/crontab.seed.txt`. Apply with:
 ```bash
-crontab crontab.seed.txt
+crontab ops/crontab.seed.txt
 ```
 
 7) **Run a full cycle manually (first time)**
 ```bash
+# macOS: Use virtual environment Python directly
+venv/bin/python bin/niche_trends.py
+venv/bin/python bin/llm_cluster.py
+venv/bin/python bin/llm_outline.py
+venv/bin/python bin/llm_script.py
+venv/bin/python bin/fetch_assets.py
+venv/bin/python bin/tts_generate.py
+venv/bin/python bin/assemble_video.py
+venv/bin/python bin/upload_stage.py
+
+# Linux: Activate virtual environment first
 source .venv/bin/activate
 python bin/niche_trends.py
 python bin/llm_cluster.py
@@ -85,6 +97,24 @@ python bin/upload_stage.py
 
 - Asset fetcher records license info per asset directory. You must respect each source’s license terms.
 - Cloud services are optional and OFF by default; enabling them may incur costs.
+
+## Python Version Compatibility
+
+### Version Checker
+Run the built-in version checker to ensure compatibility:
+```bash
+# Check current Python version and get guidance
+venv/bin/python bin/run_with_venv.py
+
+# Or check manually
+venv/bin/python --version  # Should show Python 3.11.x
+```
+
+### Why Python 3.11?
+- **MoviePy Compatibility**: MoviePy 1.0.3 has known issues with Python 3.12+
+- **Dependency Stability**: All tested dependencies work reliably with Python 3.11
+- **Performance**: Optimal performance for video processing tasks
+- **Hardware Acceleration**: Full support for macOS VideoToolbox integration
 
 ## Enhanced Features
 
@@ -210,10 +240,10 @@ All publishing operations use **centralized flag governance** with clear precede
 
 ## Cron (Unified Seed)
 
-A unified crontab is provided in `crontab.seed.txt` that schedules shared ingestion, the YouTube lane, the Blog lane, and health checks. Apply it with:
+A unified crontab is provided in `ops/crontab.seed.txt` that schedules shared ingestion, the YouTube lane, the Blog lane, and health checks. Apply it with:
 
 ```bash
-crontab crontab.seed.txt
+crontab ops/crontab.seed.txt
 ```
 
 Each script is lock-aware and exits if another heavy step is in progress.
@@ -229,6 +259,18 @@ Each script is lock-aware and exits if another heavy step is in progress.
 - `make health` — start local health server
 
 ## Health server
+
+## Documentation
+
+For comprehensive documentation, see the organized structure in the `docs/` directory:
+
+- **[docs/README.md](docs/README.md)** - Complete documentation index
+- **Architecture**: `ARCHITECTURE.md` - System design and contracts
+- **Operations**: `docs/operational/` - Runbooks, checklists, and procedures
+- **Strategy**: `docs/strategy/` - Monetization and project goals
+- **Technical**: `docs/technical/` - Implementation details and optimizations
+- **Security**: `docs/security/` - Security assessments and compliance
+
 ## Configuration reference
 
 - `.env` (copy from `.env.example`)

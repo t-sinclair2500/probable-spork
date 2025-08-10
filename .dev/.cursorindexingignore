@@ -1,0 +1,30 @@
+# Exclude from Cursor background indexing (but still accessible when explicitly referenced)
+
+# Large or noisy directories
+assets/
+voiceovers/
+videos/
+exports/
+
+# Virtual environment and caches
+venv/
+.pytest_cache/
+data/cache/
+
+# Large data files
+data/trending_topics.db
+data/analytics/
+
+# Generated content and logs
+jobs/
+logs/
+
+# System configuration
+services/
+ops/
+
+# Archive directory (superseded docs)
+docs/archive/
+
+# Node/build (if introduced later)
+node_modules/

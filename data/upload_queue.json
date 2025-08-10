@@ -45,12 +45,20 @@
     "visibility": "public"
   },
   {
-    "file": "/Users/tylersinclair/Documents/GitHub/probable-spork/videos/backup_video.mp4",
-    "title": "backup_video",
-    "description": "Auto-generated video.",
+    "file": "/Users/tylersinclair/Documents/GitHub/probable-spork/videos/2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby_cc.mp4",
+    "title": "5 Proven Tips to Get Through the 4-Month Sleep Regression with Your Baby",
+    "description": "Discover proven strategies to help your baby navigate the 4-month sleep regression and establish healthy sleep habits for life. Learn about establishing bedtime routines, recognizing sleepy cues, creating sleep-conducive environments, avoiding overstimulation, and maintaining consistency.",
     "tags": [
-      "education"
+      "baby sleep",
+      "4 month regression", 
+      "sleep training",
+      "parenting tips",
+      "baby development",
+      "sleep regression",
+      "bedtime routine",
+      "baby sleep tips"
     ],
-    "visibility": "public"
+    "visibility": "public",
+    "category_id": "27"
   }
 ]

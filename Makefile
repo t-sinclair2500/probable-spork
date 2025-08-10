@@ -98,7 +98,7 @@ blog-once:
 	$(PY) bin/blog_ping_search.py
 
 cron-install:
-	crontab crontab.seed.txt
+	crontab ops/crontab.seed.txt
 
 backup:
 	bash bin/backup_wp.sh

@@ -67,6 +67,29 @@ def ffprobe_duration(path: str) -> float:
         return 0.0
 
 
+def check_hardware_acceleration(codec: str) -> str:
+    """Check if hardware acceleration codec is available, fallback to software if not."""
+    if codec == "h264_videotoolbox":
+        try:
+            # Check if VideoToolbox is available
+            result = subprocess.run(
+                ["ffmpeg", "-encoders"], 
+                capture_output=True, 
+                text=True, 
+                check=False
+            )
+            if "h264_videotoolbox" in result.stdout:
+                log.info("VideoToolbox hardware acceleration available")
+                return codec
+            else:
+                log.warning("VideoToolbox not available, falling back to software encoding")
+                return "libx264"
+        except Exception:
+            log.warning("Could not check VideoToolbox availability, falling back to software encoding")
+            return "libx264"
+    return codec
+
+
 def best_asset_for_query(assets_dir: str, query: str, used: set, available_assets: list = None, fallback_index: int = 0) -> str:
     """Select best asset for query with deterministic fallback for coverage."""
     files = [f for f in os.listdir(assets_dir) if os.path.isfile(os.path.join(assets_dir, f)) and not f.endswith((".json", ".txt"))]
@@ -468,14 +491,25 @@ def main(brief=None):
     video = video.set_audio(audio).set_duration(target_dur)
 
     # Export
+    codec_to_use = cfg.render.codec
+    if cfg.render.use_hardware_acceleration:
+        codec_to_use = check_hardware_acceleration(codec_to_use)
+    
+    log.info(f"Using video codec: {codec_to_use} (hardware acceleration: {cfg.render.use_hardware_acceleration})")
+    
     video.write_videofile(
         out_mp4,
-        codec="libx264",
+        codec=codec_to_use,  # Use configured codec (hardware acceleration)
         audio_codec="aac",
         fps=int(cfg.render.fps),
         bitrate=cfg.render.target_bitrate,
-        threads=2,
-        ffmpeg_params=["-pix_fmt", "yuv420p"],
+        threads=cfg.render.threads,  # Use configured thread count
+        ffmpeg_params=[
+            "-pix_fmt", "yuv420p",
+            "-preset", cfg.render.preset,  # Use configured preset
+            "-crf", str(cfg.render.crf),  # Use configured CRF quality
+            "-movflags", "+faststart",  # Optimize for web streaming
+        ],
         verbose=True,
         logger=TenSecProgressLogger(emit_interval_seconds=10.0),
     )
@@ -485,8 +519,8 @@ def main(brief=None):
     if getattr(cfg.pipeline, "enable_captions", True) and os.path.exists(srt):
         try:
             burned = out_mp4.replace(".mp4", "_cc.mp4")
-            # Use ffmpeg subtitles filter
-            cmd = f"ffmpeg -y -i {shlex.quote(out_mp4)} -vf subtitles={shlex.quote(srt)} -c:a copy -c:v libx264 -pix_fmt yuv420p {shlex.quote(burned)}"
+            # Use ffmpeg subtitles filter with configured codec
+            cmd = f"ffmpeg -y -i {shlex.quote(out_mp4)} -vf subtitles={shlex.quote(srt)} -c:a copy -c:v {cfg.render.codec} -pix_fmt yuv420p {shlex.quote(burned)}"
             subprocess.run(cmd, shell=True, check=False)
             if os.path.exists(burned):
                 final_out = burned

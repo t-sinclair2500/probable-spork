@@ -252,7 +252,7 @@ Acceptance Criteria
   - [x] Last successful step analysis from state logs
   - [x] System resource monitoring (CPU temp, disk usage)
 
-### F3. Cron — `crontab.seed.txt` [x DONE]
+### F3. Cron — `ops/crontab.seed.txt` [x DONE]
 - [x] Ensure steps align with dependency order and are lock-aware.
 
 ### F4. Backups — `bin/backup_repo.sh`, `bin/backup_wp.sh` [x DONE]

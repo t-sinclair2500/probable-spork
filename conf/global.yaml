@@ -44,6 +44,7 @@ assets:
     # - "unsplash"  # Uncomment and add UNSPLASH_ACCESS_KEY to .env for attribution-required assets
   max_per_section: 3
 
+# Video rendering and performance settings
 render:
   resolution: "1920x1080"
   fps: 30
@@ -51,6 +52,11 @@ render:
   duck_db: -15
   xfade_ms: 250
   target_bitrate: "4000k"
+  codec: "h264_videotoolbox"  # Hardware acceleration
+  preset: "fast"  # Encoding speed vs quality trade-off
+  crf: 23  # Quality setting (18-28 range, lower = better quality)
+  threads: 0  # Auto-detect optimal thread count
+  use_hardware_acceleration: true  # Enable/disable hardware acceleration
 
 licenses:
   require_attribution: true

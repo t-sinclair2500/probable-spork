@@ -140,6 +140,11 @@ class RenderCfg(BaseModel):
     duck_db: int = -15
     xfade_ms: int = 250
     target_bitrate: str = "4000k"
+    codec: str = "h264_videotoolbox"  # Hardware acceleration
+    preset: str = "fast"  # Encoding speed vs quality trade-off
+    crf: int = 23  # Quality setting (18-28 range, lower = better quality)
+    threads: int = 0  # Auto-detect optimal thread count
+    use_hardware_acceleration: bool = True  # Enable/disable hardware acceleration
 
 
 class UploadCfg(BaseModel):
