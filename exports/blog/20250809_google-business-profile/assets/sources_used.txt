@@ -1,0 +1,2 @@
+# Asset sources (REUSE mode)
+fixtures://test_fixtures
