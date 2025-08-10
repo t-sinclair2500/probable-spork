@@ -27,7 +27,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock
+from bin.core import BASE, get_logger, guard_system, load_config, log_state, single_lock, load_env
 from bin.seo_lint import lint as seo_lint
 
 log = get_logger("blog_stage_local")

@@ -8,7 +8,9 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from bin.core import BASE, load_config, log_state, single_lock
+from bin.core import BASE, load_config, log_state, single_lock, get_logger, guard_system, load_env
+
+log = get_logger("upload_stage")
 
 import argparse
 
