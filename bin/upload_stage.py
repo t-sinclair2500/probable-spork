@@ -10,9 +10,24 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 from bin.core import BASE, load_config, log_state, single_lock
 
+import argparse
 
-def main():
+
+def main(brief=None):
+    """Main function for upload staging with optional brief context"""
     cfg = load_config()
+    guard_system(cfg)
+    env = load_env()
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("upload_stage", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("upload_stage", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
+    
     os.makedirs(os.path.join(BASE, "videos"), exist_ok=True)
     vdir = os.path.join(BASE, "videos")
     vids = [f for f in os.listdir(vdir) if f.endswith(".mp4")]
@@ -40,5 +55,19 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Upload staging")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

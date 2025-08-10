@@ -9,6 +9,7 @@ import markdown
 
 import sys
 import os
+import argparse
 
 # Ensure repo root on path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -57,7 +58,8 @@ def load_blog_cfg():
     return yaml.safe_load(open(p, "r", encoding="utf-8"))
 
 
-def main():
+def main(brief=None):
+    """Main function for HTML rendering with optional brief context"""
     cfg = load_global_config()
     ensure_dirs(cfg)
     blog_cfg = load_blog_cfg()
@@ -184,5 +186,19 @@ img {{ max-width: 100%; height: auto; }}
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Blog HTML rendering")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

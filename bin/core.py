@@ -219,6 +219,28 @@ def load_blog_cfg():
     return yaml.safe_load(open(p, "r", encoding="utf-8"))
 
 
+def load_brief():
+    """Load workstream brief from conf/brief.yaml or conf/brief.md"""
+    try:
+        from .brief_loader import load_brief as _load_brief
+        return _load_brief()
+    except ImportError:
+        # Fallback if brief_loader is not available
+        log.warning("brief_loader not available, using empty brief")
+        return {
+            "title": "",
+            "audience": [],
+            "tone": "informative",
+            "video": {"target_length_min": 5, "target_length_max": 7},
+            "blog": {"words_min": 900, "words_max": 1300},
+            "keywords_include": [],
+            "keywords_exclude": [],
+            "sources_preferred": [],
+            "monetization": {"primary": ["lead_magnet", "email_capture"], "cta_text": "Download our free guide"},
+            "notes": ""
+        }
+
+
 def require_keys(env: dict, keys: List[str], feature_name: str):
     missing = [k for k in keys if not env.get(k)]
     if missing:

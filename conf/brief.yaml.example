@@ -1,0 +1,54 @@
+# Workstream Brief Template
+# Copy this file to conf/brief.yaml and customize for your content strategy
+
+title: "Local SEO for Dentists"
+audience: ["practice owners", "office managers"]
+tone: "confident, practical"
+
+# Video content targets (in minutes)
+video:
+  target_length_min: 5
+  target_length_max: 7
+
+# Blog content targets (word counts)
+blog:
+  words_min: 900
+  words_max: 1300
+
+# Keywords to include in content
+keywords_include:
+  - "Google Business Profile"
+  - "reviews"
+  - "NAP consistency"
+  - "service pages"
+  - "local search"
+  - "dental marketing"
+
+# Keywords to avoid
+keywords_exclude:
+  - "AI tools"
+  - "crypto"
+  - "NFT"
+  - "get rich quick"
+
+# Preferred sources for research and citations
+sources_preferred:
+  - "Google Search Central"
+  - "Sterling Sky blog"
+  - "Local SEO Guide"
+  - "Moz Local"
+
+# Monetization strategy
+monetization:
+  primary: ["lead_magnet", "email_capture"]
+  cta_text: "Download the Local SEO checklist"
+  secondary: ["consultation_booking", "service_inquiry"]
+
+# Additional notes and context
+notes: |
+  Focus on appointment intent keywords and GBP optimization.
+  Target local search queries like "dentist near me" and "best dentist [city]".
+  Emphasize patient reviews and local citations.
+  
+  Content should be actionable and specific to dental practice owners.
+  Include step-by-step instructions for GBP optimization.

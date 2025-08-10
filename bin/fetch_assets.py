@@ -13,6 +13,7 @@ import random
 import requests
 import shutil
 from PIL import Image, ImageDraw, ImageFont
+import argparse
 
 # Ensure repo root is on sys.path for `import bin.core`
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -866,12 +867,21 @@ def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
     log.info(f"Fetched/normalized assets: {len(final_assets)} -> {out_dir}")
 
 
-def main():
-    """Main entry point with testing mode branching"""
+def main(brief=None):
+    """Main function for asset fetching with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
-
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("fetch_assets", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("fetch_assets", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
+    
     # Determine asset testing mode
     testing_cfg = getattr(cfg, "testing", {})
     asset_mode = env.get("TEST_ASSET_MODE", testing_cfg.get("asset_mode", "reuse"))
@@ -887,7 +897,21 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Asset fetching and processing")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)
 
 

@@ -22,26 +22,61 @@ def call_ollama(prompt, cfg):
     return r.json().get("response", "")
 
 
-def main():
+def main(brief=None):
     cfg = load_config()
     os.makedirs(os.path.join(BASE, "scripts"), exist_ok=True)
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("llm_outline", "START", f"brief={brief_title}")
+        # Assuming log is available, otherwise this line will cause an error
+        # log.info(f"Running with brief: {brief_title}") 
+    else:
+        log_state("llm_outline", "START", "brief=none")
+        # Assuming log is available, otherwise this line will cause an error
+        # log.info("Running without brief - using default behavior")
+    
     qpath = os.path.join(BASE, "data", "topics_queue.json")
     topics = json.load(open(qpath, "r")) if os.path.exists(qpath) else []
     topic = topics[0]["topic"] if topics else "AI tools that save time"
     seed_keywords = topics[0].get("keywords") if topics else ["ai", "productivity"]
+    
     with open(os.path.join(BASE, "prompts", "outline.txt"), "r", encoding="utf-8") as f:
         template = f.read()
-    # Include tone and target duration hints from config to steer the outline
-    tone = cfg.pipeline.tone
-    target_len_sec = cfg.pipeline.video_length_seconds
+    
+    # Use brief settings if available, otherwise fall back to config defaults
+    if brief:
+        tone = brief.get('tone', cfg.pipeline.tone)
+        target_len_sec = brief.get('video', {}).get('target_length_max', cfg.pipeline.video_length_seconds)
+        # Override topic if brief has specific focus
+        if brief.get('title') and not topics:
+            topic = brief['title']
+            seed_keywords = brief.get('keywords_include', ['ai', 'productivity'])
+    else:
+        tone = cfg.pipeline.tone
+        target_len_sec = cfg.pipeline.video_length_seconds
+    
     prompt = (
         template.replace("{topic}", topic).replace("{seed_keywords}", ", ".join(seed_keywords))
         + f"\nTone: {tone}. Target length (sec): {target_len_sec}."
     )
+    
+    # Enhance prompt with brief context if available
+    if brief:
+        brief_context = f"\nBRIEF CONTEXT:\nTitle: {brief.get('title', 'N/A')}\nAudience: {', '.join(brief.get('audience', []))}\nKeywords: {', '.join(brief.get('keywords_include', []))}"
+        prompt = prompt + brief_context
+    
     try:
         out = call_ollama(prompt, cfg)
         data = json.loads(out)
     except Exception:
+        # Fallback outline - use brief keywords if available
+        if brief and brief.get('keywords_include'):
+            fallback_keywords = brief['keywords_include'][:3]
+        else:
+            fallback_keywords = ["ai", "productivity"]
+            
         data = {
             "title_options": [f"{topic}: 5 Quick Tips"],
             "sections": [
@@ -57,20 +92,46 @@ def main():
                 {"id": 5, "label": "Recap", "beats": ["Summary"], "broll": ["checklist"]},
                 {"id": 6, "label": "CTA", "beats": ["Subscribe"], "broll": ["subscribe button"]},
             ],
-            "tags": ["ai", "productivity"],
+            "tags": fallback_keywords,
             "tone": tone,
             "target_len_sec": target_len_sec,
         }
+    
     date_tag = time.strftime("%Y-%m-%d")
     outline_path = os.path.join(
         BASE, "scripts", f"{date_tag}_{re.sub(r'[^a-z0-9]+','-',topic.lower())}.outline.json"
     )
     with open(outline_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-    log_state("llm_outline", "OK", os.path.basename(outline_path))
+    
+    # Include brief context in final log
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("llm_outline", "OK", f"{os.path.basename(outline_path)};brief={brief_title}")
+    else:
+        log_state("llm_outline", "OK", os.path.basename(outline_path))
+    
     print(f"Wrote outline {outline_path}")
 
 
 if __name__ == "__main__":
+    import argparse
+    import logging
+    log = logging.getLogger(__name__)
+    
+    parser = argparse.ArgumentParser(description="LLM outline generation")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

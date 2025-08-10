@@ -2,6 +2,8 @@
 import os
 import sqlite3
 import time
+import argparse
+import json
 
 # Ensure repo root on path
 import sys
@@ -194,10 +196,19 @@ def fetch_reddit(env: dict, cfg) -> int:
         return 0
 
 
-def main():
+def main(brief=None):
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
+
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("niche_trends", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("niche_trends", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
 
     con = db_connect()
     added = 0
@@ -216,14 +227,43 @@ def main():
 
     # If nothing added, add a single demo row (idempotent-ish; duplicates not harmful for demo)
     if added == 0:
-        insert_row(con, "demo", "AI tools that save time", "ai,tools,productivity")
+        # Use brief keywords if available, otherwise fall back to defaults
+        if brief and brief.get('keywords_include'):
+            demo_keywords = ','.join(brief['keywords_include'][:3])
+            demo_title = f"{brief.get('title', 'AI tools')} that save time"
+        else:
+            demo_keywords = "ai,tools,productivity"
+            demo_title = "AI tools that save time"
+        
+        insert_row(con, "demo", demo_title, demo_keywords)
         added = 1
     con.commit()
     con.close()
-    log_state("niche_trends", "OK", f"rows={added}")
+    
+    # Include brief context in final log
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("niche_trends", "OK", f"rows={added};brief={brief_title}")
+    else:
+        log_state("niche_trends", "OK", f"rows={added}")
+    
     print(f"Ingestion complete; rows added: {added}")
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Niche trends ingestion")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

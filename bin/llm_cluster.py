@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import json
 import os
 import re
@@ -11,7 +12,9 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from bin.core import BASE, load_config, log_state, single_lock
+from bin.core import BASE, load_config, log_state, single_lock, get_logger
+
+log = get_logger("llm_cluster")
 
 try:
     from bin.core import parse_llm_json  # when repo root is on sys.path
@@ -40,9 +43,19 @@ def call_ollama(prompt, cfg):
     return r.json().get("response", "")
 
 
-def main():
+def main(brief=None):
     cfg = load_config()
     os.makedirs(os.path.join(BASE, "data"), exist_ok=True)
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("llm_cluster", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("llm_cluster", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
+    
     # Collect recent titles/tags from sqlite
     db_path = os.path.join(BASE, "data", "trending_topics.db")
     rows = []
@@ -54,10 +67,18 @@ def main():
         ):
             rows.append({"title": title, "tags": tags, "source": source})
         con.close()
+    
     # Build prompt
     with open(os.path.join(BASE, "prompts", "cluster_topics.txt"), "r", encoding="utf-8") as f:
         template = f.read()
+    
+    # Enhance prompt with brief context if available
+    if brief:
+        brief_context = f"\nBRIEF CONTEXT:\nTitle: {brief.get('title', 'N/A')}\nAudience: {', '.join(brief.get('audience', []))}\nTone: {brief.get('tone', 'N/A')}\nKeywords: {', '.join(brief.get('keywords_include', []))}"
+        template = template + brief_context
+    
     prompt = template + "\nINPUT:\n" + json.dumps(rows)
+    
     # Call local LLM
     topics = []
     try:
@@ -65,20 +86,33 @@ def main():
         parsed = parse_llm_json(out)
         topics = parsed.get("topics", [])
     except Exception:
-        topics = [
-            {
-                "topic": "ai tools",
-                "score": 0.6,
-                "hook": "5 AI tools to save hours",
-                "keywords": ["ai", "tools"],
-            },
-            {
-                "topic": "space trivia",
-                "score": 0.5,
-                "hook": "10 wild space facts",
-                "keywords": ["space", "trivia"],
-            },
-        ]
+        # Fallback topics - use brief keywords if available
+        if brief and brief.get('keywords_include'):
+            primary_keyword = brief['keywords_include'][0] if brief['keywords_include'] else "ai tools"
+            topics = [
+                {
+                    "topic": primary_keyword,
+                    "score": 0.8,
+                    "hook": f"5 {primary_keyword} to save hours",
+                    "keywords": brief['keywords_include'][:3],
+                }
+            ]
+        else:
+            topics = [
+                {
+                    "topic": "ai tools",
+                    "score": 0.6,
+                    "hook": "5 AI tools to save hours",
+                    "keywords": ["ai", "tools"],
+                },
+                {
+                    "topic": "space trivia",
+                    "score": 0.5,
+                    "hook": "10 wild space facts",
+                    "keywords": ["space", "trivia"],
+                },
+            ]
+    
     # Enrich with created_at and clamp to top 10 by score
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     for t in topics:
@@ -87,14 +121,37 @@ def main():
         t["created_at"] = now
     topics.sort(key=lambda x: float(x.get("score", 0.0)), reverse=True)
     topics = topics[:10]
+    
     # Save queue
     queue_path = os.path.join(BASE, "data", "topics_queue.json")
     with open(queue_path, "w", encoding="utf-8") as f:
         json.dump(topics, f, indent=2)
-    log_state("llm_cluster", "OK", f"topics={len(topics)}")
+    
+    # Include brief context in final log
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("llm_cluster", "OK", f"topics={len(topics)};brief={brief_title}")
+    else:
+        log_state("llm_cluster", "OK", f"topics={len(topics)}")
+    
     print(f"Wrote {queue_path}")
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="LLM topic clustering")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

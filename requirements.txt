@@ -1,3 +1,14 @@
+# =============================================================================
+# PYTHON VERSION REQUIREMENTS
+# =============================================================================
+# This project requires Python 3.9, 3.10, or 3.11
+# Python 3.12+ is NOT supported due to MoviePy compatibility issues
+# Python 3.13+ will cause import failures and pipeline errors
+# 
+# To check your version: python --version
+# To create venv with correct version: python3.11 -m venv venv
+# =============================================================================
+
 google-api-python-client==2.137.0
 google-auth-oauthlib==1.2.1
 praw==7.7.1

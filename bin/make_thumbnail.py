@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import argparse
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -23,7 +24,8 @@ def safe_text(t, max_len=28):
     return (t[:max_len] + "…") if len(t) > max_len else t
 
 
-def main():
+def main(brief=None):
+    """Main function for thumbnail generation with optional brief context"""
     cfg = load_config()
     scripts_dir = os.path.join(BASE, "scripts")
     files = [f for f in os.listdir(scripts_dir) if f.endswith(".metadata.json")]
@@ -55,5 +57,19 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Thumbnail generation")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

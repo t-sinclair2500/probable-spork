@@ -4,6 +4,11 @@ Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts
 
 ## Quick Start
 
+**⚠️ IMPORTANT: Python Version Requirements**
+- **Required**: Python 3.9, 3.10, or 3.11
+- **NOT Supported**: Python 3.12+ (breaks MoviePy compatibility)
+- **Recommended**: Python 3.11 (optimal performance and compatibility)
+
 1) **Install system deps**
 ```bash
 sudo apt update && sudo apt install -y python3-full python3-venv python3-pip ffmpeg git jq sqlite3 rclone build-essential cmake
@@ -12,7 +17,16 @@ sudo apt update && sudo apt install -y python3-full python3-venv python3-pip ffm
 2) **Create venv and install Python deps**
 ```bash
 cd ~/youtube_onepi_pipeline
-python3 -m venv .venv && source .venv/bin/activate
+
+# Ensure you're using Python 3.11 or earlier
+python3.11 --version  # Should show 3.9.x, 3.10.x, or 3.11.x
+
+# Create virtual environment with specific Python version
+python3.11 -m venv .venv && source .venv/bin/activate
+
+# Verify Python version in venv
+python --version  # Should show 3.9.x, 3.10.x, or 3.11.x
+
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
@@ -235,3 +249,28 @@ After running `scripts/install_systemd_and_logrotate.sh`, visit:
 ```
 http://<pi-lan-ip>:8088/health
 ```
+
+## Troubleshooting
+
+### MoviePy Import Errors
+If you see `ModuleNotFoundError: No module named 'moviepy.editor'` or similar errors:
+
+1. **Check Python version**: `python --version` should show 3.9.x, 3.10.x, or 3.11.x
+2. **Recreate virtual environment**:
+   ```bash
+   rm -rf .venv/
+   python3.11 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+3. **Verify MoviePy works**: `python -c "import moviepy.editor; print('OK')"`
+
+### Python Version Issues
+- **Python 3.12+**: Not supported due to MoviePy compatibility issues
+- **Python 3.13+**: Will cause import failures and pipeline errors
+- **Solution**: Always use Python 3.9-3.11 for this project
+
+### Common Issues
+- **Asset download failures**: Check API keys in `.env` and provider rate limits
+- **TTS errors**: Verify Coqui TTS installation and voice model availability
+- **FFmpeg issues**: Ensure system FFmpeg is installed and accessible

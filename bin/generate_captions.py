@@ -36,21 +36,40 @@ def whisper_cpp_cmd(binary, model_path, audio_path, srt_out):
     return cmd, wav_tmp
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate captions (SRT) using whisper.cpp")
-    parser.add_argument("--input", "-i", help="Input audio file (.mp3)")
-    parser.add_argument("--output", "-o", help="Output SRT path")
-    args = parser.parse_args()
-
+def main(brief=None):
+    """Main function for caption generation with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
-    if args.input:
-        mp3 = args.input
-        if not args.output:
+    env = load_env()
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("generate_captions", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("generate_captions", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
+    
+    # Get command line arguments from sys.argv since we're being called by the pipeline
+    # with --brief-data that was already parsed by the main argument parser
+    input_file = None
+    output_file = None
+    
+    # Simple argument parsing for input/output if provided
+    for i, arg in enumerate(sys.argv):
+        if arg in ['-i', '--input'] and i + 1 < len(sys.argv):
+            input_file = sys.argv[i + 1]
+        elif arg in ['-o', '--output'] and i + 1 < len(sys.argv):
+            output_file = sys.argv[i + 1]
+
+    if input_file:
+        mp3 = input_file
+        if not output_file:
             base, _ = os.path.splitext(mp3)
             srt = base + ".srt"
         else:
-            srt = args.output
+            srt = output_file
     else:
         vdir = os.path.join(BASE, "voiceovers")
         files = [f for f in os.listdir(vdir) if f.endswith(".mp3")]
@@ -69,7 +88,6 @@ def main():
         if os.path.isabs(cfg.asr.model)
         else os.path.join(os.path.expanduser("~"), "whisper.cpp", "models", cfg.asr.model)
     )
-    env = load_env()
     if not os.path.exists(bin_path) or not os.path.exists(model_path):
         # Optional OpenAI Whisper fallback
         if getattr(cfg.asr, "openai_enabled", False) and env.get("OPENAI_API_KEY"):
@@ -147,5 +165,19 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Caption generation")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

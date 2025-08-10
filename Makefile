@@ -6,6 +6,9 @@ export PYTHONPATH := $(CURDIR)
 .PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health
 
 install:
+	@echo "Checking Python version..."
+	@python3 --version | grep -E "(3\.9|3\.10|3\.11)" > /dev/null || (echo "❌ ERROR: Python 3.9, 3.10, or 3.11 required. Current version:" && python3 --version && echo "Use: python3.11 -m venv .venv" && exit 1)
+	@echo "✅ Python version compatible"
 	python3 -m venv $(VENV)
 	. $(VENV)/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 

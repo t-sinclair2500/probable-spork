@@ -2,6 +2,7 @@
 import json
 import os
 import time
+import argparse
 
 # Ensure repo root on path
 import sys
@@ -22,7 +23,7 @@ def load_blog_cfg():
     return yaml.safe_load(open(p, "r", encoding="utf-8"))
 
 
-def main():
+def main(brief_data=None):
     cfg = load_config()
     bcfg = load_blog_cfg()
     qpath = os.path.join(BASE, "data", "topics_queue.json")
@@ -77,5 +78,24 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Blog topic selection")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            # Assuming log_state is available, otherwise this line will cause an error
+            # from bin.core import log  # type: ignore
+            # log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            # Assuming log_state is available, otherwise this line will cause an error
+            # from bin.core import log  # type: ignore
+            # log.warning(f"Failed to parse brief data: {e}")
+            print(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

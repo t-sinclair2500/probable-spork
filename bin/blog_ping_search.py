@@ -21,7 +21,8 @@ def load_blog_cfg():
     return yaml.safe_load(open(p, "r", encoding="utf-8"))
 
 
-def main():
+def main(brief=None):
+    """Main function for search engine pinging with optional brief context"""
     cfg = load_global_config()
     ensure_dirs(cfg)
     bcfg = load_blog_cfg()

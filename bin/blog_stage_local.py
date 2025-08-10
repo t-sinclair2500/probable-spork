@@ -222,10 +222,20 @@ def create_zip_bundle(export_dir):
         return None
 
 
-def main():
-    """Main execution function"""
+def main(brief=None):
+    """Main function for local blog staging with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
+    env = load_env()
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("blog_stage_local", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("blog_stage_local", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
     
     blog_cfg = load_blog_cfg()
     staging_root = blog_cfg.get("wordpress", {}).get("staging_root", "exports/blog")
@@ -378,5 +388,21 @@ def main():
 
 
 if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Blog local staging")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

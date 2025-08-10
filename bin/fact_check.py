@@ -249,9 +249,18 @@ def should_gate_content(fact_check_result: Dict, gate_mode: str,
     return highest_level >= threshold_level
 
 
-def main():
+def main(brief=None):
     """CLI interface for testing fact-checking functionality."""
     import argparse
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("fact_check", "START", f"brief={brief_title}")
+        print(f"Running with brief: {brief_title}")
+    else:
+        log_state("fact_check", "START", "brief=none")
+        print("Running without brief - using default behavior")
     
     parser = argparse.ArgumentParser(description="Fact-check markdown content")
     parser.add_argument("input_file", help="Markdown file to fact-check")
@@ -303,8 +312,45 @@ def main():
             json.dump(result, f, indent=2)
         print(f"\nResults saved to {args.output}")
     
+    # Include brief context in final log
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("fact_check", "OK", f"issues={metrics['total_issues']};brief={brief_title}")
+    else:
+        log_state("fact_check", "OK", f"issues={metrics['total_issues']}")
+    
     return 1 if should_block else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Fact checking")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    parser.add_argument("input_file", nargs='?', help="Markdown file to fact-check (optional)")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            print(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"Warning: Failed to parse brief data: {e}")
+    
+    # If no input file provided, run in pipeline mode
+    if not args.input_file:
+        # Pipeline mode - just log that we're ready
+        if brief:
+            brief_title = brief.get('title', 'Untitled')
+            log_state("fact_check", "START", f"brief={brief_title}")
+            print(f"Fact-check ready with brief: {brief_title}")
+        else:
+            log_state("fact_check", "START", "brief=none")
+            print("Fact-check ready without brief")
+        sys.exit(0)
+    
+    # CLI mode - run fact-check on input file
+    sys.exit(main(brief))

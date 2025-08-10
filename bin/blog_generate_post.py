@@ -302,7 +302,8 @@ def validate_blog_post(markdown_content, min_words, max_words, include_faq=True,
     return validation_result
 
 
-def main():
+def main(brief=None):
+    """Main function for blog post generation with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
     bcfg = load_blog_cfg()
@@ -458,5 +459,20 @@ def main():
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Blog post generation")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

@@ -20,6 +20,9 @@ from bin.core import (  # noqa: E402
     single_lock,
 )
 
+import argparse
+import json
+
 
 log = get_logger("tts_generate")
 
@@ -71,10 +74,21 @@ def loudnorm_to_mp3(wav_in: str, mp3_out: str, max_seconds: int | None = None):
         pass
 
 
-def main():
+def main(brief=None):
+    """Main function for TTS generation with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
+    
+    # Log brief context if available
+    if brief:
+        brief_title = brief.get('title', 'Untitled')
+        log_state("tts_generate", "START", f"brief={brief_title}")
+        log.info(f"Running with brief: {brief_title}")
+    else:
+        log_state("tts_generate", "START", "brief=none")
+        log.info("Running without brief - using default behavior")
+    
     short_secs = None
     try:
         _ss = int(env.get("SHORT_RUN_SECS", "0") or 0)
@@ -91,9 +105,8 @@ def main():
     files.sort(reverse=True)
     sfile = os.path.join(scripts_dir, files[0])
     # Convert any bracketed stage directions to natural narration hints or remove them.
-    raw_text = open(sfile, "r", encoding="utf-8").read()
-    # Replace B-ROLL markers like [B-ROLL: ...] with brief pauses; strip other bracketed cues
     import re as _re
+    raw_text = open(sfile, "r", encoding="utf-8").read()
     text = _re.sub(r"\[B-ROLL:[^\]]+\]", " ", raw_text)
     text = _re.sub(r"\[[^\]]+\]", " ", text)
     text = _re.sub(r"\s+", " ", text).strip()
@@ -199,5 +212,19 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="TTS voice generation")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)
