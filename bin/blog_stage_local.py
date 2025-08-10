@@ -297,6 +297,34 @@ def main(brief=None):
         if seo_issues:
             log.warning(f"SEO validation issues: {seo_issues}")
         
+        # Apply brief-specific validation if available
+        if brief:
+            brief_validation_issues = []
+            
+            # Check if content length matches brief target
+            target_length = brief.get('target_len_sec')
+            if target_length:
+                # Estimate content length (rough approximation)
+                word_count = len(md_content.split())
+                estimated_seconds = word_count / 150  # Assume ~150 WPM reading speed
+                
+                if abs(estimated_seconds - target_length) > target_length * 0.2:  # 20% tolerance
+                    brief_validation_issues.append(f"Content length ({estimated_seconds:.1f}s) differs from brief target ({target_length}s)")
+            
+            # Check if brief keywords are present in content
+            include_keywords = brief.get('keywords_include', [])
+            if include_keywords:
+                content_lower = md_content.lower()
+                missing_keywords = [kw for kw in include_keywords if kw.lower() not in content_lower]
+                if missing_keywords:
+                    brief_validation_issues.append(f"Missing brief keywords: {', '.join(missing_keywords)}")
+            
+            # Log brief validation results
+            if brief_validation_issues:
+                log.warning(f"Brief validation issues: {brief_validation_issues}")
+            else:
+                log.info("Brief validation passed")
+        
         # 3. Generate schema.org JSON-LD
         schema_data = extract_schema_from_html(sanitized_html, metadata)
         

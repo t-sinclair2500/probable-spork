@@ -241,6 +241,79 @@ def load_brief():
         }
 
 
+def create_brief_context(brief: dict) -> str:
+    """Create a standardized brief context string for injection into prompts"""
+    if not brief:
+        return ""
+    
+    context_parts = []
+    
+    if brief.get('title'):
+        context_parts.append(f"Title: {brief['title']}")
+    
+    if brief.get('audience'):
+        audience_str = ', '.join(brief['audience'])
+        context_parts.append(f"Audience: {audience_str}")
+    
+    if brief.get('tone'):
+        context_parts.append(f"Tone: {brief['tone']}")
+    
+    if brief.get('keywords_include'):
+        keywords_str = ', '.join(brief['keywords_include'])
+        context_parts.append(f"Keywords to include: {keywords_str}")
+    
+    if brief.get('keywords_exclude'):
+        exclude_str = ', '.join(brief['keywords_exclude'])
+        context_parts.append(f"Keywords to exclude: {exclude_str}")
+    
+    if brief.get('video', {}).get('target_length_min') and brief.get('video', {}).get('target_length_max'):
+        context_parts.append(f"Video target: {brief['video']['target_length_min']}-{brief['video']['target_length_max']} minutes")
+    
+    if brief.get('blog', {}).get('words_min') and brief.get('blog', {}).get('words_max'):
+        context_parts.append(f"Blog target: {brief['blog']['words_min']}-{brief['blog']['words_max']} words")
+    
+    if brief.get('sources_preferred'):
+        sources_str = ', '.join(brief['sources_preferred'])
+        context_parts.append(f"Preferred sources: {sources_str}")
+    
+    if brief.get('notes'):
+        context_parts.append(f"Notes: {brief['notes']}")
+    
+    if context_parts:
+        return "BRIEF CONTEXT:\n" + "\n".join(context_parts) + "\n\n"
+    
+    return ""
+
+
+def filter_content_by_brief(content: str, brief: dict) -> tuple[str, list[str]]:
+    """
+    Filter content based on brief keywords_exclude and return filtered content with rejection reasons.
+    
+    Args:
+        content: Text content to filter
+        brief: Brief configuration with keywords_exclude
+        
+    Returns:
+        Tuple of (filtered_content, rejection_reasons)
+    """
+    if not brief or not brief.get('keywords_exclude'):
+        return content, []
+    
+    exclude_terms = [term.lower().strip() for term in brief['keywords_exclude']]
+    content_lower = content.lower()
+    rejection_reasons = []
+    
+    for term in exclude_terms:
+        if term in content_lower:
+            rejection_reasons.append(f"Contains excluded term: '{term}'")
+    
+    if rejection_reasons:
+        log.warning(f"Content rejected due to excluded terms: {rejection_reasons}")
+        return "", rejection_reasons
+    
+    return content, rejection_reasons
+
+
 def require_keys(env: dict, keys: List[str], feature_name: str):
     missing = [k for k in keys if not env.get(k)]
     if missing:

@@ -1306,3 +1306,14 @@
 {"ts": "2025-08-10T01:14:56Z", "step": "fetch_assets", "status": "ERROR", "notes": "missing_keys=['PIXABAY_API_KEY', 'PEXELS_API_KEY']"}
 {"ts": "2025-08-10T01:14:56Z", "step": "fetch_assets", "status": "ERROR", "notes": "missing_keys=['PIXABAY_API_KEY', 'PEXELS_API_KEY']"}
 {"ts": "2025-08-10T01:14:57Z", "step": "fetch_assets", "status": "OK", "notes": "exists:18"}
+{"ts": "2025-08-10T01:43:55Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-10T01:43:55Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-10T01:46:56Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-10T01:46:57Z", "step": "generate_captions", "status": "OK", "notes": "2025-08-09_test-slug_normalized.srt"}
+{"ts": "2025-08-10T01:46:57Z", "step": "generate_captions", "status": "METRIC", "notes": "dur=1.6s;wpm=76;conf~100%"}
+{"ts": "2025-08-10T02:08:49Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-10T02:08:52Z", "step": "generate_captions", "status": "OK", "notes": "2025-08-09_ai-tools.srt"}
+{"ts": "2025-08-10T02:08:52Z", "step": "generate_captions", "status": "METRIC", "notes": "dur=30.0s;wpm=144;conf~100%"}
+{"ts": "2025-08-10T02:09:05Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-10T02:09:21Z", "step": "generate_captions", "status": "OK", "notes": "2025-08-09_5-proven-tips-to-get-through-the-4-month-sleep-regression-with-your-baby.srt"}
+{"ts": "2025-08-10T02:09:21Z", "step": "generate_captions", "status": "METRIC", "notes": "dur=207.6s;wpm=145;conf~100%"}

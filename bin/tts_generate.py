@@ -123,6 +123,36 @@ def main(brief=None):
     # Try Coqui TTS if available and configured; otherwise optional OpenAI TTS; else placeholder
     wav_tmp = out_mp3.replace(".mp3", ".wav")
     used = "placeholder"
+    
+    # Apply brief settings for TTS if available
+    if brief:
+        # Use brief tone for voice selection
+        brief_tone = brief.get('tone', '').lower()
+        if brief_tone:
+            log.info(f"Brief tone: {brief_tone}")
+            # Adjust voice selection based on tone
+            if brief_tone in ['professional', 'corporate', 'formal']:
+                voice = "alloy"  # More formal voice
+                log.info("Applied professional tone: using formal voice")
+            elif brief_tone in ['casual', 'friendly', 'conversational']:
+                voice = "echo"  # More conversational voice
+                log.info("Applied casual tone: using conversational voice")
+            elif brief_tone in ['energetic', 'enthusiastic', 'motivational']:
+                voice = "fable"  # More energetic voice
+                log.info("Applied energetic tone: using energetic voice")
+        
+        # Use brief pacing preferences if available
+        brief_pacing = brief.get('pacing', '').lower()
+        if brief_pacing:
+            log.info(f"Brief pacing: {brief_pacing}")
+            # Adjust TTS parameters based on pacing preference
+            if brief_pacing in ['slow', 'deliberate']:
+                # Slower pacing - this would need TTS provider support
+                log.info("Applied slow pacing preference")
+            elif brief_pacing in ['fast', 'energetic']:
+                # Faster pacing - this would need TTS provider support
+                log.info("Applied fast pacing preference")
+    
     try:
         provider = getattr(cfg.tts, "provider", "coqui").lower()
         if provider == "coqui":

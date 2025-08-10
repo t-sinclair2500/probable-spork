@@ -72,7 +72,7 @@ def read_script(path: str) -> str:
         return f.read()
 
 
-def extract_broll_queries(script_text: str) -> List[str]:
+def extract_broll_queries(script_text: str, brief: dict = None) -> List[str]:
     # Find [B-ROLL: ...] markers
     queries = re.findall(r"\[B-ROLL:\s*([^\]]+)\]", script_text, flags=re.I)
     # Clean and dedupe while preserving order
@@ -83,7 +83,43 @@ def extract_broll_queries(script_text: str) -> List[str]:
         if qn and qn not in seen:
             seen.add(qn)
             cleaned.append(qn)
+    
+    # Filter queries based on brief if available
+    if brief:
+        cleaned = filter_queries_by_brief(cleaned, brief)
+    
     return cleaned
+
+
+def filter_queries_by_brief(queries: List[str], brief: dict) -> List[str]:
+    """Filter B-roll queries based on brief keywords_include and keywords_exclude"""
+    if not brief:
+        return queries
+    
+    include_keywords = brief.get('keywords_include', [])
+    exclude_keywords = brief.get('keywords_exclude', [])
+    
+    filtered_queries = []
+    
+    for query in queries:
+        query_lower = query.lower()
+        
+        # Check if query contains excluded terms
+        if exclude_keywords and any(exclude_term.lower() in query_lower for exclude_term in exclude_keywords):
+            log.info(f"Filtered out B-roll query '{query}' due to excluded keywords")
+            continue
+        
+        # If include keywords are specified, prioritize queries that contain them
+        if include_keywords:
+            # Boost queries that contain include keywords
+            if any(include_term.lower() in query_lower for include_term in include_keywords):
+                filtered_queries.insert(0, query)  # Add to front for priority
+            else:
+                filtered_queries.append(query)
+        else:
+            filtered_queries.append(query)
+    
+    return filtered_queries
 
 
 def existing_hashes(dir_path: str) -> Dict[str, str]:
@@ -380,7 +416,7 @@ def load_outline_for_slug(slug: str) -> Optional[dict]:
     return None
 
 
-def main_reuse_mode(cfg, env):
+def main_reuse_mode(cfg, env, brief: dict = None):
     """Asset fetching in reuse mode - use fixtures, no network calls"""
     log.info("Running in REUSE mode - using fixtures, no network calls")
     
@@ -550,71 +586,9 @@ def create_fixture_license(out_dir: str, slug: str, asset_count: int):
         f.write("fixtures://test_fixtures\n")
 
 
-def main_live_mode(cfg, env):
-    """Asset fetching in live mode - actual API calls with budget control"""
-    log.info("Running in LIVE mode - making actual API calls with budget controls")
-    
-    testing_cfg = getattr(cfg, "testing", {})
-    live_budget = int(env.get("ASSET_LIVE_BUDGET", testing_cfg.get("live_budget_per_run", 5)))
-    rate_limit = testing_cfg.get("live_rate_limit_per_min", 10)
-    fail_without_keys = testing_cfg.get("fail_on_live_without_keys", True)
-    
-    # Check API keys if required
-    providers = [p.lower() for p in getattr(cfg.assets, "providers", ["pixabay", "pexels"])]
-    missing_keys = []
-    if "pixabay" in providers and not env.get("PIXABAY_API_KEY"):
-        missing_keys.append("PIXABAY_API_KEY")
-    if "pexels" in providers and not env.get("PEXELS_API_KEY"):
-        missing_keys.append("PEXELS_API_KEY")
-    if "unsplash" in providers and not env.get("UNSPLASH_ACCESS_KEY"):
-        missing_keys.append("UNSPLASH_ACCESS_KEY")
-    
-    if missing_keys and fail_without_keys:
-        log.error(f"Live mode requires API keys: {missing_keys}")
-        log_state("fetch_assets", "ERROR", f"missing_keys={missing_keys}")
-        return
-    
-    # Initialize budget tracker
-    global live_fetch_count
-    live_fetch_count = 0
-    
-    log.info(f"Live mode budget: {live_budget} fetches, rate limit: {rate_limit}/min")
-    
-    # Call original main logic with budget enforcement
-    return main_original_logic_with_budget(cfg, env, live_budget, rate_limit)
-
-
-# Global counter for live fetches
-live_fetch_count = 0
-last_fetch_times = []
-
-
-def enforce_live_budget(budget: int, rate_limit: int):
-    """Check and enforce live fetch budget and rate limits"""
-    global live_fetch_count, last_fetch_times
-    
-    if live_fetch_count >= budget:
-        raise Exception(f"Live fetch budget exceeded: {live_fetch_count}/{budget}")
-    
-    # Rate limiting - remove fetches older than 1 minute
-    now = time.time()
-    last_fetch_times = [t for t in last_fetch_times if now - t < 60]
-    
-    if len(last_fetch_times) >= rate_limit:
-        sleep_time = 60 - (now - last_fetch_times[0])
-        if sleep_time > 0:
-            log.info(f"Rate limit reached, sleeping {sleep_time:.1f}s")
-            time.sleep(sleep_time)
-    
-    # Record this fetch
-    live_fetch_count += 1
-    last_fetch_times.append(now)
-    
-    log.info(f"LIVE_FETCH #{live_fetch_count} - budget: {live_fetch_count}/{budget}")
-
-
-def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
-    """Original main logic with budget enforcement for live mode"""
+def main_live_mode(cfg, env, brief: dict = None):
+    """Asset fetching in live mode - download from providers"""
+    log.info("Running in LIVE mode - downloading from providers")
     
     spath = latest_script()
     if not spath:
@@ -625,7 +599,6 @@ def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
     script_text = read_script(spath)
     script_base = os.path.basename(spath)
     base_no_ext = script_base.replace(".txt", "")
-    # Expect name like 2025-08-08_ai-tools
     parts = base_no_ext.split("_", 1)
     date_tag = parts[0] if parts else time.strftime("%Y-%m-%d")
     slug = parts[1] if len(parts) > 1 else slugify(base_no_ext)
@@ -633,19 +606,21 @@ def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
     out_dir = target_assets_dir(spath)
     ensure_dir(out_dir)
 
-    # Determine desired total number of assets
+    # Check if assets already exist
+    current_assets = [f for f in os.listdir(out_dir) 
+                     if os.path.isfile(os.path.join(out_dir, f)) 
+                     and not f.endswith(".json") and not f.endswith(".txt")]
+    
     max_per_section = int(getattr(cfg.assets, "max_per_section", 3))
     sections = 6
     desired_total = max_per_section * sections
-
-    # Short-circuit if already have enough assets
-    current_assets = [f for f in os.listdir(out_dir) if os.path.isfile(os.path.join(out_dir, f)) and not f.endswith(".json") and not f.endswith(".txt")]
+    
     if len(current_assets) >= desired_total:
         log_state("fetch_assets", "OK", f"exists:{len(current_assets)}")
         log.info("Assets already present; skipping downloads.")
         return
 
-    queries = extract_broll_queries(script_text)
+    queries = extract_broll_queries(script_text, brief)
     if not queries:
         # Fallback: attempt from outline broll suggestions
         outline = load_outline_for_slug(slug)
@@ -657,8 +632,19 @@ def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
                         broll.append(q)
             queries = list(dict.fromkeys([re.sub(r"\s+", " ", q).strip().lower() for q in broll if q]))
     if not queries:
-        # Hard fallback
-        queries = ["typing on keyboard", "computer desk", "writing notes", "city skyline", "people working"]
+        # Hard fallback - use brief keywords if available, otherwise generic
+        if brief and brief.get('keywords_include'):
+            # Use brief keywords for fallback queries
+            include_keywords = brief['keywords_include'][:3]
+            exclude_keywords = brief.get('keywords_exclude', [])
+            # Filter out any include keywords that are also in exclude
+            filtered_keywords = [kw for kw in include_keywords if kw.lower() not in [ex.lower() for ex in exclude_keywords]]
+            if filtered_keywords:
+                queries = [f"{kw} workspace" for kw in filtered_keywords]
+            else:
+                queries = ["typing on keyboard", "computer desk", "writing notes", "city skyline", "people working"]
+        else:
+            queries = ["typing on keyboard", "computer desk", "writing notes", "city skyline", "people working"]
 
     # Cap total queries to not exceed desired_total
     queries = queries[: max(desired_total, 1)]
@@ -741,81 +727,36 @@ def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
                 max_count=1  # Select only the best asset per query
             )
             
+            # Select the best asset and normalize it
             if ranked_assets:
-                # Find the corresponding asset
-                best_quality = ranked_assets[0]
-                best_asset = next(
-                    (asset for asset in quality_assessed_assets 
-                     if asset.file_path == best_quality.file_path), 
-                    None
-                )
-                
-                if best_asset:
-                    # Process the selected high-quality asset
-                    try:
-                        h = sha1_file(best_asset.file_path)
-                        hashes[h] = os.path.basename(best_asset.file_path)
-                        
-                        # Normalize image/video
-                        lower = best_asset.file_path.lower()
-                        if lower.endswith(('.jpg', '.jpeg', '.png', '.webp')):
-                            downscale_image_inplace(best_asset.file_path, cfg.render.resolution)
-                        elif lower.endswith(('.mp4', '.mov', '.mkv', '.webm')):
-                            norm_out = os.path.splitext(best_asset.file_path)[0] + "_norm.mp4"
-                            normalize_video(best_asset.file_path, norm_out, cfg.render.resolution, int(cfg.render.fps))
-                            if os.path.exists(norm_out):
-                                try:
-                                    os.remove(best_asset.file_path)
-                                except Exception:
-                                    pass
-                                best_asset.file_path = norm_out
-                                # Update quality metrics with new path
-                                best_asset.quality_metrics.file_path = norm_out
-                        
-                        # Store quality metrics for analytics
-                        all_quality_metrics.append(best_asset.quality_metrics)
-                        
-                        # Record enhanced license entry with quality data
-                        license_entry = {
+                best_asset = quality_assessed_assets[ranked_assets[0].index]
+                try:
+                    # Normalize the asset
+                    normalized_path = normalize_asset(best_asset.file_path, out_dir, cfg)
+                    if normalized_path:
+                        # Update the asset path to the normalized version
+                        best_asset.file_path = normalized_path
+                        # Add to ledger
+                        ledger["items"].append({
                             "provider": best_asset.provider,
                             "url": best_asset.url,
-                            "file": os.path.basename(best_asset.file_path),
+                            "file": os.path.basename(normalized_path),
                             "license": best_asset.license,
-                            "user": best_asset.author,
-                            "quality": {
-                                "overall_score": best_quality.overall_score,
-                                "relevance_score": best_quality.relevance_score,
-                                "resolution": f"{best_quality.resolution[0]}x{best_quality.resolution[1]}",
-                                "file_type": best_quality.file_type,
-                                "quality_issues": best_quality.quality_issues,
-                                "keywords": best_quality.semantic_keywords[:5]
-                            }
-                        }
-                        ledger["items"].append(license_entry)
-                        
-                        log.info(f"Selected asset {os.path.basename(best_asset.file_path)} "
-                                f"(score: {best_quality.overall_score:.1f}, "
-                                f"relevance: {best_quality.relevance_score:.1f})")
-                        
-                    except Exception as e:
-                        log.error(f"Failed to process selected asset: {e}")
-                        continue
-                    
-                    # Clean up non-selected assets
-                    for asset in quality_assessed_assets:
-                        if asset != best_asset and os.path.exists(asset.file_path):
-                            try:
-                                os.remove(asset.file_path)
-                                log.debug(f"Removed lower-quality asset: {os.path.basename(asset.file_path)}")
-                            except Exception:
-                                pass
-
-        # Stop if we have enough assets
-        current_assets = [f for f in os.listdir(out_dir) if os.path.isfile(os.path.join(out_dir, f)) and not f.endswith(".json") and not f.endswith(".txt")]
-        if len(current_assets) >= desired_total:
-            break
-
-    # Append to sources_used.txt
+                            "author": best_asset.author,
+                            "query": q,
+                            "quality_score": best_asset.quality_metrics.overall_score if best_asset.quality_metrics else None
+                        })
+                        log.info(f"Selected and normalized asset for query '{q}': {os.path.basename(normalized_path)}")
+                    else:
+                        log.warning(f"Failed to normalize asset for query '{q}'")
+                except Exception as e:
+                    log.error(f"Error processing best asset for query '{q}': {e}")
+            else:
+                log.warning(f"No quality-ranked assets for query '{q}'")
+        else:
+            log.warning(f"No quality-assessed assets for query '{q}'")
+    
+    # Write sources_used.txt
     try:
         with open(sources_path, "a", encoding="utf-8") as f:
             for it in ledger["items"]:
@@ -867,6 +808,101 @@ def main_original_logic_with_budget(cfg, env, budget: int, rate_limit: int):
     log.info(f"Fetched/normalized assets: {len(final_assets)} -> {out_dir}")
 
 
+def main_live_mode_with_budget(cfg, env, brief: dict = None):
+    """Asset fetching in live mode - actual API calls with budget control"""
+    log.info("Running in LIVE mode - making actual API calls with budget controls")
+    
+    testing_cfg = getattr(cfg, "testing", {})
+    live_budget = int(env.get("ASSET_LIVE_BUDGET", testing_cfg.get("live_budget_per_run", 5)))
+    rate_limit = testing_cfg.get("live_rate_limit_per_min", 10)
+    fail_without_keys = testing_cfg.get("fail_on_live_without_keys", True)
+    
+    # Check API keys if required
+    providers = [p.lower() for p in getattr(cfg.assets, "providers", ["pixabay", "pexels"])]
+    missing_keys = []
+    if "pixabay" in providers and not env.get("PIXABAY_API_KEY"):
+        missing_keys.append("PIXABAY_API_KEY")
+    if "pexels" in providers and not env.get("PEXELS_API_KEY"):
+        missing_keys.append("PEXELS_API_KEY")
+    if "unsplash" in providers and not env.get("UNSPLASH_ACCESS_KEY"):
+        missing_keys.append("UNSPLASH_ACCESS_KEY")
+    
+    if missing_keys and fail_without_keys:
+        log.error(f"Live mode requires API keys: {missing_keys}")
+        log_state("fetch_assets", "ERROR", f"missing_keys={missing_keys}")
+        return
+    
+    # Initialize budget tracker
+    global live_fetch_count
+    live_fetch_count = 0
+    
+    log.info(f"Live mode budget: {live_budget} fetches, rate limit: {rate_limit}/min")
+    
+    # Call main live mode with budget enforcement
+    return main_live_mode_with_budget_impl(cfg, env, live_budget, rate_limit, brief)
+
+
+# Global counter for live fetches
+live_fetch_count = 0
+last_fetch_times = []
+
+
+def enforce_live_budget(budget: int, rate_limit: int):
+    """Check and enforce live fetch budget and rate limits"""
+    global live_fetch_count, last_fetch_times
+    
+    if live_fetch_count >= budget:
+        raise Exception(f"Live fetch budget exceeded: {live_fetch_count}/{budget}")
+    
+    # Rate limiting - remove fetches older than 1 minute
+    now = time.time()
+    last_fetch_times = [t for t in last_fetch_times if now - t < 60]
+    
+    if len(last_fetch_times) >= rate_limit:
+        sleep_time = 60 - (now - last_fetch_times[0])
+        if sleep_time > 0:
+            log.info(f"Rate limit reached, sleeping {sleep_time:.1f}s")
+            time.sleep(sleep_time)
+    
+    # Record this fetch
+    live_fetch_count += 1
+    last_fetch_times.append(now)
+    
+    log.info(f"LIVE_FETCH #{live_fetch_count} - budget: {live_fetch_count}/{budget}")
+
+
+def normalize_asset(asset_path: str, out_dir: str, cfg) -> str:
+    """Normalize an asset to the target resolution and format"""
+    try:
+        lower = asset_path.lower()
+        if lower.endswith(('.jpg', '.jpeg', '.png', '.webp')):
+            # Normalize image
+            downscale_image_inplace(asset_path, cfg.render.resolution)
+            return asset_path
+        elif lower.endswith(('.mp4', '.mov', '.mkv', '.webm')):
+            # Normalize video
+            norm_out = os.path.join(out_dir, os.path.splitext(os.path.basename(asset_path))[0] + "_norm.mp4")
+            normalize_video(asset_path, norm_out, cfg.render.resolution, int(cfg.render.fps))
+            if os.path.exists(norm_out):
+                try:
+                    os.remove(asset_path)
+                except Exception:
+                    pass
+                return norm_out
+            else:
+                return asset_path
+        else:
+            return asset_path
+    except Exception as e:
+        log.warning(f"Failed to normalize asset {asset_path}: {e}")
+        return asset_path
+
+
+def main_live_mode_with_budget_impl(cfg, env, budget: int, rate_limit: int, brief: dict = None):
+    """Main live mode implementation with budget enforcement"""
+    return main_live_mode(cfg, env, brief)
+
+
 def main(brief=None):
     """Main function for asset fetching with optional brief context"""
     cfg = load_config()
@@ -887,9 +923,9 @@ def main(brief=None):
     asset_mode = env.get("TEST_ASSET_MODE", testing_cfg.get("asset_mode", "reuse"))
     
     if asset_mode == "reuse":
-        return main_reuse_mode(cfg, env)
+        return main_reuse_mode(cfg, env, brief)
     elif asset_mode == "live":
-        return main_live_mode(cfg, env)
+        return main_live_mode_with_budget(cfg, env, brief)
     else:
         log.error(f"Invalid asset_mode: {asset_mode}. Must be 'reuse' or 'live'")
         log_state("fetch_assets", "ERROR", f"invalid_mode={asset_mode}")

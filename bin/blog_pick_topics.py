@@ -26,12 +26,56 @@ def load_blog_cfg():
 def main(brief_data=None):
     cfg = load_config()
     bcfg = load_blog_cfg()
+    
+    # Log brief context if available
+    if brief_data:
+        log_state("blog_pick_topics", "START", f"brief={brief_data.get('title', 'Untitled')}")
+    else:
+        log_state("blog_pick_topics", "START", "no brief")
+    
     qpath = os.path.join(BASE, "data", "topics_queue.json")
     topics = json.load(open(qpath, "r")) if os.path.exists(qpath) else []
     if not topics:
         log_state("blog_pick_topics", "SKIP", "no topics")
         print("No topics")
         return
+    
+    # Filter topics based on brief if available
+    if brief_data:
+        filtered_topics = []
+        include_keywords = brief_data.get('keywords_include', [])
+        exclude_keywords = brief_data.get('keywords_exclude', [])
+        
+        for topic in topics:
+            topic_text = (topic.get("topic") or "").lower()
+            topic_keywords = (topic.get("keywords") or "").lower()
+            combined_text = f"{topic_text} {topic_keywords}"
+            
+            # Check for excluded keywords
+            if any(exclude_term.lower() in combined_text for exclude_term in exclude_keywords):
+                continue
+            
+            # Score based on include keywords
+            score = 0
+            for include_term in include_keywords:
+                if include_term.lower() in combined_text:
+                    score += 1
+            
+            if include_keywords:  # Only include topics that match at least one include keyword
+                if score > 0:
+                    filtered_topics.append((topic, score))
+            else:  # If no include keywords specified, include all non-excluded topics
+                filtered_topics.append((topic, 0))
+        
+        # Sort by score (highest first) and then by original order
+        filtered_topics.sort(key=lambda x: (-x[1], topics.index(x[0])))
+        topics = [item[0] for item in filtered_topics]
+        
+        if not topics:
+            log_state("blog_pick_topics", "SKIP", "no topics match brief criteria")
+            print("No topics match brief criteria")
+            return
+    
     # Avoid repeats within last N days if configured
     avoid_days = 14
     try:
@@ -60,10 +104,12 @@ def main(brief_data=None):
             pick = cand
             break
     pick = pick or topics[0]
+    
     work_dir = os.path.join(BASE, "data", "cache")
     os.makedirs(work_dir, exist_ok=True)
     out = os.path.join(work_dir, "blog_topic.json")
     json.dump(pick, open(out, "w", encoding="utf-8"), indent=2)
+    
     # Append to recent ledger
     try:
         data = []
@@ -73,7 +119,13 @@ def main(brief_data=None):
         json.dump(data[-100:], open(ledger_path, "w", encoding="utf-8"), indent=2)
     except Exception:
         pass
-    log_state("blog_pick_topics", "OK", pick.get("topic", "(unknown)"))
+    
+    # Log final selection with brief context
+    if brief_data:
+        log_state("blog_pick_topics", "OK", f"brief={brief_data.get('title', 'Untitled')} -> {pick.get('topic', '(unknown)')}")
+    else:
+        log_state("blog_pick_topics", "OK", pick.get("topic", "(unknown)"))
+    
     print(f"Picked topic: {pick.get('topic')} -> {out}")
 
 

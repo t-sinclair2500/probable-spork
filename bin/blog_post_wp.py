@@ -217,10 +217,16 @@ def upload_media(base, auth, file_path, dry_run=False):
             time.sleep(wait_time)
 
 
-def main():
+def main(brief_data=None):
     cfg = load_config()
     env = load_env()
     bcfg = load_blog_cfg()
+    
+    # Log brief context if available
+    if brief_data:
+        log_state("blog_post_wp", "START", f"brief={brief_data.get('title', 'Untitled')}")
+    else:
+        log_state("blog_post_wp", "START", "no brief")
     
     # Use centralized flag governance - no CLI dry-run arg passed from blog_post_wp.py directly
     flags = get_publish_flags(cli_dry_run=False, target="blog")
@@ -235,6 +241,23 @@ def main():
         open(os.path.join(BASE, "data", "cache", "post.meta.json"), "r", encoding="utf-8")
     )
     html = open(os.path.join(BASE, "data", "cache", "post.html"), "r", encoding="utf-8").read()
+    
+    # Apply brief settings to metadata if available
+    if brief_data:
+        # Enhance tags with brief keywords
+        brief_keywords = brief_data.get('keywords_include', [])
+        if brief_keywords and 'tags' in meta:
+            existing_tags = set(meta['tags'])
+            # Add brief keywords as tags if they're not already present
+            for keyword in brief_keywords:
+                if keyword.lower() not in [tag.lower() for tag in existing_tags]:
+                    meta['tags'].append(keyword)
+        
+        # Enhance description with brief context if available
+        brief_description = brief_data.get('description', '')
+        if brief_description and 'description' in meta:
+            # Combine existing description with brief context
+            meta['description'] = f"{meta['description']} {brief_description}".strip()
     
     # Process inline images first - upload to WordPress and replace local paths
     try:
@@ -315,10 +338,31 @@ def main():
         log_state("blog_post_wp", "FAIL", r.text[:200])
         raise SystemExit(f"WordPress POST failed: {r.status_code} {r.text[:200]}")
     resp = r.json()
-    log_state("blog_post_wp", "OK", f"id={resp.get('id')}")
+    
+    # Log final result with brief context
+    if brief_data:
+        log_state("blog_post_wp", "OK", f"brief={brief_data.get('title', 'Untitled')} -> id={resp.get('id')}")
+    else:
+        log_state("blog_post_wp", "OK", f"id={resp.get('id')}")
+    
     print("Posted to WordPress: id", resp.get("id"))
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Post blog to WordPress")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+            print(f"Failed to parse brief data: {e}")
+    
     with single_lock():
-        main()
+        main(brief)

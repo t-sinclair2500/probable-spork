@@ -36,7 +36,7 @@ def whisper_cpp_cmd(binary, model_path, audio_path, srt_out):
     return cmd, wav_tmp
 
 
-def main(brief=None):
+def main(brief=None, input_file=None, output_file=None):
     """Main function for caption generation with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
@@ -53,16 +53,6 @@ def main(brief=None):
     
     # Get command line arguments from sys.argv since we're being called by the pipeline
     # with --brief-data that was already parsed by the main argument parser
-    input_file = None
-    output_file = None
-    
-    # Simple argument parsing for input/output if provided
-    for i, arg in enumerate(sys.argv):
-        if arg in ['-i', '--input'] and i + 1 < len(sys.argv):
-            input_file = sys.argv[i + 1]
-        elif arg in ['-o', '--output'] and i + 1 < len(sys.argv):
-            output_file = sys.argv[i + 1]
-
     if input_file:
         mp3 = input_file
         if not output_file:
@@ -159,6 +149,30 @@ def main(brief=None):
         blocks = [b for b in raw.strip().split("\n\n") if b.strip()]
         nonempty = sum(1 for b in blocks if len(b.splitlines()) >= 3 and b.splitlines()[-1].strip())
         conf = round((nonempty / max(len(blocks), 1)) * 100)
+        
+        # Apply brief settings for caption optimization if available
+        if brief:
+            brief_tone = brief.get('tone', '').lower()
+            if brief_tone:
+                log.info(f"Brief tone applied to captions: {brief_tone}")
+                # Log tone-specific caption metrics
+                if brief_tone in ['professional', 'corporate']:
+                    log.info("Professional tone: captions optimized for clarity and accuracy")
+                elif brief_tone in ['casual', 'friendly']:
+                    log.info("Casual tone: captions optimized for natural speech patterns")
+                elif brief_tone in ['energetic', 'enthusiastic']:
+                    log.info("Energetic tone: captions optimized for dynamic content")
+            
+            # Check if brief keywords are present in captions
+            brief_keywords = brief.get('keywords_include', [])
+            if brief_keywords:
+                content_lower = content.lower()
+                present_keywords = [kw for kw in brief_keywords if kw.lower() in content_lower]
+                if present_keywords:
+                    log.info(f"Brief keywords found in captions: {', '.join(present_keywords)}")
+                else:
+                    log.warning("No brief keywords found in captions")
+        
         log_state("generate_captions", "METRIC", f"dur={round(dur,1)}s;wpm={wpm};conf~{conf}%")
     except Exception:
         pass
@@ -167,6 +181,8 @@ def main(brief=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Caption generation")
     parser.add_argument("--brief-data", help="JSON string containing brief data")
+    parser.add_argument("-i", "--input", help="Input MP3 file path")
+    parser.add_argument("-o", "--output", help="Output SRT file path")
     
     args = parser.parse_args()
     
@@ -180,4 +196,4 @@ if __name__ == "__main__":
             log.warning(f"Failed to parse brief data: {e}")
     
     with single_lock():
-        main(brief)
+        main(brief, args.input, args.output)

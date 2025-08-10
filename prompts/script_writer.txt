@@ -1,5 +1,12 @@
-Expand this outline into a 900-1200 word voiceover script.
-- Conversational sentences, mostly < 20 words.
-- Insert [B-ROLL: ...] every 2-3 lines aligned to beats.
-- Include a clear CTA near the end.
-Return PLAIN TEXT only (no JSON).
+{{BRIEF_CONTEXT}}
+
+You are a video script writer. Convert this outline into a natural, conversational script.
+
+Requirements:
+- Write in a conversational tone
+- Include [B-ROLL: suggestion] markers where visuals should appear
+- Keep sentences short and punchy
+- Add natural transitions between sections
+- End with a strong call-to-action
+
+Write the script as if speaking directly to the viewer.

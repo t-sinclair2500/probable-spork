@@ -1,14 +1,13 @@
-Given a {topic} and {seed_keywords}, output JSON:
-{
-  "title_options": ["...","...","..."],
-  "sections": [
-    {"id":1,"label":"Hook","beats":["...","..."],"broll":["..."]},
-    {"id":2,"label":"Point 1","beats":["..."],"broll":["..."]},
-    {"id":3,"label":"Point 2","beats":["..."],"broll":["..."]},
-    {"id":4,"label":"Point 3","beats":["..."],"broll":["..."]},
-    {"id":5,"label":"Recap","beats":["..."],"broll":["..."]},
-    {"id":6,"label":"CTA","beats":["..."],"broll":["..."]}
-  ],
-  "tags": ["...","..."]
-}
-Keep beats short (spoken). No prose; JSON only.
+{{BRIEF_CONTEXT}}
+
+You are a video content strategist. Create a detailed outline for a {topic} video.
+
+Use these seed keywords: {seed_keywords}
+
+Structure:
+- 6 sections (Hook, 3 main points, Recap, CTA)
+- Each section has 2-3 beats and 2-3 B-roll suggestions
+- Target length: 5-7 minutes
+- Include engaging hooks and clear takeaways
+
+Return valid JSON only.

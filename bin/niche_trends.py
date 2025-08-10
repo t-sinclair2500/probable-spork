@@ -206,6 +206,12 @@ def main(brief=None):
         brief_title = brief.get('title', 'Untitled')
         log_state("niche_trends", "START", f"brief={brief_title}")
         log.info(f"Running with brief: {brief_title}")
+        
+        # Log brief keywords for transparency
+        if brief.get('keywords_include'):
+            log.info(f"Brief keywords to include: {brief['keywords_include']}")
+        if brief.get('keywords_exclude'):
+            log.info(f"Brief keywords to exclude: {brief['keywords_exclude']}")
     else:
         log_state("niche_trends", "START", "brief=none")
         log.info("Running without brief - using default behavior")
@@ -229,11 +235,24 @@ def main(brief=None):
     if added == 0:
         # Use brief keywords if available, otherwise fall back to defaults
         if brief and brief.get('keywords_include'):
-            demo_keywords = ','.join(brief['keywords_include'][:3])
-            demo_title = f"{brief.get('title', 'AI tools')} that save time"
+            # Use brief keywords and avoid excluded terms
+            include_keywords = brief['keywords_include'][:3]
+            exclude_keywords = brief.get('keywords_exclude', [])
+            
+            # Filter out any include keywords that are also in exclude
+            filtered_keywords = [kw for kw in include_keywords if kw.lower() not in [ex.lower() for ex in exclude_keywords]]
+            
+            if filtered_keywords:
+                demo_keywords = ','.join(filtered_keywords)
+                demo_title = f"{brief.get('title', 'Topic')} that save time"
+            else:
+                # Fallback if all keywords were excluded
+                demo_keywords = "productivity,tips,guide"
+                demo_title = f"{brief.get('title', 'Topic')} guide"
         else:
-            demo_keywords = "ai,tools,productivity"
-            demo_title = "AI tools that save time"
+            # No brief - use generic defaults
+            demo_keywords = "productivity,tips,guide"
+            demo_title = "Productivity tips that save time"
         
         insert_row(con, "demo", demo_title, demo_keywords)
         added = 1

@@ -74,8 +74,9 @@ def main(brief=None):
     
     # Enhance prompt with brief context if available
     if brief:
-        brief_context = f"\nBRIEF CONTEXT:\nTitle: {brief.get('title', 'N/A')}\nAudience: {', '.join(brief.get('audience', []))}\nTone: {brief.get('tone', 'N/A')}\nKeywords: {', '.join(brief.get('keywords_include', []))}"
-        template = template + brief_context
+        from bin.core import create_brief_context
+        brief_context = create_brief_context(brief)
+        template = brief_context + template
     
     prompt = template + "\nINPUT:\n" + json.dumps(rows)
     
@@ -88,7 +89,7 @@ def main(brief=None):
     except Exception:
         # Fallback topics - use brief keywords if available
         if brief and brief.get('keywords_include'):
-            primary_keyword = brief['keywords_include'][0] if brief['keywords_include'] else "ai tools"
+            primary_keyword = brief['keywords_include'][0] if brief['keywords_include'] else "topic"
             topics = [
                 {
                     "topic": primary_keyword,
@@ -100,10 +101,10 @@ def main(brief=None):
         else:
             topics = [
                 {
-                    "topic": "ai tools",
+                    "topic": "productivity tips",
                     "score": 0.6,
-                    "hook": "5 AI tools to save hours",
-                    "keywords": ["ai", "tools"],
+                    "hook": "5 productivity tips to save hours",
+                    "keywords": ["productivity", "tips"],
                 },
                 {
                     "topic": "space trivia",
@@ -112,6 +113,20 @@ def main(brief=None):
                     "keywords": ["space", "trivia"],
                 },
             ]
+    
+    # Filter out topics that contain excluded keywords
+    if brief and brief.get('keywords_exclude'):
+        exclude_terms = [term.lower() for term in brief['keywords_exclude']]
+        filtered_topics = []
+        
+        for topic in topics:
+            topic_text = f"{topic.get('topic', '')} {' '.join(topic.get('keywords', []))}".lower()
+            if not any(exclude_term in topic_text for exclude_term in exclude_terms):
+                filtered_topics.append(topic)
+            else:
+                log.info(f"Filtered out topic '{topic.get('topic')}' due to excluded keywords")
+        
+        topics = filtered_topics
     
     # Enrich with created_at and clamp to top 10 by score
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())

@@ -211,6 +211,29 @@ def main(brief=None):
     if not os.path.exists(topic_assets_dir):
         topic_assets_dir = adir
 
+    # Apply brief settings for video assembly if available
+    if brief:
+        # Use brief video length target if specified
+        brief_target_length = brief.get('target_len_sec')
+        if brief_target_length:
+            log.info(f"Brief target length: {brief_target_length}s")
+            # Adjust short run seconds if brief target is shorter
+            if short_secs is None or brief_target_length < short_secs:
+                short_secs = brief_target_length
+                log.info(f"Adjusted short run to brief target: {short_secs}s")
+        
+        # Apply brief tone for style decisions
+        brief_tone = brief.get('tone', '').lower()
+        if brief_tone:
+            log.info(f"Brief tone: {brief_tone}")
+            # Adjust transition style based on tone
+            if brief_tone in ['professional', 'corporate', 'formal']:
+                xfade = min(xfade, 0.5)  # Shorter transitions for professional tone
+                log.info("Applied professional tone: shorter transitions")
+            elif brief_tone in ['casual', 'friendly', 'conversational']:
+                xfade = min(xfade * 1.2, 1.0)  # Slightly longer transitions for casual tone
+                log.info("Applied casual tone: slightly longer transitions")
+
     # Build visual timeline with coverage tracking
     W, H = [int(x) for x in cfg.render.resolution.split("x")]
     xfade = max(0.0, float(cfg.render.xfade_ms) / 1000.0)

@@ -52,9 +52,16 @@ def main(brief=None):
     if brief:
         tone = brief.get('tone', cfg.pipeline.tone)
         target_len_sec = brief.get('video', {}).get('target_length_max', cfg.pipeline.video_length_seconds)
+        
+        # Override word count targets if brief specifies them
+        if brief.get('blog', {}).get('words_min') and brief.get('blog', {}).get('words_max'):
+            word_target = f"{brief['blog']['words_min']}-{brief['blog']['words_max']} words"
+        else:
+            word_target = "900-1200 words"
     else:
         tone = cfg.pipeline.tone
         target_len_sec = cfg.pipeline.video_length_seconds
+        word_target = "900-1200 words"
     
     # Simple prompt: feed outline JSON and instructions
     prompt = (
@@ -62,13 +69,14 @@ def main(brief=None):
         + json.dumps(data)
         + "\n\n"
         + template
-        + f"\nTone: {tone}. Target length (sec): {target_len_sec}. Return plain text only."
+        + f"\nTone: {tone}. Target length (sec): {target_len_sec}. Target: {word_target}. Return plain text only."
     )
     
     # Enhance prompt with brief context if available
     if brief:
-        brief_context = f"\nBRIEF CONTEXT:\nTitle: {brief.get('title', 'N/A')}\nAudience: {', '.join(brief.get('audience', []))}\nKeywords: {', '.join(brief.get('keywords_include', []))}"
-        prompt = prompt + brief_context
+        from bin.core import create_brief_context
+        brief_context = create_brief_context(brief)
+        prompt = brief_context + prompt
     
     try:
         text = call_ollama(prompt, cfg)
@@ -86,6 +94,20 @@ def main(brief=None):
                 lines.append(f"- {b}.{tag}")
         lines.append("\nCTA: Subscribe for more!")
         text = "\n".join(lines)
+    
+    # Filter out any content that contains excluded keywords
+    if brief and brief.get('keywords_exclude'):
+        from bin.core import filter_content_by_brief
+        filtered_text, rejection_reasons = filter_content_by_brief(text, brief)
+        if rejection_reasons:
+            log_state("llm_script", "REJECTED", f"Script contains excluded keywords: {rejection_reasons}")
+            # Generate a replacement script without excluded terms
+            replacement_prompt = prompt + f"\n\nIMPORTANT: Do not use these terms: {', '.join(brief['keywords_exclude'])}"
+            try:
+                text = call_ollama(replacement_prompt, cfg)
+            except Exception:
+                log_state("llm_script", "FALLBACK", "Using fallback script after keyword rejection")
+                # Keep the original fallback text
     
     # Save script text + minimal metadata
     base = opath.replace(".outline.json", "")

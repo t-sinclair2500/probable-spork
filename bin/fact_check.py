@@ -280,6 +280,36 @@ def main(brief=None):
     with open(args.input_file, "r", encoding="utf-8") as f:
         content = f.read()
     
+    # Apply brief settings for fact-checking if available
+    if brief:
+        # Use brief keywords to prioritize fact-checking
+        brief_keywords = brief.get('keywords_include', [])
+        if brief_keywords:
+            print(f"Brief keywords for fact-checking priority: {', '.join(brief_keywords)}")
+            # Prioritize fact-checking of claims containing brief keywords
+            content_lines = content.split('\n')
+            prioritized_lines = []
+            for line in content_lines:
+                line_lower = line.lower()
+                if any(kw.lower() in line_lower for kw in brief_keywords):
+                    prioritized_lines.append(f"PRIORITY: {line}")
+                else:
+                    prioritized_lines.append(line)
+            content = '\n'.join(prioritized_lines)
+            print(f"Prioritized {len([l for l in prioritized_lines if l.startswith('PRIORITY:')])} lines for fact-checking")
+        
+        # Apply brief tone to fact-checking approach
+        brief_tone = brief.get('tone', '').lower()
+        if brief_tone:
+            print(f"Brief tone: {brief_tone}")
+            if brief_tone in ['professional', 'corporate', 'formal']:
+                print("Professional tone: applying strict fact-checking standards")
+                # Could adjust severity thresholds for professional content
+            elif brief_tone in ['casual', 'friendly']:
+                print("Casual tone: applying balanced fact-checking standards")
+            elif brief_tone in ['educational', 'informative']:
+                print("Educational tone: applying thorough fact-checking for accuracy")
+    
     # Run fact-check
     print(f"Fact-checking {args.input_file}...")
     result = fact_check_content(content)

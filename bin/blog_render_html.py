@@ -64,6 +64,13 @@ def main(brief=None):
     ensure_dirs(cfg)
     blog_cfg = load_blog_cfg()
     monetization_config = load_monetization_config()
+    
+    # Log brief context if available
+    if brief:
+        log_state("blog_render_html", "START", f"brief={brief.get('title', 'Untitled')}")
+    else:
+        log_state("blog_render_html", "START", "no brief")
+    
     md_path = os.path.join(BASE, "data", "cache", "post.md")
     meta_path = os.path.join(BASE, "data", "cache", "post.meta.json")
     if not (os.path.exists(md_path) and os.path.exists(meta_path)):
@@ -72,6 +79,15 @@ def main(brief=None):
     md = open(md_path, "r", encoding="utf-8").read()
     html = markdown.markdown(md, extensions=["extra", "sane_lists", "toc"])
     meta = json.load(open(meta_path, "r", encoding="utf-8")) if os.path.exists(meta_path) else {}
+    
+    # Apply brief content filtering if available
+    if brief:
+        from bin.core import filter_content_by_brief
+        exclude_keywords = brief.get('keywords_exclude', [])
+        if exclude_keywords:
+            # Filter excluded content from HTML
+            html = filter_content_by_brief(html, brief)
+            log.info(f"Filtered content based on brief exclude keywords: {exclude_keywords}")
     
     # Ensure monetization elements are properly handled
     html = ensure_monetization_styles(html, monetization_config)
@@ -98,10 +114,12 @@ def main(brief=None):
                             prov = it.get("provider", "")
                             url = it.get("url", "")
                             who = it.get("user") or it.get("photographer") or ""
-                            rows.append(
-                                f'<li>{prov}: <a href="{url}" rel="nofollow">{who or url}</a></li>'
-                            )
-                        attribution_html = "<h3>Attributions</h3><ul>" + "".join(rows) + "</ul>"
+                            try:
+                                rows.append(f"<tr><td>{prov}</td><td><a href='{url}'>{url}</a></td><td>{who}</td></tr>")
+                            except Exception:
+                                pass
+                        if rows:
+                            attribution_html = "<h3>Attributions</h3><table><tr><th>Provider</th><th>URL</th><th>Creator</th></tr>" + "".join(rows) + "</table>"
                 except Exception:
                     pass
     if attribution_html:
@@ -109,7 +127,7 @@ def main(brief=None):
     # Sanitize HTML output
     html = sanitize_html(html)
     
-    # Enhanced SEO generation
+    # Enhanced SEO generation with brief context
     try:
         # Initialize SEO enhancer with site configuration from blog config
         seo_config = blog_cfg.get("seo", {})
@@ -122,6 +140,19 @@ def main(brief=None):
                 "author_name": "AI Editor",
                 "organization_name": "AI Content Pipeline"
             }
+        
+        # Apply brief keywords to SEO if available
+        if brief:
+            brief_keywords = brief.get('keywords_include', [])
+            if brief_keywords:
+                # Enhance meta description with brief keywords
+                if 'description' in meta:
+                    meta['description'] = f"{meta['description']} {' '.join(brief_keywords)}".strip()
+                
+                # Add brief keywords to meta tags
+                if 'keywords' not in meta:
+                    meta['keywords'] = []
+                meta['keywords'].extend(brief_keywords)
         
         seo_enhancer = SEOEnhancer(seo_config)
         seo_metadata = seo_enhancer.generate_seo_metadata(md, meta)
@@ -159,10 +190,15 @@ img {{ max-width: 100%; height: auto; }}
 </body>
 </html>"""
         
-        # Log SEO enhancement metrics
-        log.info(f"SEO enhanced: reading_time={seo_metadata.reading_time_minutes}min, "
-                f"keywords={len(seo_metadata.keywords)}, "
-                f"quality_score={seo_metadata.content_quality_score:.1f if seo_metadata.content_quality_score else 0}")
+        # Log SEO enhancement metrics with brief context
+        if brief:
+            log.info(f"SEO enhanced with brief '{brief.get('title', 'Untitled')}': reading_time={seo_metadata.reading_time_minutes}min, "
+                    f"keywords={len(seo_metadata.keywords)}, "
+                    f"quality_score={seo_metadata.content_quality_score:.1f if seo_metadata.content_quality_score else 0}")
+        else:
+            log.info(f"SEO enhanced: reading_time={seo_metadata.reading_time_minutes}min, "
+                    f"keywords={len(seo_metadata.keywords)}, "
+                    f"quality_score={seo_metadata.content_quality_score:.1f if seo_metadata.content_quality_score else 0}")
         
     except Exception as e:
         log.warning(f"SEO enhancement failed, falling back to basic HTML: {e}")
@@ -181,7 +217,13 @@ img {{ max-width: 100%; height: auto; }}
 </head><body>{html}</body></html>"""
     out_html = os.path.join(BASE, "data", "cache", "post.html")
     open(out_html, "w", encoding="utf-8").write(full)
-    log_state("blog_render_html", "OK", os.path.basename(out_html))
+    
+    # Log final result with brief context
+    if brief:
+        log_state("blog_render_html", "OK", f"brief={brief.get('title', 'Untitled')} -> {os.path.basename(out_html)}")
+    else:
+        log_state("blog_render_html", "OK", os.path.basename(out_html))
+    
     print(f"Wrote {out_html} (HTML with schema.org Article + attribution if present).")
 
 

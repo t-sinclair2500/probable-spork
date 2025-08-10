@@ -39,23 +39,30 @@ def main(brief=None):
     
     qpath = os.path.join(BASE, "data", "topics_queue.json")
     topics = json.load(open(qpath, "r")) if os.path.exists(qpath) else []
-    topic = topics[0]["topic"] if topics else "AI tools that save time"
-    seed_keywords = topics[0].get("keywords") if topics else ["ai", "productivity"]
-    
-    with open(os.path.join(BASE, "prompts", "outline.txt"), "r", encoding="utf-8") as f:
-        template = f.read()
     
     # Use brief settings if available, otherwise fall back to config defaults
     if brief:
         tone = brief.get('tone', cfg.pipeline.tone)
         target_len_sec = brief.get('video', {}).get('target_length_max', cfg.pipeline.video_length_seconds)
+        
         # Override topic if brief has specific focus
         if brief.get('title') and not topics:
             topic = brief['title']
-            seed_keywords = brief.get('keywords_include', ['ai', 'productivity'])
+            seed_keywords = brief.get('keywords_include', ['productivity', 'tips'])
+        elif topics:
+            topic = topics[0]["topic"]
+            seed_keywords = topics[0].get("keywords", brief.get('keywords_include', ['productivity', 'tips']))
+        else:
+            topic = brief.get('title', 'Productivity tips')
+            seed_keywords = brief.get('keywords_include', ['productivity', 'tips'])
     else:
         tone = cfg.pipeline.tone
         target_len_sec = cfg.pipeline.video_length_seconds
+        topic = topics[0]["topic"] if topics else "Productivity tips that save time"
+        seed_keywords = topics[0].get("keywords") if topics else ["productivity", "tips"]
+    
+    with open(os.path.join(BASE, "prompts", "outline.txt"), "r", encoding="utf-8") as f:
+        template = f.read()
     
     prompt = (
         template.replace("{topic}", topic).replace("{seed_keywords}", ", ".join(seed_keywords))
@@ -64,8 +71,9 @@ def main(brief=None):
     
     # Enhance prompt with brief context if available
     if brief:
-        brief_context = f"\nBRIEF CONTEXT:\nTitle: {brief.get('title', 'N/A')}\nAudience: {', '.join(brief.get('audience', []))}\nKeywords: {', '.join(brief.get('keywords_include', []))}"
-        prompt = prompt + brief_context
+        from bin.core import create_brief_context
+        brief_context = create_brief_context(brief)
+        prompt = brief_context + prompt
     
     try:
         out = call_ollama(prompt, cfg)
@@ -75,7 +83,7 @@ def main(brief=None):
         if brief and brief.get('keywords_include'):
             fallback_keywords = brief['keywords_include'][:3]
         else:
-            fallback_keywords = ["ai", "productivity"]
+            fallback_keywords = ["productivity", "tips"]
             
         data = {
             "title_options": [f"{topic}: 5 Quick Tips"],
@@ -96,6 +104,31 @@ def main(brief=None):
             "tone": tone,
             "target_len_sec": target_len_sec,
         }
+    
+    # Filter out any content that contains excluded keywords
+    if brief and brief.get('keywords_exclude'):
+        from bin.core import filter_content_by_brief
+        exclude_terms = brief['keywords_exclude']
+        
+        # Check title options
+        if 'title_options' in data:
+            filtered_titles = []
+            for title in data['title_options']:
+                if not any(exclude_term.lower() in title.lower() for exclude_term in exclude_terms):
+                    filtered_titles.append(title)
+                else:
+                    log_state("llm_outline", "FILTERED", f"Title filtered due to excluded keywords: {title}")
+            data['title_options'] = filtered_titles
+        
+        # Check tags
+        if 'tags' in data:
+            filtered_tags = []
+            for tag in data['tags']:
+                if not any(exclude_term.lower() in tag.lower() for exclude_term in exclude_terms):
+                    filtered_tags.append(tag)
+                else:
+                    log_state("llm_outline", "FILTERED", f"Tag filtered due to excluded keywords: {tag}")
+            data['tags'] = filtered_tags
     
     date_tag = time.strftime("%Y-%m-%d")
     outline_path = os.path.join(

@@ -312,18 +312,29 @@ def main(brief=None):
     if not os.path.exists(work):
         log_state("blog_generate_post", "SKIP", "no topic")
         return
-    topic = json.load(open(work, "r", encoding="utf-8")).get("topic", "AI tools that save time")
+    topic = json.load(open(work, "r", encoding="utf-8")).get("topic", "Productivity tips that save time")
     sfile = choose_script_for_topic(topic)
     if not sfile:
         log_state("blog_generate_post", "SKIP", "no scripts")
         return
     text = open(sfile, "r", encoding="utf-8").read()
-    # Iterative LLM rewrite pipeline with separate roles: writer -> copyeditor -> SEO polish
-    tone = getattr(getattr(cfg, "blog", object()), "tone", "informative")
-    mn = int(getattr(getattr(cfg, "blog", object()), "min_words", 800))
-    mx = int(getattr(getattr(cfg, "blog", object()), "max_words", 1500))
-    include_faq = bool(getattr(getattr(cfg, "blog", object()), "include_faq", True))
-    cta = getattr(getattr(cfg, "blog", object()), "inject_cta", "Thanks for reading.")
+    
+    # Use brief settings if available, otherwise fall back to config defaults
+    if brief:
+        tone = brief.get('tone', getattr(getattr(cfg, "blog", object()), "tone", "informative"))
+        mn = brief.get('blog', {}).get('words_min', getattr(getattr(cfg, "blog", object()), "min_words", 800))
+        mx = brief.get('blog', {}).get('words_max', getattr(getattr(cfg, "blog", object()), "max_words", 1500))
+        include_faq = brief.get('blog', {}).get('include_faq', bool(getattr(getattr(cfg, "blog", object()), "include_faq", True)))
+        cta = brief.get('blog', {}).get('cta_text', getattr(getattr(cfg, "blog", object()), "inject_cta", "Thanks for reading."))
+        
+        # Log brief context for transparency
+        log.info(f"Using brief settings: tone={tone}, words={mn}-{mx}, include_faq={include_faq}")
+    else:
+        tone = getattr(getattr(cfg, "blog", object()), "tone", "informative")
+        mn = int(getattr(getattr(cfg, "blog", object()), "min_words", 800))
+        mx = int(getattr(getattr(cfg, "blog", object()), "max_words", 1500))
+        include_faq = bool(getattr(getattr(cfg, "blog", object()), "include_faq", True))
+        cta = getattr(getattr(cfg, "blog", object()), "inject_cta", "Thanks for reading.")
 
     import requests
     # Stage 1: Draft writer
@@ -338,6 +349,13 @@ def main(brief=None):
         f"TONE: {tone}\nMIN_WORDS: {mn}\nMAX_WORDS: {mx}\nINCLUDE_FAQ: {str(include_faq).lower()}\nINJECT_CTA: {cta}\n\n"
         "SCRIPT:\n" + text
     )
+    
+    # Enhance prompt with brief context if available
+    if brief:
+        from bin.core import create_brief_context
+        brief_context = create_brief_context(brief)
+        writer_prompt = brief_context + writer_prompt
+    
     writer_payload = {"model": cfg.llm.model, "prompt": writer_prompt, "stream": False}
     md1 = None
     try:
@@ -379,6 +397,26 @@ def main(brief=None):
             md3 = md2
 
     md = md3 or ("# " + topic + "\n\n" + text[:800])
+    
+    # Filter out any content that contains excluded keywords
+    if brief and brief.get('keywords_exclude'):
+        from bin.core import filter_content_by_brief
+        filtered_md, rejection_reasons = filter_content_by_brief(md, brief)
+        if rejection_reasons:
+            log_state("blog_generate_post", "REJECTED", f"Blog post contains excluded keywords: {rejection_reasons}")
+            # Generate a replacement post without excluded terms
+            replacement_prompt = writer_prompt + f"\n\nIMPORTANT: Do not use these terms: {', '.join(brief['keywords_exclude'])}"
+            try:
+                r_replacement = requests.post(cfg.llm.endpoint, json={"model": cfg.llm.model, "prompt": replacement_prompt, "stream": False}, timeout=600)
+                if r_replacement.ok:
+                    md = r_replacement.json().get("response", "").strip()
+                    log_state("blog_generate_post", "REPLACED", "Generated replacement post without excluded keywords")
+                else:
+                    log_state("blog_generate_post", "FALLBACK", "Using fallback post after keyword rejection")
+            except Exception:
+                log_state("blog_generate_post", "FALLBACK", "Using fallback post after keyword rejection")
+        else:
+            md = filtered_md
     
     # Inject monetization elements (affiliate disclosure, newsletter signup)
     md = inject_monetization_elements(md, monetization_config)
