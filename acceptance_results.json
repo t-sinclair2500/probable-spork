@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-12T15:20:04.135124Z",
+  "timestamp": "2025-08-12T19:11:20.359661Z",
   "pipeline": "acceptance_harness",
   "overall_status": "FAIL",
   "lanes": {
@@ -24,30 +24,39 @@
           "scene_004.mp4"
         ],
         "voiceover": "2025-08-12_eames.mp3",
-        "captions": null,
+        "captions": "2025-08-12_eames.srt",
         "video": "eames.mp4",
         "video_metadata": "eames.metadata.json",
         "thumbnail": null
       },
       "quality": {
-        "warning": "Missing captions SRT",
+        "captions_status": "Available",
+        "captions_path": "2025-08-12_eames.srt",
         "animatics": {
           "validation_pass": true,
           "validation_errors": [],
-          "legibility_pass": false,
-          "legibility_issues": [
-            "Legibility check error: unsupported operand type(s) for +: 'int' and 'NoneType'"
-          ],
+          "legibility_pass": true,
+          "legibility_issues": [],
           "scene_coverage": 1.0,
           "coverage_pass": true,
-          "qa_gates_pass": false,
-          "qa_gates_fails": [
-            "No background color specified for contrast checking"
+          "qa_gates_pass": true,
+          "qa_gates_fails": [],
+          "qa_gates_warnings": [
+            "Mapped background identifier 'gradient1' to color #f9fafb",
+            "Element 'scene_000_main' using default text color #111827",
+            "Only one color used - consider adding variety"
           ],
-          "qa_gates_warnings": [],
           "qa_gates_details": {
             "contrast": {
-              "contrast_checks": []
+              "contrast_checks": [
+                {
+                  "element_id": "scene_000_main",
+                  "text_color": "#111827",
+                  "background_color": "#f9fafb",
+                  "contrast_ratio": 16.98,
+                  "wcag_aa_pass": true
+                }
+              ]
             },
             "collisions": {
               "collisions": [],
@@ -55,10 +64,12 @@
             },
             "palette": {
               "palette_analysis": {
-                "total_colors": 0,
-                "unique_colors": 0,
+                "total_colors": 5,
+                "unique_colors": 1,
                 "max_allowed": 3,
-                "colors_used": [],
+                "colors_used": [
+                  "#111827"
+                ],
                 "invalid_colors": []
               }
             },
@@ -105,9 +116,111 @@
             "scenes_with_positions": 5,
             "animatics_only": true
           },
-          "overall_pass": false
+          "overall_pass": true
         },
-        "error": "QA gates failed: No background color specified for contrast checking"
+        "procedural_seed": 42,
+        "procedural_placement": {
+          "min_spacing_px": 64,
+          "safe_margin_px": 40
+        },
+        "procedural_motion": {
+          "jitter_ms": 80
+        },
+        "warning": "Missing thumbnail PNG",
+        "script_words": 491,
+        "broll_markers": 11,
+        "script_score": 85,
+        "asset_count": 5,
+        "visual_coverage": 100.0,
+        "audio": {
+          "voiceover": {
+            "valid": true,
+            "lufs_valid": true,
+            "peak_valid": true,
+            "lufs_target": -16.0,
+            "lufs_actual": -15.95,
+            "lufs_tolerance": 2.0,
+            "peak_target": -1.0,
+            "peak_actual": -12.0,
+            "can_normalize": false,
+            "metrics": {
+              "duration_seconds": 10.032,
+              "sample_rate": 48000,
+              "lufs_integrated": -15.95,
+              "lufs_range": 0.0,
+              "true_peak_db": -12.0,
+              "format": "mp3"
+            },
+            "final_metrics": {
+              "duration_seconds": 10.032,
+              "sample_rate": 48000,
+              "lufs_integrated": -15.95,
+              "lufs_range": 0.0,
+              "true_peak_db": -12.0,
+              "format": "mp3"
+            },
+            "final_validation": "original"
+          },
+          "mixed_audio": {
+            "valid": false,
+            "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_41cs9cfi/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
+          },
+          "valid": false,
+          "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_41cs9cfi/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254.",
+          "targets": {
+            "vo_lufs": -16.0,
+            "music_lufs": -23.0,
+            "true_peak_max": -1.0,
+            "ducking_min_db": 6.0
+          }
+        },
+        "assets": {
+          "status": "PASS",
+          "coverage": {
+            "gaps": [],
+            "gaps_count": 0,
+            "status": "pass"
+          },
+          "reuse_ratio": {
+            "value": 1.0,
+            "total_library_assets": 44,
+            "status": "exempt"
+          },
+          "palette_compliance": {
+            "status": "pass",
+            "violations": [],
+            "approved_colors": [
+              "#1C4FA1",
+              "#D62828",
+              "#F6BE00",
+              "#F28C28",
+              "#4E9F3D",
+              "#008080",
+              "#8B5E3C",
+              "#1A1A1A",
+              "#FFFFFF",
+              "#F8F1E5",
+              "#FF6F91"
+            ],
+            "total_assets": 0
+          },
+          "qa_results": {
+            "status": "pass",
+            "collisions": [],
+            "safe_margin_violations": [],
+            "contrast_issues": [],
+            "overall_status": "pass",
+            "errors": [],
+            "total_scenes": 5,
+            "failed_scenes": 0
+          },
+          "provenance": [],
+          "errors": [],
+          "warnings": [
+            "Library has only 44 assets, reuse ratio not enforced"
+          ]
+        },
+        "error": "Audio validation failed: Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_41cs9cfi/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
       }
     },
     "blog": {
@@ -132,11 +245,57 @@
     "min_assets": 10,
     "min_script_words": 350
   },
+  "assets": {
+    "status": "PASS",
+    "coverage": {
+      "gaps": [],
+      "gaps_count": 0,
+      "status": "pass"
+    },
+    "reuse_ratio": {
+      "value": 1.0,
+      "total_library_assets": 44,
+      "status": "exempt"
+    },
+    "palette_compliance": {
+      "status": "pass",
+      "violations": [],
+      "approved_colors": [
+        "#1C4FA1",
+        "#D62828",
+        "#F6BE00",
+        "#F28C28",
+        "#4E9F3D",
+        "#008080",
+        "#8B5E3C",
+        "#1A1A1A",
+        "#FFFFFF",
+        "#F8F1E5",
+        "#FF6F91"
+      ],
+      "total_assets": 0
+    },
+    "qa_results": {
+      "status": "pass",
+      "collisions": [],
+      "safe_margin_violations": [],
+      "contrast_issues": [],
+      "overall_status": "pass",
+      "errors": [],
+      "total_scenes": 5,
+      "failed_scenes": 0
+    },
+    "provenance": [],
+    "errors": [],
+    "warnings": [
+      "Library has only 44 assets, reuse ratio not enforced"
+    ]
+  },
   "summary": {
     "youtube_lane": "FAIL",
     "blog_lane": "FAIL",
     "total_artifacts": {
-      "youtube": 8,
+      "youtube": 9,
       "blog": 0
     }
   }

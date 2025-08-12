@@ -116,6 +116,7 @@ class Element(BaseModel):
     id: str = Field(..., description="Unique element identifier")
     type: str = Field(..., description="Element type")
     content: Optional[str] = Field(None, description="Text or content")
+    asset_path: Optional[str] = Field(None, description="Path to asset file (SVG, PNG, etc.)")
     x: float = Field(default=0.0, description="X position")
     y: float = Field(default=0.0, description="Y position")
     width: Optional[float] = Field(None, description="Width")

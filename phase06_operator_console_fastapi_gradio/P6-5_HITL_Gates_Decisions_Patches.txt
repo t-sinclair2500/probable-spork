@@ -1,0 +1,24 @@
+# Prompt P6-5 — HITL Gates (Decisions, Timeouts, Patch Hooks)
+
+ROLE: Human‑in‑the‑loop engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Wire the **Script**, **Storyboard+Assets**, and **Audio** approval gates. Add optional timeouts for auto‑approve, and a patch hook so the operator can upload a small JSON patch to modify an artifact before resuming.
+
+REQUIREMENTS
+- Routes to accept a GateDecision: `{approve|reject, notes?, patch?}`.
+- Patch target examples:
+  - Script: small text diff or section replace
+  - Storyboard: durations tweak for a beat or asset substitution
+  - Audio: bed level adjustment in dB
+- Timeouts: per gate in `conf/operator.yaml` (`auto_approve_after_s: null|int`)
+- All decisions and patches are stored under `runs/<id>/gates/<stage>.json` and appended to events.
+
+SUCCESS CRITERIA
+- Reject pauses the job safely; resume re‑runs only that stage with patch applied.
+- Auto‑approve works when configured; decision recorded with `by: "timer"`.
+
+TEST CRITERIA
+1) Run to Script gate, reject with a patch to adjust tone; resume and verify changed artifact.
+2) Configure auto‑approve on Storyboard; observe progression without manual click.

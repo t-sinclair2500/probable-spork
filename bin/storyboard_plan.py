@@ -22,7 +22,7 @@ from bin.core import get_logger, load_config, single_lock
 from bin.cutout.sdk import (
     SceneScript, Scene, Element, Keyframe, BrandStyle,
     MAX_WORDS_PER_CARD, SAFE_MARGINS_PX, VIDEO_W, VIDEO_H,
-    load_style, validate_scene_script, save_scene_script, Paths
+    load_style, validate_scene_script, save_scene_script, Paths, load_scene_script
 )
 from bin.cutout.asset_loop import run_asset_loop
 from bin.cutout.qa_gates import run_all as run_qa_gates, qa_result_to_dict
@@ -93,6 +93,109 @@ def create_text_element(
     )
 
 
+def apply_legibility_defaults(scene: Scene, brand_style: BrandStyle, log: logging.Logger) -> Scene:
+    """Apply legibility defaults to ensure WCAG compliance."""
+    # Check if legibility defaults are enabled
+    try:
+        from bin.core import load_config
+        cfg = load_config()
+        legibility_enabled = getattr(cfg, 'legibility', {}).get('enabled', True)
+        if not legibility_enabled:
+            log.debug("[legibility-defaults] Legibility defaults disabled in config")
+            return scene
+    except Exception as e:
+        log.warning(f"[legibility-defaults] Failed to load legibility config: {e}, using defaults")
+        legibility_enabled = True
+    
+    # Ensure scene has a background color
+    if not scene.bg:
+        scene.bg = "gradient1"  # Default to brand gradient
+        log.info(f"[legibility-defaults] Applied default background 'gradient1' to scene {scene.id}")
+    
+    # Ensure text elements have proper colors
+    for element in scene.elements:
+        if element.type == "text" and not element.style.get("color"):
+            # Determine appropriate text color based on background
+            bg_color = map_background_to_color(scene.bg, brand_style)
+            if bg_color:
+                text_color = get_contrasting_text_color(bg_color, brand_style)
+                if not element.style:
+                    element.style = {}
+                element.style["color"] = text_color
+                log.info(f"[legibility-defaults] Applied default text color {text_color} to element {element.id} in scene {scene.id}")
+    
+    return scene
+
+
+def apply_legibility_defaults_to_storyboard(storyboard: SceneScript, brand_style: BrandStyle, log: logging.Logger) -> SceneScript:
+    """Apply legibility defaults to all scenes in the storyboard."""
+    log.info("[legibility-defaults] Applying legibility defaults to all scenes")
+    
+    for scene in storyboard.scenes:
+        scene = apply_legibility_defaults(scene, brand_style, log)
+    
+    log.info(f"[legibility-defaults] Applied legibility defaults to {len(storyboard.scenes)} scenes")
+    return storyboard
+
+
+def map_background_to_color(bg_id: str, brand_style: BrandStyle) -> str:
+    """Map background identifier to actual hex color."""
+    try:
+        from bin.core import load_config
+        cfg = load_config()
+        background_mapping = getattr(cfg, 'legibility', {}).get('background_mapping', {})
+        
+        # Use config mapping if available, otherwise fall back to brand style
+        if bg_id in background_mapping:
+            return background_mapping[bg_id]
+    except Exception as e:
+        log.warning(f"[legibility-defaults] Failed to load background mapping config: {e}")
+    
+    # Fallback to brand style colors
+    background_colors = {
+        "gradient1": brand_style.colors.get("background", "#f9fafb"),
+        "paper": brand_style.colors.get("background", "#f9fafb"),
+        "solid_white": "#ffffff",
+        "solid_black": brand_style.colors.get("black", "#111827"),
+        "solid_primary": brand_style.colors.get("primary", "#2563eb"),
+        "solid_secondary": brand_style.colors.get("secondary", "#7c3aed"),
+        "solid_accent": brand_style.colors.get("accent", "#f59e0b"),
+    }
+    
+    return background_colors.get(bg_id, brand_style.colors.get("background", "#f9fafb"))
+
+
+def get_contrasting_text_color(bg_color: str, brand_style: BrandStyle) -> str:
+    """Get text color that provides good contrast with background."""
+    try:
+        from bin.core import load_config
+        cfg = load_config()
+        text_color_fallback = getattr(cfg, 'legibility', {}).get('text_color_fallback', {})
+        
+        # Use config fallback colors if available
+        light_fallback = text_color_fallback.get('light_background', brand_style.colors.get("text_primary", "#111827"))
+        dark_fallback = text_color_fallback.get('dark_background', brand_style.colors.get("white", "#ffffff"))
+    except Exception as e:
+        log.warning(f"[legibility-defaults] Failed to load text color fallback config: {e}")
+        light_fallback = brand_style.colors.get("text_primary", "#111827")
+        dark_fallback = brand_style.colors.get("white", "#ffffff")
+    
+    try:
+        # Simple luminance calculation for contrast
+        hex_color = bg_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+        
+        if luminance > 0.5:  # Light background
+            return light_fallback
+        else:  # Dark background
+            return dark_fallback
+            
+    except (ValueError, TypeError, AttributeError):
+        # Fallback to brand defaults
+        return light_fallback
+
+
 def create_scene_from_beat(
     beat: Dict, 
     scene_id: str, 
@@ -125,19 +228,36 @@ def create_scene_from_beat(
         Keyframe(t=duration_ms, opacity=0.0)
     ])
     
-    return Scene(
+    scene = Scene(
         id=scene_id,
         duration_ms=duration_ms,
         bg="gradient1",  # Use brand style background
         elements=elements
     )
+    
+    # Apply legibility defaults
+    scene = apply_legibility_defaults(scene, brand_style, log)
+    
+    return scene
 
 
 def map_beats_to_scenes(beats: List[Dict], brief: Dict, timing_config: Dict, slug: str) -> List[Scene]:
     """Map beats to scenes with intelligent duration allocation."""
+    # Load brand style for defaults
+    try:
+        brand_style = load_style()
+    except Exception as e:
+        log.warning(f"Failed to load brand style for scene creation: {e}")
+        brand_style = BrandStyle(
+            colors={"primary": "#2563eb", "background": "#f9fafb", "text_primary": "#111827"},
+            fonts={"primary": "Inter"},
+            font_sizes={"hook": 48, "body": 24, "lower_third": 32}
+        )
+    
     if len(beats) == 0:
         # Fallback: create a single scene with default duration
         default_duration = timing_config.get('default_scene_ms', 5000)
+        
         fallback_scene = Scene(
             id="fallback",
             duration_ms=default_duration,
@@ -152,6 +272,9 @@ def map_beats_to_scenes(beats: List[Dict], brief: Dict, timing_config: Dict, slu
                 )
             ]
         )
+        
+        # Apply legibility defaults to fallback scene
+        fallback_scene = apply_legibility_defaults(fallback_scene, brand_style, log)
         return [fallback_scene]
     
     # Compute scene durations using timing utilities
@@ -165,10 +288,19 @@ def map_beats_to_scenes(beats: List[Dict], brief: Dict, timing_config: Dict, slu
     scenes = []
     for i, (beat, duration) in enumerate(zip(beats, durations)):
         scene_id = f"scene_{i:03d}"
-        scene = create_scene_from_beat(beat, scene_id, duration, None)
+        scene = create_scene_from_beat(beat, scene_id, duration, brand_style)
+        
+        # Add duration rationale metadata to scene
+        if hasattr(scene, 'metadata'):
+            scene.metadata = scene.metadata or {}
+        else:
+            scene.metadata = {}
+        scene.metadata['duration_rationale'] = rationale
+        scene.metadata['duration_strategy'] = strategy
+        
         scenes.append(scene)
         
-        log.info(f"Scene {scene_id}: {duration}ms ({rationale})")
+        log.info(f"[duration-policy] Scene {scene_id}: {duration}ms ({rationale})")
     
     return scenes
 
@@ -214,8 +346,8 @@ def create_storyboard(
     deviation_pct = abs(total_duration_ms - target_ms) / target_ms * 100 if target_ms > 0 else 0
     timing_compliant = deviation_pct <= timing_tolerance
     
-    log.info(f"Created {total_scenes} scenes, total duration: {total_duration_ms}ms")
-    log.info(f"Target: {target_ms}ms, deviation: {deviation_pct:.1f}%, compliant: {timing_compliant}")
+    log.info(f"[duration-policy] Created {total_scenes} scenes, total duration: {total_duration_ms}ms")
+    log.info(f"[duration-policy] Target: {target_ms}ms, deviation: {deviation_pct:.1f}%, compliant: {timing_compliant}")
     
     # Count text truncations
     truncation_count = 0
@@ -278,7 +410,8 @@ def create_storyboard(
     except Exception as e:
         log.warning(f"Auto-layout failed: {e}, scenes will use default positioning")
     
-    return SceneScript(
+    # Create storyboard
+    storyboard = SceneScript(
         slug=slug,
         fps=30,
         scenes=scenes,
@@ -292,6 +425,55 @@ def create_storyboard(
             "truncation_count": truncation_count
         }
     )
+    
+    # Apply legibility defaults to ensure all scenes have proper colors
+    storyboard = apply_legibility_defaults_to_storyboard(storyboard, brand_style, log)
+    
+    return storyboard
+
+
+def update_existing_scenescript_legibility(slug: str, brand_style: BrandStyle, log: logging.Logger) -> bool:
+    """Update existing scenescript with legibility defaults if it exists."""
+    scenescript_path = Path("scenescripts") / f"{slug}.json"
+    
+    if not scenescript_path.exists():
+        log.info(f"[legibility-defaults] No existing scenescript found at {scenescript_path}")
+        return False
+    
+    try:
+        # Load existing scenescript
+        storyboard = load_scene_script(scenescript_path)
+        
+        # Check if legibility defaults are needed
+        needs_update = False
+        for scene in storyboard.scenes:
+            if not scene.bg:
+                needs_update = True
+                break
+            for element in scene.elements:
+                if element.type == "text" and (not element.style or not element.style.get("color")):
+                    needs_update = True
+                    break
+            if needs_update:
+                break
+        
+        if not needs_update:
+            log.info(f"[legibility-defaults] Existing scenescript {slug} already has legibility defaults")
+            return True
+        
+        # Apply legibility defaults
+        log.info(f"[legibility-defaults] Updating existing scenescript {slug} with legibility defaults")
+        storyboard = apply_legibility_defaults_to_storyboard(storyboard, brand_style, log)
+        
+        # Save updated scenescript
+        save_scene_script(storyboard, scenescript_path)
+        log.info(f"[legibility-defaults] Updated and saved scenescript {slug} with legibility defaults")
+        
+        return True
+        
+    except Exception as e:
+        log.error(f"[legibility-defaults] Failed to update existing scenescript {slug}: {e}")
+        return False
 
 
 def main(brief=None, models_config=None):
@@ -333,6 +515,10 @@ def main(brief=None, models_config=None):
     except Exception as e:
         log.warning(f"Failed to load config for seed: {e}, using default seed 42")
         seed = 42
+    
+    # Check if we should update existing scenescript with legibility defaults
+    if not args.dry_run:
+        update_existing_scenescript_legibility(args.slug, brand_style, log)
     
     # Create storyboard
     storyboard = create_storyboard(args.slug, beats, brief, brand_style)

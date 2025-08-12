@@ -1,0 +1,31 @@
+# Prompt P4-4 — Research Collectors (Whitelisted Domains, Cache-First)
+
+ROLE: Research collection engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Collect evidence snippets from whitelisted, reputable domains with strict caching and metadata. No black-box summaries—store the raw extract and minimal normalized text.
+
+MANDATORY CONTEXT
+- New config: `conf/research.yaml` (domain allowlist, disallow list, recency policy, rate limits, timeouts)
+- New module: `bin/research_collect.py`
+- Storage: `runs/<slug>/research/snippets.json` (raw), plus persistent cache `data/research_cache/`
+
+REQUIREMENTS
+- CLI: `python bin/research_collect.py --slug <slug> --mode reuse|live --max 50 --domains default`
+- For each URL: store `{url, domain, title, ts_crawled, published_at?, extract_method, text_raw, text_clean[:500], tokens_est}`
+- Deduplicate by URL hash; respect cache TTL from config; skip blacklisted domains.
+- Provide adapters for: Wikipedia, design museums/archives, reputable magazines/journals.
+- No LLM summarization at this stage; extraction only.
+
+DELIVERABLES
+- `snippets.json` with high-quality, date-stamped extracts and a local cache for offline reuse.
+- Logs with `[collect]` including fetch/cached decisions and domain allowlist checks.
+
+SUCCESS CRITERIA
+- Reuse mode works offline; live mode fills cache and respects timeouts/limits.
+- All snippets include provenance fields.
+
+TEST CRITERIA (paste outputs)
+1) `jq '. | length' runs/<slug>/research/snippets.json`
+2) Show one snippet entry (domain, title, published_at?).

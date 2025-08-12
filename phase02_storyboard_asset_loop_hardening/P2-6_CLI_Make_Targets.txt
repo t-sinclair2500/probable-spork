@@ -1,0 +1,38 @@
+# Prompt P2-6 — CLI & Make Targets (Operator Ergonomics)
+
+ROLE: Developer experience engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Provide convenient operator commands to run the asset loop end-to-end or stepwise, with clear logs and artifacts. Ensure dry-run support.
+
+MANDATORY CONTEXT
+- Binaries created in P2-1..P2-4
+- Makefile (if present), or create basic `make` targets
+- `bin/run_pipeline.py` (orchestrator)
+
+REQUIREMENTS
+- Add CLI wrappers:
+  - `python bin/asset_manifest.py --rebuild`
+  - `python bin/asset_librarian.py --slug <slug>` (writes plan)
+  - `python bin/asset_generator.py --plan runs/<slug>/asset_plan.json`
+  - `python bin/reflow_assets.py --slug <slug>` (can be part of storyboard module)
+- Make targets:
+  - `make asset-rebuild`
+  - `make asset-plan SLUG=<slug>`
+  - `make asset-fill SLUG=<slug>`
+  - `make asset-reflow SLUG=<slug>`
+  - `make asset-loop SLUG=<slug>` (runs all of the above in order)
+- Logs printed with the stage tags from README.
+
+DELIVERABLES
+- New CLIs and Make targets with help text.
+- README note in OPERATOR_RUNBOOK.md describing usage.
+
+SUCCESS CRITERIA
+- Operator can run `make asset-loop SLUG=eames-history` and see a clean pass with logs and artifacts in place.
+
+TEST CRITERIA (paste outputs)
+1) `make asset-rebuild && make asset-plan SLUG=<slug>`
+2) `jq '.gaps | length' runs/<slug>/asset_plan.json`
+3) `make asset-fill SLUG=<slug> && make asset-reflow SLUG=<slug>`

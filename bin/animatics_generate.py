@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 import time
+import yaml
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -98,6 +99,7 @@ def get_background_path(bg_id: str, style: BrandStyle) -> Optional[str]:
 def rasterize_element_assets(elements: List[Element], style: BrandStyle, texture_config: Optional[Dict] = None) -> Dict[str, str]:
     """Rasterize SVG assets for elements and return path mapping with optional texture overlay."""
     asset_paths = {}
+    texture_metadata = {}
     
     # Load brand palette for texture constraints
     brand_palette = []
@@ -108,6 +110,9 @@ def rasterize_element_assets(elements: List[Element], style: BrandStyle, texture
         # Fallback to style colors if available
         if hasattr(style, 'colors'):
             brand_palette = list(style.colors.values())
+    
+    # Get seed for deterministic texture application
+    seed = 42  # Default seed, could be made configurable
     
     for element in elements:
         if element.type in ["prop", "character"] and element.asset_path:
@@ -121,20 +126,21 @@ def rasterize_element_assets(elements: List[Element], style: BrandStyle, texture
                     )
                     if raster_path:
                         # Apply texture overlay if enabled
-                        if texture_config and texture_config.get("enabled", False):
+                        if texture_config and texture_config.get("enable", False):
                             try:
-                                from .cutout.texture_integration import process_rasterized_with_texture
-                                textured_path = process_rasterized_with_texture(
-                                    raster_path, texture_config, brand_palette
+                                from .cutout.texture_integration import process_rasterized_with_texture_qa
+                                textured_path, metadata = process_rasterized_with_texture_qa(
+                                    raster_path, texture_config, brand_palette, seed
                                 )
                                 if textured_path != raster_path:
                                     asset_paths[element.id] = textured_path
-                                    log.debug(f"Applied texture to {element.asset_path} -> {textured_path}")
+                                    texture_metadata[element.id] = metadata
+                                    log.info(f"[texture-integrate] Applied texture to {element.asset_path} -> {textured_path}")
                                 else:
                                     asset_paths[element.id] = raster_path
                                     log.debug(f"Rasterized {element.asset_path} -> {raster_path}")
                             except ImportError:
-                                log.warning("Texture integration not available, using untextured version")
+                                log.warning("[texture-integrate] Texture integration not available, using untextured version")
                                 asset_paths[element.id] = raster_path
                         else:
                             asset_paths[element.id] = raster_path
@@ -142,7 +148,95 @@ def rasterize_element_assets(elements: List[Element], style: BrandStyle, texture
             except Exception as e:
                 log.warning(f"Failed to rasterize {element.asset_path}: {e}")
     
+    # Store texture metadata for later use
+    if texture_metadata:
+        log.info(f"[texture-integrate] Texture metadata collected for {len(texture_metadata)} elements")
+        # Store in a way that can be accessed by the main render function
+        rasterize_element_assets.texture_metadata = texture_metadata
+    
     return asset_paths
+
+
+def create_texture_metadata(texture_config: Dict, texture_results: Dict) -> Dict:
+    """Create structured metadata about texture application and QA results."""
+    metadata = {
+        "textures": {
+            "enabled": texture_config.get("enable", False),
+            "config": texture_config,
+            "results": texture_results
+        }
+    }
+    
+    if texture_results:
+        # Aggregate texture statistics
+        total_elements = len(texture_results)
+        successful_applications = sum(1 for r in texture_results.values() if r.get("textures", {}).get("applied", False))
+        dialback_applied = sum(1 for r in texture_results.values() if r.get("textures", {}).get("dialback_applied", False))
+        
+        metadata["textures"]["summary"] = {
+            "total_elements": total_elements,
+            "successful_applications": successful_applications,
+            "dialback_applied": dialback_applied,
+            "success_rate": successful_applications / total_elements if total_elements > 0 else 0.0
+        }
+        
+        # Collect QA attempt statistics
+        qa_attempts = []
+        for element_id, result in texture_results.items():
+            if "textures" in result and "qa_results" in result["textures"]:
+                # Convert QAResult objects to dictionaries for JSON serialization
+                qa_results = result["textures"]["qa_results"]
+                for qa in qa_results:
+                    if hasattr(qa, 'ok'):  # QAResult object
+                        qa_attempts.append({
+                            "attempt": qa.attempt,
+                            "config": qa.config,
+                            "contrast_result": {
+                                "ok": qa.contrast_result.ok,
+                                "fails": qa.contrast_result.fails,
+                                "warnings": qa.contrast_result.warnings,
+                                "details": qa.contrast_result.details
+                            }
+                        })
+                    else:  # Already a dictionary
+                        qa_attempts.append(qa)
+        
+        if qa_attempts:
+            metadata["textures"]["qa_summary"] = {
+                "total_attempts": len(qa_attempts),
+                "average_attempts_per_element": sum(qa["attempt"] for qa in qa_attempts) / len(texture_results) if texture_results else 0,
+                "max_attempts": max(qa["attempt"] for qa in qa_attempts) if qa_attempts else 0
+            }
+    
+    return metadata
+
+
+def write_animatics_metadata(slug: str, texture_metadata: Dict, texture_config: Dict) -> str:
+    """Write animatics metadata including texture information."""
+    import time
+    
+    metadata = {
+        "slug": slug,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "source": "animatics_generate",
+        "version": "1.0"
+    }
+    
+    # Add texture metadata
+    if texture_metadata:
+        metadata.update(create_texture_metadata(texture_config, texture_metadata))
+    
+    # Ensure videos directory exists
+    videos_dir = Path("videos")
+    videos_dir.mkdir(exist_ok=True)
+    
+    # Write metadata
+    metadata_path = videos_dir / f"{slug}.metadata.json"
+    with open(metadata_path, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2, ensure_ascii=False)
+    
+    log.info(f"[texture-integrate] Wrote animatics metadata with texture info: {metadata_path}")
+    return str(metadata_path)
 
 
 def create_element_clip(
@@ -201,6 +295,7 @@ def render_scene(
     style: BrandStyle,
     asset_paths: Dict[str, str],
     output_path: Path,
+    slug: str,
     vo_cues: Optional[Dict] = None,
     procedural_cfg: Optional[Dict] = None,
     palette: Optional[List[str]] = None
@@ -256,32 +351,12 @@ def render_scene(
         
         scene_duration = scene.duration_ms / 1000.0  # Convert to seconds
         
-        # Check for audio cue timing adjustments
-        timing_adjustment = 0.0
-        if vo_cues and scene.id in vo_cues:
-            scene_cue_data = vo_cues[scene.id]
-            if scene_cue_data.get('cues'):
-                # Calculate timing adjustment based on audio cues
-                # Allow ±300ms tolerance as per requirements
-                tolerance_ms = 300
-                scene_start_ms = scene_cue_data['scene_start_ms']
-                scene_end_ms = scene_cue_data['scene_end_ms']
-                
-                # Check if scene timing aligns with audio cues
-                expected_duration_ms = scene_end_ms - scene_start_ms
-                actual_duration_ms = scene.duration_ms
-                timing_diff_ms = abs(expected_duration_ms - actual_duration_ms)
-                
-                if timing_diff_ms > tolerance_ms:
-                    log.warning(
-                        f"Scene {scene.id} timing differs from audio cues by "
-                        f"{timing_diff_ms}ms (tolerance: ±{tolerance_ms}ms)"
-                    )
-                    # Adjust scene duration to match audio cues if within reasonable bounds
-                    if timing_diff_ms <= 1000:  # Allow up to 1 second adjustment
-                        timing_adjustment = (expected_duration_ms - actual_duration_ms) / 1000.0
-                        scene_duration += timing_adjustment
-                        log.info(f"Adjusted scene {scene.id} duration by {timing_adjustment:.3f}s")
+        # Log scene duration for duration policy compliance
+        log.info(f"[duration-policy] Rendering scene {scene.id} with duration: {scene.duration_ms}ms")
+        
+        # Note: Duration policy requires renderer to respect storyboard durations
+        # VO alignment should be handled in storyboard planning, not during rendering
+        scene_duration = scene.duration_ms / 1000.0  # Convert to seconds
         
         # Create background clip using procedural generation
         clips = []
@@ -324,6 +399,42 @@ def render_scene(
                 if bg_path:
                     bg_clip = make_background_clip(bg_path, scene_duration)
                     clips.append(bg_clip)
+        
+        # Generate micro-animations for eligible elements
+        micro_anim_config = None
+        try:
+            from .cutout.micro_animations import create_micro_animation_generator
+            # Load micro-animations configuration from modules.yaml
+            import yaml
+            modules_config_path = Path("conf/modules.yaml")
+            if modules_config_path.exists():
+                with open(modules_config_path, 'r') as f:
+                    modules_config = yaml.safe_load(f)
+                    micro_anim_config = modules_config.get('micro_anim', {})
+                    
+                if micro_anim_config.get('enable', False):
+                    # Create micro-animation generator
+                    scene_seed = hash(scene.id) % 10000
+                    micro_anim_gen = create_micro_animation_generator(micro_anim_config, seed=scene_seed)
+                    
+                    # Generate animations for this scene
+                    animation_result = micro_anim_gen.generate_scene_animations(scene)
+                    
+                    if animation_result['enabled'] and animation_result['elements_animated'] > 0:
+                        log.info(f"[micro-anim] Applied animations to {animation_result['elements_animated']} elements in scene {scene.id}")
+                        
+                        # Save animation report for this scene
+                        runs_dir = Path(f"runs/{slug}")
+                        runs_dir.mkdir(parents=True, exist_ok=True)
+                        report_path = runs_dir / f"micro_anim_report_{scene.id}.json"
+                        micro_anim_gen.save_animation_report(str(report_path))
+                    else:
+                        log.debug(f"[micro-anim] No elements animated in scene {scene.id}")
+                        
+        except ImportError:
+            log.debug("[micro-anim] Micro-animations module not available")
+        except Exception as e:
+            log.warning(f"[micro-anim] Failed to generate micro-animations for scene {scene.id}: {e}")
         
         # Create element clips
         for element in scene.elements:
@@ -416,7 +527,8 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         else:
             scenes_to_render = scenescript.scenes
         
-        log.info(f"Rendering {len(scenes_to_render)} scenes for {slug}")
+        log.info(f"[duration-policy] Rendering {len(scenes_to_render)} scenes for {slug}")
+        log.info(f"[duration-policy] Total storyboard duration: {sum(s.duration_ms for s in scenes_to_render)}ms")
         
         # Rasterize assets for all scenes
         all_elements = []
@@ -428,6 +540,11 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         
         asset_paths = rasterize_element_assets(all_elements, style, texture_config)
         log.info(f"Rasterized {len(asset_paths)} assets")
+        
+        # Collect texture metadata if available
+        texture_metadata = getattr(rasterize_element_assets, 'texture_metadata', {})
+        if texture_metadata:
+            log.info(f"[texture-integrate] Collected texture metadata for {len(texture_metadata)} elements")
         
         # Render each scene
         successful_renders = 0
@@ -454,7 +571,7 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
                 except Exception as e:
                     log.warning(f"Failed to load voiceover cues: {e}")
             
-            if render_scene(scene, style, asset_paths, output_path, vo_cues, procedural_cfg, palette):
+            if render_scene(scene, style, asset_paths, output_path, slug, vo_cues, procedural_cfg, palette):
                 successful_renders += 1
         
         total_time = time.time() - start_time
@@ -462,6 +579,14 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
             f"Rendered {successful_renders}/{len(scenes_to_render)} scenes "
             f"in {total_time:.2f}s"
         )
+        
+        # Write texture metadata if available
+        if texture_metadata:
+            try:
+                metadata_path = write_animatics_metadata(slug, texture_metadata, texture_config)
+                log.info(f"[texture-integrate] Wrote texture metadata to {metadata_path}")
+            except Exception as e:
+                log.error(f"[texture-integrate] Failed to write texture metadata: {e}")
         
         # Log state
         log_state(

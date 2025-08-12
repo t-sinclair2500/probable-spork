@@ -1,0 +1,29 @@
+# Prompt P6-2 — Core Routes (Jobs CRUD, Artifacts, Auth, CORS)
+
+ROLE: API engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Implement core FastAPI routes with token auth and optional CORS. Provide CRUD for jobs, gates, and artifacts; write to SQLite and per-job state files.
+
+REQUIRED ENDPOINTS
+- `GET /healthz`
+- `GET /config/operator` (sanitized), `POST /config/validate`
+- `POST /jobs` (create), `GET /jobs`, `GET /jobs/{id}`
+- `POST /jobs/{id}/approve` (GateDecision), `POST /jobs/{id}/reject`, `POST /jobs/{id}/resume`
+- `POST /jobs/{id}/cancel`
+- `GET /jobs/{id}/artifacts` (list)
+- `GET /jobs/{id}/events` (Server-Sent Events stream), AND `GET /jobs/{id}/events/poll` (JSON array for polling)
+
+RULES
+- **Auth:** Bearer token via `Authorization: Bearer <ADMIN_TOKEN>`; reject otherwise.
+- **CORS:** Off by default; enable only if `conf/operator.yaml` says so.
+- **Persistence:** Every state change must append to `runs/<id>/events.jsonl` and update `runs/<id>/state.json`.
+
+SUCCESS CRITERIA
+- Routes respond with correct shapes; unauthorized requests fail 401.
+- Events stream yields heartbeats + stage events.
+
+TEST CRITERIA
+1) `curl -H "Authorization: Bearer $ADMIN_TOKEN" http://127.0.0.1:8008/jobs`
+2) SSE: `curl -N -H "Authorization: Bearer $ADMIN_TOKEN" http://127.0.0.1:8008/jobs/<id>/events | head`

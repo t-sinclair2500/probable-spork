@@ -1,0 +1,36 @@
+# Prompt P3-4 — Micro‑Animations via Geometry (Subtle Morphs & Safe Transforms)
+
+ROLE: Motion designer (systems)
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Apply subtle geometry-driven micro‑animations to select elements (e.g., background motifs or props) that add “life” without distracting from VO. Ensure timing fits scene durations and respects safe margins.
+
+MANDATORY CONTEXT
+- Geometry engine: `bin/cutout/svg_geom.py`
+- Renderer: `bin/animatics_generate.py` / scene compositor
+- Layout/QA: `bin/cutout/layout_engine.py`, `bin/cutout/qa_gates.py`
+- Configs: `conf/modules.yaml` → `micro_anim.enable`
+
+REQUIREMENTS
+- Rules:
+  - Micro‑animations limited to **≤ 10%** of elements in a scene.
+  - Movement ≤ 4px amplitude or morph delta per 1000ms; ease in/out.
+  - Never overlap text bounding boxes; re-check collisions after anim.
+- Implementation:
+  - Choose eligible elements: decorative shapes, backgrounds, non-focal props.
+  - Add a small morph (src→tgt→src) or parallax-safe translate/scale; sync to scene duration.
+  - Deterministic seed; log with `[micro-anim]` entries: element id, method, magnitude.
+- Metadata: record which scenes/elements were animated and the parameters used.
+
+DELIVERABLES
+- Micro‑animation generator/integrator; updated renderer to render these keyframes.
+- Logs and metadata for operator review.
+
+SUCCESS CRITERIA
+- Animations are visible but subtle; no collisions introduced; no timing overruns.
+- Deterministic replay with same seed.
+
+TEST CRITERIA (paste outputs)
+1) Logs with `[micro-anim]` entries for a demo scene.
+2) Short MP4/GIF snippet path demonstrating one animated motif.

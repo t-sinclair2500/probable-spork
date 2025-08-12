@@ -1,0 +1,37 @@
+# Prompt P2-3 — Asset Generator (Procedural Gap Fill with SVG Geometry)
+
+ROLE: Procedural Asset Generator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+For every gap in `asset_plan.json`, procedurally generate compliant SVG assets (palette-only, mid-century style) using motif generators and SVG geometry ops. Update manifest and close gaps.
+
+MANDATORY CONTEXT
+- Gaps: `runs/<slug>/asset_plan.json` from P2-2
+- Generators: `bin/cutout/motif_generators.py`, `bin/cutout/svg_path_ops.py`
+- Manifest tools: `bin/asset_manifest.py`
+- Config: `conf/modules.yaml` (generation caps per run), `design/design_language.json`
+
+REQUIREMENTS
+- Create `bin/asset_generator.py` with:
+  - `generate_from_spec(spec: dict, out_dir: str, seed:int|None=None) -> dict` returning `{"path": "...svg", "palette": [...], "seed": 42, "generator_params": {...}}`
+  - `fill_gaps(plan_path: str, manifest_path: str, seed:int|None=None) -> dict` updating `asset_plan.json` → move items from `gaps` to `resolved` and refresh manifest.
+- Enforce palette compliance; refuse colors outside design palette.
+- Add `<desc>` metadata describing generator, seed, and parameters.
+- Create thumbnail PNG for each new asset.
+- Respect generation caps (e.g., max 20 assets/run) to prevent explosion.
+
+DELIVERABLES
+- New SVGs under `assets/generated/svg/` with thumbnails.
+- Updated `runs/<slug>/asset_plan.json` where `gaps.length == 0` (coverage 100%).
+- `runs/<slug>/asset_generation_report.json` with per-asset details.
+
+SUCCESS CRITERIA
+- All gaps filled deterministically for the same seed.
+- No palette violations; thumbnails produced.
+- Manifest refreshed; reuse ratio updated accordingly.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/asset_generator.py --plan runs/<slug>/asset_plan.json --manifest data/library_manifest.json`
+2) `jq '.gaps | length' runs/<slug>/asset_plan.json`  (should be 0)
+3) Show one generated SVG `<desc>` snippet and its thumbnail path.

@@ -1,0 +1,30 @@
+# Prompt P6-1 — Architecture & Schemas (PLAN → scaffolding only)
+
+ROLE: System architect
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Define the orchestrator architecture, directory layout, Pydantic models, and enums for stages/statuses. Produce a minimal scaffolding that compiles but does not run jobs yet.
+
+DELIVERABLES
+- Folder layout:
+  - `fastapi_app/` → `models.py`, `db.py`, `routes.py`, `orchestrator.py`, `events.py`, `security.py`, `storage.py`, `__init__.py`
+  - `ui/` → `gradio_app.py`
+  - `scripts/` → `serve_api.sh`, `serve_ui.sh`
+- Pydantic models in `fastapi_app/models.py`:
+  - `Brief`, `ConfigSnapshot`, `Gate`, `Artifact`, `Job`, `JobCreate`, `JobStatus` (Enum), `Stage` (Enum), `GateDecision`
+- SQLite bootstrap in `fastapi_app/db.py`
+- New config file `conf/operator.yaml` (defaults for bind/port/auth/gates)
+- A minimal `uvicorn` entrypoint in `scripts/serve_api.sh`
+
+RULES
+- Start with PLAN-ONLY; list all models with fields and enums; list endpoints and their request/response shapes.
+- After PLAN approval in your own log, create empty stubs (no business logic yet).
+
+SUCCESS CRITERIA
+- `uvicorn` can import the app (no runtime errors).
+- `GET /healthz` returns 200 with `{ok:true}` (stub).
+
+TEST CRITERIA
+1) `bash scripts/serve_api.sh` (or import test)
+2) `curl -s http://127.0.0.1:8008/healthz`

@@ -1,0 +1,32 @@
+# Prompt P4-3 — Trending Intake (Feeder Only, Cached, Rate-Limited)
+
+ROLE: Intake engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Provide a trending topics intake that feeds prioritization without contaminating research sources. Write into a queue file but never cite these sources.
+
+MANDATORY CONTEXT
+- New module: `bin/trending_intake.py`
+- Storage: `data/trending_topics.db` (existing) or `runs/<date>/trending_topics.json`
+- Config: `conf/research.yaml` (APIs toggles, rate limits, providers)
+- Modes: `reuse` (default; no network), `live` (only within rate limits)
+
+REQUIREMENTS
+- CLI: `python bin/trending_intake.py --mode reuse|live --providers reddit,youtube,google_trends --limit 20`
+- Store outputs with fields: `{"topic": "...", "score": float, "source": "...", "ts": "ISO8601"}`
+- In **reuse** mode, read last cache and sort by recency.
+- In **live** mode, enforce provider-specific rate limits/backoff; write cache for next runs.
+- Explicitly mark this data as **non-citable** in logs and output.
+
+DELIVERABLES
+- Working intake with caching and clear rate-limit behavior.
+- Queue file `data/topics_queue.json` updated with top-N topics for later selection.
+
+SUCCESS CRITERIA
+- Runs offline in `reuse` mode deterministically.
+- Live pulls respect rate limits; subsequent reuse run replays same results.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/trending_intake.py --mode reuse --limit 10`
+2) Show 3 queue entries and their scores.

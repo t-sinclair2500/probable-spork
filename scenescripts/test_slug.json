@@ -55,6 +55,49 @@
             "text_align": "center",
             "max_width": 1152
           }
+        },
+        {
+          "id": "scene_000_prop",
+          "type": "prop",
+          "asset_path": "assets/brand/props/phone.svg",
+          "x": 400.0,
+          "y": 500.0,
+          "width": 100,
+          "height": 100,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 300,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 2700,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 3000,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ]
         }
       ]
     },

@@ -1,0 +1,28 @@
+# Prompt P6-9 — Make Targets, Runbook, and Smoke Tests
+
+ROLE: Developer experience engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Ship friendly scripts, Make targets, and a concise runbook so a new operator can bring up the console in one command and validate end‑to‑end.
+
+REQUIREMENTS
+- Scripts:
+  - `scripts/serve_api.sh` (uvicorn fastapi_app.routes:app on port from config)
+  - `scripts/serve_ui.sh` (runs `ui/gradio_app.py` on port from config with API base URL)
+- Make targets:
+  - `make op-console` (run API + UI; print URLs)
+  - `make op-console-api` / `make op-console-ui`
+  - `make clean-op-console` (remove `fastapi_app/` & `ui/` build artifacts only)
+- OPERATOR_RUNBOOK.md:
+  - “Start here” steps; token setup; launching; approving gates; downloading artifacts; troubleshooting (ports, token errors, SSE blocked, etc.).
+- Smoke script:
+  - `scripts/smoke_op_console.sh` — creates a short job, polls until `needs_approval`, approves via curl, waits for completion, verifies acceptance exists.
+
+SUCCESS CRITERIA
+- From a clean clone, `make op-console` starts both services.
+- `smoke_op_console.sh` exits 0 and prints the final acceptance path.
+
+TEST CRITERIA
+1) `make op-console-api` and `curl /healthz`
+2) Run the smoke script and paste relevant lines.

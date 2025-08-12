@@ -1,0 +1,33 @@
+# Prompt P5-5 — CLI & Make Targets (Report, Tune, Smoke)
+
+ROLE: Developer experience engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Add ergonomic CLIs and Make targets to compute pacing, apply one-pass feedback, and print a compact operator report.
+
+MANDATORY CONTEXT
+- Modules: `bin/pacing_kpi.py`, `bin/pacing_feedback.py`
+- Makefile (or create), OPERATOR_RUNBOOK.md
+
+REQUIREMENTS
+- CLIs:
+  - `python bin/pacing_kpi.py --slug <slug>` → computes KPIs and writes report.
+  - `python bin/pacing_feedback.py --slug <slug> --apply` → applies one-pass adjustments and updates report/metadata.
+  - `python bin/pacing_feedback.py --slug <slug> --dry-run` → prints proposed adjustments only.
+- Make targets:
+  - `make pacing-report SLUG=<slug>`
+  - `make pacing-tune SLUG=<slug>` (run KPI then feedback with `--apply`)
+  - `make pacing-smoke SLUG=<slug>` (KPI → feedback dry-run → print summary)
+- The report should print `{words/sec, cuts/min, avg_scene_s, flags, adjusted}` in a single concise line.
+
+DELIVERABLES
+- New CLIs/targets with helpful usage text; OPERATOR_RUNBOOK updated.
+
+SUCCESS CRITERIA
+- Operator runs `make pacing-smoke SLUG=eames-history` and sees a clear one-line summary.
+- `pacing-tune` updates metadata and does not violate acceptance constraints.
+
+TEST CRITERIA (paste outputs)
+1) `make pacing-report SLUG=eames-history`
+2) `make pacing-tune SLUG=eames-history`

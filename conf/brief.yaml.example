@@ -2,6 +2,7 @@
 # Copy this file to conf/brief.yaml and customize for your content strategy
 
 title: "Local SEO for Dentists"
+intent: "explainer_howto"
 audience: ["practice owners", "office managers"]
 tone: "confident, practical"
 

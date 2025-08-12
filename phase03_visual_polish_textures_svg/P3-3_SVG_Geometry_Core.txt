@@ -1,0 +1,37 @@
+# Prompt P3-3 — SVG Geometry Engine Core (Booleans, Offsets, Morphs, Assembly)
+
+ROLE: Vector systems engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Provide a robust geometry toolkit for SVG path operations used by the asset generator and micro-animations.
+
+MANDATORY CONTEXT
+- Target module: `bin/cutout/svg_geom.py`
+- Helpers: `svgpathtools` or `svgelements`, `shapely` (optional), `svgwrite`
+- Brand rules: `design/design_language.json` (palette, motif primitives)
+
+REQUIREMENTS
+- Public API:
+  - `load_svg_paths(path: str) -> list[dict]`  # [{'d': 'M...', 'fill': '#hex'}]
+  - `boolean_union(paths: list) -> list`  # requires shapely; otherwise WARN and passthrough
+  - `inset_path(path_d: str, delta: float) -> str`
+  - `morph_paths(src_paths: list, tgt_paths: list, t: float, seed:int|None=None) -> list`  # normalized interpolation
+  - `assemble_icon(primitives: list[dict], palette: list[str], seed:int|None=None) -> str`  # returns SVG XML
+  - `save_svg(svg_str: str, out_path: str) -> None`
+- Constraints:
+  - Deterministic; match palette; include `<desc>` with params + seed.
+  - Validate geometry (no NaNs, reasonable bounds) and write a `geom_validation_report.json` per run.
+
+DELIVERABLES
+- `bin/cutout/svg_geom.py` with docstrings + error handling + WARN fallbacks.
+- Minimal tests (sanity) and a demo asset saved under `assets/generated/svg/`.
+
+SUCCESS CRITERIA
+- Valid SVGs produced; booleans work when shapely exists; fallbacks otherwise.
+- Morph interpolation produces stable intermediate without spikes.
+
+TEST CRITERIA (paste outputs)
+1) Generate and save one assembled icon; show path.
+2) Show a morph sample (t=0.5) between two blobs; saved as SVG.
+3) `runs/<slug>/geom_validation_report.json` excerpt.

@@ -95,6 +95,7 @@ def validate_brief(brief: Dict[str, Any]) -> Dict[str, Any]:
     # Define allowed keys and their default values
     allowed_keys = {
         "title": "",
+        "intent": "",
         "audience": [],
         "tone": "informative",
         "video": {"target_length_min": 5, "target_length_max": 7},
@@ -119,6 +120,17 @@ def validate_brief(brief: Dict[str, Any]) -> Dict[str, Any]:
     
     # Normalize specific fields
     normalized = _normalize_brief_fields(normalized)
+    
+    # Validate intent if present
+    if normalized.get('intent'):
+        try:
+            from bin.core import validate_brief_intent
+            is_valid, error = validate_brief_intent(normalized)
+            if not is_valid:
+                raise ValueError(f"Intent validation failed: {error}")
+        except ImportError:
+            # Intent validation not available, skip
+            pass
     
     return normalized
 

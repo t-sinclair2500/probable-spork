@@ -1,0 +1,46 @@
+# Prompt P2-2 — Asset Librarian Resolver (Reuse-First Mapping to Concrete Assets)
+
+ROLE: Asset Librarian (resolver)
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Resolve storyboard placeholders into **concrete asset files** using the manifest. Apply reuse-first policy, palette compliance, and size/pose constraints; produce `asset_plan.json` with `resolved[]` and `gaps[]`.
+
+MANDATORY CONTEXT
+- Storyboard draft producer: `bin/storyboard_plan.py` (scene placeholders like `{"type":"prop","category":"clock","style":"nelson_sunburst"}`)
+- Manifest: `data/library_manifest.json` (from P2-1)
+- Configs: `conf/modules.yaml` (reuse thresholds, generation caps), `design/design_language.json` (palette)
+
+REQUIREMENTS
+- Create `bin/asset_librarian.py` with:
+  - `resolve_assets(scenescript: dict, manifest: dict, policy: dict) -> dict` returning:
+    ```json
+    {
+      "slug": "<slug>",
+      "resolved": [ {"element_id":"s2_clock","asset":"assets/design/svg/nelson_sunburst_clock.svg","scale":1.0,"variant":"primary_yellow"} ],
+      "gaps": [ {"element_id":"s3_vase","spec": {"category":"vase","style":"midcentury","palette":["primary_blue","accent_cream"],"notes":"tall,narrow"}} ],
+      "reuse_ratio": 0.78
+    }
+    ```
+  - Heuristics for size matching: prefer assets whose `viewBox` aspect ratio is within ±20% of requested box.
+  - Pose/variant selection via tags (`left_facing`, `outline`, etc.) when present.
+  - Deterministic selection by seed; tie-break by lowest `usage_count` (to spread wear).
+- Write plan to `runs/<slug>/asset_plan.json` and update `videos/<slug>.metadata.json` with `assets.reuse_ratio` and counts.
+
+DELIVERABLES
+- `bin/asset_librarian.py` and a generated `runs/<slug>/asset_plan.json`.
+- Logs explaining each decision: reuse vs gap, chosen file, variant, scale.
+
+SUCCESS CRITERIA
+- First pass resolves ≥70% placeholders when library is non-empty.
+- No palette violations in resolved set.
+- Deterministic results for same seed and manifest.
+
+TEST CRITERIA (paste outputs)
+1) `python - << 'PY'
+from bin.asset_librarian import resolve_assets
+import json, pathlib
+print('ok')
+PY`
+2) `jq '.reuse_ratio, .resolved | length, .gaps | length' runs/*/asset_plan.json`
+3) Log lines with `[librarian]` decisions.

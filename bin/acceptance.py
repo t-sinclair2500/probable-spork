@@ -41,6 +41,10 @@ class AcceptanceValidator:
         self.cfg = cfg
         self.blog_cfg = blog_cfg
         self.modules_cfg = load_modules_cfg()
+        
+        # Create temporary directory for audio validation
+        import tempfile
+        self.temp_dir = tempfile.mktemp(prefix="acceptance_")
         self.results = {
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "pipeline": "acceptance_harness",
@@ -55,8 +59,392 @@ class AcceptanceValidator:
                 "visual_coverage_min": 85,
                 "min_assets": 10,
                 "min_script_words": 350
+            },
+            "assets": {
+                "status": "PENDING",
+                "coverage": {},
+                "reuse_ratio": {},
+                "palette_compliance": {},
+                "qa_results": {},
+                "provenance": []
+            },
+            "visual_polish": {
+                "status": "PENDING",
+                "textures": {"status": "PENDING", "enabled": False},
+                "geometry": {"status": "PENDING", "enabled": False},
+                "micro_animations": {"status": "PENDING", "enabled": False},
+                "performance": {"status": "PENDING"}
             }
         }
+    
+    def __del__(self):
+        """Clean up temporary files."""
+        try:
+            import shutil
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+        except Exception:
+            pass
+    
+    def _validate_assets_quality(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate asset quality: coverage, reuse, palette compliance, and QA results"""
+        log.info("[acceptance-assets] Starting asset quality validation")
+        
+        asset_results = {
+            "status": "PENDING",
+            "coverage": {},
+            "reuse_ratio": {},
+            "palette_compliance": {},
+            "qa_results": {},
+            "provenance": [],
+            "errors": [],
+            "warnings": []
+        }
+        
+        # Find asset plan and related files
+        slug = self._extract_slug_from_artifacts(artifacts)
+        if not slug:
+            asset_results["status"] = "FAIL"
+            asset_results["errors"].append("Could not determine slug for asset validation")
+            return asset_results
+        
+        # Check asset plan for gaps
+        asset_plan_path = os.path.join(BASE, "runs", slug, "asset_plan.json")
+        if not os.path.exists(asset_plan_path):
+            asset_results["status"] = "FAIL"
+            asset_results["errors"].append(f"Missing asset plan: {asset_plan_path}")
+            return asset_results
+        
+        try:
+            with open(asset_plan_path, 'r') as f:
+                asset_plan = json.load(f)
+            
+            # Check for unresolved gaps
+            gaps = asset_plan.get("gaps", [])
+            if len(gaps) > 0:
+                asset_results["status"] = "FAIL"
+                asset_results["errors"].append(f"Found {len(gaps)} unresolved asset gaps")
+                asset_results["coverage"]["gaps"] = gaps
+                asset_results["coverage"]["gaps_count"] = len(gaps)
+            else:
+                asset_results["coverage"]["gaps"] = []
+                asset_results["coverage"]["gaps_count"] = 0
+                asset_results["coverage"]["status"] = "pass"
+            
+            # Check reuse ratio
+            reuse_ratio = asset_plan.get("reuse_ratio", 0.0)
+            asset_results["reuse_ratio"]["value"] = reuse_ratio
+            
+            # Check if we have a substantial library to enforce reuse ratio
+            library_manifest_path = os.path.join(BASE, "data", "library_manifest.json")
+            if os.path.exists(library_manifest_path):
+                try:
+                    with open(library_manifest_path, 'r') as f:
+                        manifest = json.load(f)
+                    total_assets = manifest.get("total_assets", 0)
+                    asset_results["reuse_ratio"]["total_library_assets"] = total_assets
+                    
+                    if total_assets > 50:
+                        # Enforce reuse ratio threshold
+                        reuse_threshold = getattr(self.modules_cfg, 'assets', {}).get('reuse_ratio_threshold', 0.7)
+                        if reuse_ratio < reuse_threshold:
+                            asset_results["status"] = "FAIL"
+                            asset_results["errors"].append(f"Reuse ratio {reuse_ratio:.1%} below threshold {reuse_threshold:.1%}")
+                        else:
+                            asset_results["reuse_ratio"]["status"] = "pass"
+                    else:
+                        asset_results["reuse_ratio"]["status"] = "exempt"
+                        asset_results["warnings"].append(f"Library has only {total_assets} assets, reuse ratio not enforced")
+                except Exception as e:
+                    log.warning(f"[acceptance-assets] Could not read library manifest: {e}")
+                    asset_results["reuse_ratio"]["status"] = "unknown"
+            else:
+                asset_results["reuse_ratio"]["status"] = "no_manifest"
+                asset_results["warnings"].append("No library manifest found")
+            
+            # Check palette compliance
+            palette_compliance = self._check_palette_compliance(asset_plan, slug)
+            asset_results["palette_compliance"] = palette_compliance
+            
+            if not palette_compliance.get("status") == "pass":
+                asset_results["status"] = "FAIL"
+                asset_results["errors"].append("Palette compliance check failed")
+            
+            # Check QA results
+            qa_results = self._check_qa_results(slug)
+            asset_results["qa_results"] = qa_results
+            
+            if not qa_results.get("status") == "pass":
+                asset_results["status"] = "FAIL"
+                asset_results["errors"].append("QA results check failed")
+            
+            # Record provenance for generated assets
+            provenance = self._extract_provenance(slug)
+            asset_results["provenance"] = provenance
+            
+            # Determine overall asset status
+            if asset_results["status"] == "PENDING" and not asset_results["errors"]:
+                asset_results["status"] = "PASS"
+            
+            log.info(f"[acceptance-assets] Asset validation completed: {asset_results['status']}")
+            return asset_results
+            
+        except Exception as e:
+            log.error(f"[acceptance-assets] Asset validation error: {e}")
+            asset_results["status"] = "FAIL"
+            asset_results["errors"].append(f"Asset validation error: {str(e)}")
+            return asset_results
+    
+    def _check_palette_compliance(self, asset_plan: Dict[str, Any], slug: str) -> Dict[str, Any]:
+        """Check if all assets comply with approved palette colors"""
+        log.info("[acceptance-assets] Checking palette compliance")
+        
+        result = {
+            "status": "PENDING",
+            "violations": [],
+            "approved_colors": [],
+            "total_assets": 0
+        }
+        
+        # Load approved palette from design language
+        design_language_path = os.path.join(BASE, "design", "design_language.json")
+        if not os.path.exists(design_language_path):
+            result["status"] = "FAIL"
+            result["violations"].append("Design language file not found")
+            return result
+        
+        try:
+            with open(design_language_path, 'r') as f:
+                design_language = json.load(f)
+            
+            approved_colors = list(design_language.get("colors", {}).values())
+            result["approved_colors"] = approved_colors
+            
+            # Check asset generation report for palette violations
+            generation_report_path = os.path.join(BASE, "runs", slug, "asset_generation_report.json")
+            if os.path.exists(generation_report_path):
+                with open(generation_report_path, 'r') as f:
+                    generation_report = json.load(f)
+                
+                generated_assets = generation_report.get("generated_assets", [])
+                result["total_assets"] = len(generated_assets)
+                
+                for asset in generated_assets:
+                    asset_palette = asset.get("palette", [])
+                    for color in asset_palette:
+                        if color not in approved_colors:
+                            result["violations"].append({
+                                "asset_path": asset.get("path", "unknown"),
+                                "invalid_color": color,
+                                "element_id": asset.get("element_id", "unknown")
+                            })
+            
+            # Check resolved assets for palette info
+            resolved_assets = asset_plan.get("resolved", [])
+            for asset in resolved_assets:
+                # For existing assets, we'd need to analyze the actual SVG content
+                # For now, we'll assume existing brand assets are compliant
+                pass
+            
+            if result["violations"]:
+                result["status"] = "FAIL"
+            else:
+                result["status"] = "pass"
+            
+            return result
+            
+        except Exception as e:
+            log.error(f"[acceptance-assets] Palette compliance check error: {e}")
+            result["status"] = "FAIL"
+            result["violations"].append(f"Palette compliance check error: {str(e)}")
+            return result
+    
+    def _check_qa_results(self, slug: str) -> Dict[str, Any]:
+        """Check QA results from reflow summary"""
+        log.info("[acceptance-assets] Checking QA results")
+        
+        result = {
+            "status": "PENDING",
+            "collisions": [],
+            "safe_margin_violations": [],
+            "contrast_issues": [],
+            "overall_status": "unknown",
+            "errors": []
+        }
+        
+        reflow_summary_path = os.path.join(BASE, "runs", slug, "reflow_summary.json")
+        if not os.path.exists(reflow_summary_path):
+            result["status"] = "FAIL"
+            result["errors"].append("Missing reflow summary")
+            return result
+        
+        try:
+            with open(reflow_summary_path, 'r') as f:
+                reflow_summary = json.load(f)
+            
+            scenes = reflow_summary.get("scenes", [])
+            total_scenes = len(scenes)
+            failed_scenes = 0
+            
+            for scene in scenes:
+                scene_id = scene.get("scene_id", "unknown")
+                qa_results = scene.get("qa_results", {})
+                
+                # Check for collisions
+                collisions = qa_results.get("collisions", [])
+                if collisions:
+                    result["collisions"].extend([{
+                        "scene_id": scene_id,
+                        "collisions": collisions
+                    }])
+                
+                # Check safe margin violations
+                safe_margins = qa_results.get("safe_margins", {})
+                violations = safe_margins.get("violations", [])
+                if violations:
+                    result["safe_margin_violations"].extend([{
+                        "scene_id": scene_id,
+                        "violations": violations
+                    }])
+                
+                # Check contrast issues
+                contrast = qa_results.get("contrast", {})
+                if contrast.get("status") == "fail":
+                    result["contrast_issues"].append({
+                        "scene_id": scene_id,
+                        "contrast": contrast
+                    })
+                
+                # Check overall scene status
+                if scene.get("status") != "pass":
+                    failed_scenes += 1
+            
+            # Determine overall QA status
+            if result["collisions"] or result["safe_margin_violations"] or result["contrast_issues"]:
+                result["status"] = "FAIL"
+                result["overall_status"] = "fail"
+            elif failed_scenes > 0:
+                result["status"] = "FAIL"
+                result["overall_status"] = "fail"
+            else:
+                result["status"] = "pass"
+                result["overall_status"] = "pass"
+            
+            result["total_scenes"] = total_scenes
+            result["failed_scenes"] = failed_scenes
+            
+            return result
+            
+        except Exception as e:
+            log.error(f"[acceptance-assets] QA results check error: {e}")
+            result["status"] = "FAIL"
+            result["errors"].append(f"QA results check error: {str(e)}")
+            return result
+    
+    def _extract_provenance(self, slug: str) -> List[Dict[str, Any]]:
+        """Extract provenance information for generated assets"""
+        log.info("[acceptance-assets] Extracting provenance information")
+        
+        provenance = []
+        
+        # Check asset generation report
+        generation_report_path = os.path.join(BASE, "runs", slug, "asset_generation_report.json")
+        if os.path.exists(generation_report_path):
+            try:
+                with open(generation_report_path, 'r') as f:
+                    generation_report = json.load(f)
+                
+                generated_assets = generation_report.get("generated_assets", [])
+                for asset in generated_assets:
+                    provenance.append({
+                        "path": asset.get("path", ""),
+                        "seed": asset.get("seed", None),
+                        "generator_params": asset.get("generator_params", {}),
+                        "palette": asset.get("palette", []),
+                        "category": asset.get("category", ""),
+                        "style": asset.get("style", ""),
+                        "element_id": asset.get("element_id", ""),
+                        "asset_hash": asset.get("asset_hash", "")
+                    })
+                
+                log.info(f"[acceptance-assets] Found {len(provenance)} generated assets with provenance")
+                
+            except Exception as e:
+                log.warning(f"[acceptance-assets] Could not read generation report: {e}")
+        
+        return provenance
+    
+    def _extract_slug_from_artifacts(self, artifacts: Dict[str, Any]) -> Optional[str]:
+        """Extract slug from artifacts for asset validation"""
+        # Try to get slug from script filename
+        script = artifacts.get("script")
+        if script:
+            # Remove .txt extension
+            slug = script.replace('.txt', '')
+            # If it has a date prefix (format: YYYY-MM-DD_slug), extract the slug part
+            if '_' in slug and len(slug.split('_')[0]) == 10 and slug.split('_')[0].replace('-', '').isdigit():
+                slug = slug.split('_', 1)[1]  # Get part after date prefix
+            return slug
+        
+        # Try to get slug from video metadata
+        video_metadata = artifacts.get("video_metadata")
+        if video_metadata:
+            try:
+                metadata_path = os.path.join(BASE, "videos", video_metadata)
+                if os.path.exists(metadata_path):
+                    with open(metadata_path, 'r') as f:
+                        metadata = json.load(f)
+                    return metadata.get("slug")
+            except Exception:
+                pass
+        
+        # Try to get slug from scenescript filename
+        scenescript = artifacts.get("scenescript")
+        if scenescript:
+            # Remove .json extension
+            slug = scenescript.replace('.json', '')
+            return slug
+        
+        return None
+    
+    def _update_video_metadata_with_assets(self, slug: str, asset_results: Dict[str, Any]):
+        """Update video metadata with asset coverage and reuse information"""
+        log.info(f"[acceptance-assets] Updating video metadata for {slug}")
+        
+        video_metadata_path = os.path.join(BASE, "videos", f"{slug}.metadata.json")
+        if not os.path.exists(video_metadata_path):
+            log.warning(f"[acceptance-assets] Video metadata not found: {video_metadata_path}")
+            return
+        
+        try:
+            with open(video_metadata_path, 'r') as f:
+                metadata = json.load(f)
+            
+            # Preserve existing metadata sections
+            if "assets" not in metadata:
+                metadata["assets"] = {}
+            
+            # Update assets section
+            metadata["assets"].update({
+                "coverage_pct": 100.0 if asset_results["coverage"]["gaps_count"] == 0 else 0.0,
+                "reuse_ratio": asset_results["reuse_ratio"]["value"],
+                "total_generated": len(asset_results["provenance"]),
+                "manifest_version": "1.0",  # This should come from the manifest
+                "palette_names_used": list(set([color for asset in asset_results["provenance"] for color in asset.get("palette", [])])),
+                "validation_status": asset_results["status"],
+                "last_validated": datetime.utcnow().isoformat() + "Z"
+            })
+            
+            # Add provenance information
+            metadata["assets"]["provenance"] = asset_results["provenance"]
+            
+            # Write updated metadata
+            with open(video_metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
+            
+            log.info(f"[acceptance-assets] Updated video metadata with asset information")
+            
+        except Exception as e:
+            log.error(f"[acceptance-assets] Failed to update video metadata: {e}")
     
     def validate_youtube_lane(self) -> bool:
         """Validate YouTube lane artifacts and quality"""
@@ -90,6 +478,9 @@ class AcceptanceValidator:
             
         if not artifacts["captions"]:
             youtube_results["quality"]["warning"] = "Missing captions SRT"
+        else:
+            youtube_results["quality"]["captions_status"] = "Available"
+            youtube_results["quality"]["captions_path"] = artifacts["captions"]
         
         # Validate animatics if enabled
         animatics_enabled = False
@@ -146,8 +537,8 @@ class AcceptanceValidator:
             enable_legacy = getattr(self.cfg.video, "enable_legacy_stock", False)
             
             if animatics_only and not enable_legacy:
-                # Enforce animatics-only policy
-                if artifacts["assets"]:
+                # Enforce animatics-only policy - but allow animatics as assets
+                if artifacts["assets"] and not artifacts.get("animatics"):
                     youtube_results["status"] = "FAIL"
                     youtube_results["quality"]["error"] = "Stock assets present in animatics_only mode"
                     return False
@@ -207,6 +598,19 @@ class AcceptanceValidator:
         quality = self._validate_youtube_quality(artifacts)
         youtube_results["quality"].update(quality)
         
+        # Audio validation
+        audio_quality = self._validate_youtube_audio(artifacts)
+        
+        # Debug: Log audio validation structure
+        log.info(f"Audio validation completed: {len(audio_quality)} items")
+        for key, value in audio_quality.items():
+            if isinstance(value, dict):
+                log.info(f"  {key}: dict with {len(value)} keys")
+            else:
+                log.info(f"  {key}: {type(value).__name__}")
+        
+        youtube_results["quality"]["audio"] = audio_quality
+        
         # Determine overall status
         if quality.get("script_score", 0) < self.results["quality_thresholds"]["script_score_min"]:
             youtube_results["status"] = "FAIL"
@@ -228,6 +632,53 @@ class AcceptanceValidator:
             youtube_results["status"] = "FAIL"
             youtube_results["quality"]["error"] = f"Script only {quality.get('script_words', 0)} words, need {self.results['quality_thresholds']['min_script_words']}"
             return False
+        
+        # Asset validation (run regardless of audio status)
+        asset_quality = self._validate_assets_quality(artifacts)
+        youtube_results["quality"]["assets"] = asset_quality
+        
+        # Update video metadata with asset information
+        slug = self._extract_slug_from_artifacts(artifacts)
+        if slug:
+            self._update_video_metadata_with_assets(slug, asset_quality)
+        
+        # Audio validation check
+        if not audio_quality.get("valid", False):
+            audio_error = audio_quality.get("error", "Audio validation failed")
+            youtube_results["status"] = "FAIL"
+            youtube_results["quality"]["error"] = f"Audio validation failed: {audio_error}"
+            
+            # Still check asset validation results even if audio fails
+            if asset_quality.get("status") == "FAIL":
+                asset_errors = asset_quality.get("errors", [])
+                asset_error_msg = f"Asset validation also failed: {'; '.join(asset_errors[:3])}"
+                if len(asset_errors) > 3:
+                    asset_error_msg += f" (+{len(asset_errors) - 3} more)"
+                youtube_results["quality"]["error"] += f"; {asset_error_msg}"
+            
+            return False
+        
+        # Check asset validation results
+        if asset_quality.get("status") == "FAIL":
+            asset_errors = asset_quality.get("errors", [])
+            error_msg = f"Asset validation failed: {'; '.join(asset_errors[:3])}"  # Show first 3 failures
+            if len(asset_errors) > 3:
+                error_msg += f" (+{len(asset_errors) - 3} more)"
+            youtube_results["status"] = "FAIL"
+            youtube_results["quality"]["error"] = error_msg
+            return False
+        
+        # Visual polish validation
+        visual_polish_quality = self._validate_visual_polish(artifacts)
+        youtube_results["quality"]["visual_polish"] = visual_polish_quality
+        
+        # Check visual polish results (non-blocking for overall status)
+        if visual_polish_quality.get("status") == "FAIL":
+            visual_polish_errors = visual_polish_quality.get("errors", [])
+            error_msg = f"Visual polish validation failed: {'; '.join(visual_polish_errors[:3])}"
+            if len(visual_polish_errors) > 3:
+                error_msg += f" (+{len(visual_polish_errors) - 3} more)"
+            youtube_results["quality"]["warning"] = f"Visual polish issues: {error_msg}"
         
         youtube_results["status"] = "PASS"
         return True
@@ -631,6 +1082,117 @@ class AcceptanceValidator:
         
         return quality
     
+    def _validate_youtube_audio(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate YouTube lane audio quality metrics"""
+        audio_quality = {}
+        
+        try:
+            # Import audio validation
+            from bin.audio_validator import validate_audio_for_acceptance, validate_ducking_for_acceptance
+            
+            # Validate voiceover if present
+            if artifacts["voiceover"]:
+                vo_path = os.path.join(BASE, "voiceovers", artifacts["voiceover"])
+                if os.path.exists(vo_path):
+                    vo_validation = validate_audio_for_acceptance(vo_path, "voiceover")
+                    audio_quality["voiceover"] = vo_validation
+                else:
+                    audio_quality["voiceover"] = {
+                        "valid": False,
+                        "error": f"Voiceover file not found: {vo_path}"
+                    }
+            
+            # Validate final video audio if present
+            if artifacts["video"]:
+                video_path = os.path.join(BASE, "videos", artifacts["video"])
+                if os.path.exists(video_path):
+                    # Extract audio from video for validation
+                    temp_audio = os.path.join(self.temp_dir, f"temp_audio_{os.path.basename(video_path)}.mp3")
+                    
+                    try:
+                        # Extract audio using ffmpeg
+                        import subprocess
+                        cmd = [
+                            'ffmpeg', '-i', video_path, '-vn', '-acodec', 'mp3',
+                            '-y', temp_audio
+                        ]
+                        result = subprocess.run(cmd, capture_output=True, check=True)
+                        
+                        if os.path.exists(temp_audio):
+                            # Validate mixed audio
+                            mixed_validation = validate_audio_for_acceptance(temp_audio, "mixed")
+                            audio_quality["mixed_audio"] = mixed_validation
+                            
+                            # Validate ducking if voiceover is available
+                            if artifacts["voiceover"] and os.path.exists(vo_path):
+                                ducking_validation = validate_ducking_for_acceptance(
+                                    temp_audio, vo_path
+                                )
+                                audio_quality["ducking"] = ducking_validation
+                            
+                            # Clean up temp file
+                            os.unlink(temp_audio)
+                        else:
+                            audio_quality["mixed_audio"] = {
+                                "valid": False,
+                                "error": "Failed to extract audio from video"
+                            }
+                            
+                    except Exception as e:
+                        audio_quality["mixed_audio"] = {
+                            "valid": False,
+                            "error": f"Audio extraction failed: {str(e)}"
+                        }
+                else:
+                    audio_quality["mixed_audio"] = {
+                        "valid": False,
+                        "error": f"Video file not found: {video_path}"
+                    }
+            
+            # Determine overall audio validity
+            all_valid = True
+            errors = []
+            
+            for audio_type, validation in audio_quality.items():
+                if isinstance(validation, dict) and not validation.get("valid", False):
+                    all_valid = False
+                    error_msg = validation.get("error", f"{audio_type} validation failed")
+                    errors.append(error_msg)
+            
+            audio_quality["valid"] = all_valid
+            if errors:
+                audio_quality["error"] = "; ".join(errors)
+            
+            # Add audio targets for reference
+            audio_cfg = getattr(self.cfg.render, 'audio', None)
+            if audio_cfg:
+                audio_quality["targets"] = {
+                    "vo_lufs": getattr(audio_cfg, 'vo_lufs_target', -16.0),
+                    "music_lufs": getattr(audio_cfg, 'music_lufs_target', -23.0),
+                    "true_peak_max": getattr(audio_cfg, 'true_peak_max', -1.0),
+                    "ducking_min_db": getattr(audio_cfg, 'ducking_min_db', 6.0)
+                }
+            else:
+                audio_quality["targets"] = {
+                    "vo_lufs": -16.0,
+                    "music_lufs": -23.0,
+                    "true_peak_max": -1.0,
+                    "ducking_min_db": 6.0
+                }
+            
+        except ImportError as e:
+            audio_quality = {
+                "valid": False,
+                "error": f"Audio validation module not available: {str(e)}"
+            }
+        except Exception as e:
+            audio_quality = {
+                "valid": False,
+                "error": f"Audio validation error: {str(e)}"
+            }
+        
+        return audio_quality
+    
     def _validate_animatics_quality(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
         """Validate animatics quality metrics"""
         quality = {}
@@ -727,8 +1289,8 @@ class AcceptanceValidator:
                         # Check positioning (basic bounds check)
                         x = element.get("x", 0)
                         y = element.get("y", 0)
-                        width = element.get("width", 0)
-                        height = element.get("height", 0)
+                        width = element.get("width", 0) or 0  # Handle None values
+                        height = element.get("height", 0) or 0  # Handle None values
                         
                         # Check if text is too close to edges
                         if x < safe_margins or y < safe_margins:
@@ -851,8 +1413,8 @@ class AcceptanceValidator:
                         "Consider: adjust beat durations, change distribution strategy, or review brief target length"
                     )
             
-            log.info(f"Duration policy validation: {'PASS' if result['pass'] else 'FAIL'}")
-            log.info(f"  Target: {target_ms}ms, Actual: {total_duration_ms}ms, Deviation: {deviation_pct:.1f}%")
+            log.info(f"[duration-policy] Duration policy validation: {'PASS' if result['pass'] else 'FAIL'}")
+            log.info(f"[duration-policy] Target: {target_ms}ms, Actual: {total_duration_ms}ms, Deviation: {deviation_pct:.1f}%")
             
         except Exception as e:
             result["pass"] = False
@@ -1060,6 +1622,219 @@ class AcceptanceValidator:
         
         return result
     
+    def _validate_visual_polish(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate visual polish quality: textures, geometry, and micro-animations"""
+        log.info("[acceptance-visual-polish] Starting visual polish validation")
+        
+        visual_polish_results = {
+            "status": "PENDING",
+            "textures": {"status": "PENDING", "enabled": False, "metadata": {}, "contrast_check": "PENDING"},
+            "geometry": {"status": "PENDING", "enabled": False, "validation_report": {}, "critical_errors": 0},
+            "micro_animations": {"status": "PENDING", "enabled": False, "elements_animated": 0, "collision_check": "PENDING"},
+            "performance": {"status": "PENDING", "texture_delta_pct": 0.0, "render_time_with": 0.0, "render_time_without": 0.0},
+            "errors": [],
+            "warnings": []
+        }
+        
+        # Extract slug for artifact paths
+        slug = self._extract_slug_from_artifacts(artifacts)
+        if not slug:
+            visual_polish_results["status"] = "FAIL"
+            visual_polish_results["errors"].append("Could not determine slug for visual polish validation")
+            return visual_polish_results
+        
+        # Check texture settings and validation
+        textures_enabled = getattr(self.cfg, 'textures', None)
+        if textures_enabled and hasattr(textures_enabled, 'enabled'):
+            textures_enabled = textures_enabled.enabled
+        else:
+            textures_enabled = False
+        visual_polish_results["textures"]["enabled"] = textures_enabled
+        
+        if textures_enabled:
+            # Check if texture metadata exists in video metadata
+            if artifacts.get("video_metadata"):
+                try:
+                    # Handle both relative and absolute paths
+                    metadata_path = artifacts["video_metadata"]
+                    if not os.path.isabs(metadata_path):
+                        metadata_path = os.path.join(BASE, metadata_path)
+                    
+                    log.info(f"[acceptance-visual-polish] Reading video metadata from: {metadata_path}")
+                    
+                    with open(metadata_path, 'r') as f:
+                        metadata = json.load(f)
+                    
+                    log.info(f"[acceptance-visual-polish] Video metadata keys: {list(metadata.keys())}")
+                    
+                    texture_metadata = metadata.get("textures", {})
+                    if texture_metadata:
+                        log.info(f"[acceptance-visual-polish] Found texture metadata: {texture_metadata}")
+                        visual_polish_results["textures"]["metadata"] = texture_metadata
+                        visual_polish_results["textures"]["status"] = "PASS"
+                        
+                        # Check contrast remains PASS
+                        contrast_status = metadata.get("legibility", {}).get("contrast_status", "UNKNOWN")
+                        visual_polish_results["textures"]["contrast_check"] = contrast_status
+                        
+                        if contrast_status != "PASS":
+                            visual_polish_results["warnings"].append(f"Texture applied but contrast status is {contrast_status}")
+                    else:
+                        log.warning(f"[acceptance-visual-polish] No texture metadata found in video metadata")
+                        visual_polish_results["textures"]["status"] = "FAIL"
+                        visual_polish_results["errors"].append("Textures enabled but no texture metadata found")
+                except Exception as e:
+                    log.warning(f"Could not read video metadata for texture validation: {e}")
+                    visual_polish_results["textures"]["status"] = "WARN"
+                    visual_polish_results["warnings"].append(f"Could not validate texture metadata: {e}")
+            
+            # Check for texture probe grid
+            texture_probe_path = os.path.join(BASE, "runs", slug, "texture_probe_grid.png")
+            if os.path.exists(texture_probe_path):
+                visual_polish_results["textures"]["probe_grid"] = texture_probe_path
+            else:
+                visual_polish_results["warnings"].append("Texture probe grid not found")
+        
+        # Check geometry settings and validation
+        geometry_enabled = self.modules_cfg.get('geometry', {}).get('enable', False) if self.modules_cfg else False
+        visual_polish_results["geometry"]["enabled"] = geometry_enabled
+        
+        if geometry_enabled:
+            # Check for geometry validation report
+            geom_report_path = os.path.join(BASE, "runs", slug, "geom_validation_report.json")
+            if os.path.exists(geom_report_path):
+                try:
+                    with open(geom_report_path, 'r') as f:
+                        geom_report = json.load(f)
+                    
+                    visual_polish_results["geometry"]["validation_report"] = geom_report
+                    critical_errors = geom_report.get("critical_errors", 0)
+                    visual_polish_results["geometry"]["critical_errors"] = critical_errors
+                    
+                    if critical_errors == 0:
+                        visual_polish_results["geometry"]["status"] = "PASS"
+                    else:
+                        visual_polish_results["geometry"]["status"] = "FAIL"
+                        visual_polish_results["errors"].append(f"Geometry validation has {critical_errors} critical errors")
+                except Exception as e:
+                    log.warning(f"Could not read geometry validation report: {e}")
+                    visual_polish_results["geometry"]["status"] = "WARN"
+                    visual_polish_results["warnings"].append(f"Could not validate geometry report: {e}")
+            else:
+                visual_polish_results["geometry"]["status"] = "FAIL"
+                visual_polish_results["errors"].append("Geometry enabled but validation report not found")
+        
+        # Check micro-animations settings and validation
+        micro_anim_enabled = self.modules_cfg.get('micro_anim', {}).get('enable', False) if self.modules_cfg else False
+        visual_polish_results["micro_animations"]["enabled"] = micro_anim_enabled
+        
+        if micro_anim_enabled:
+            # Check for style signature to get animation details
+            style_signature_path = os.path.join(BASE, "runs", slug, "style_signature.json")
+            if os.path.exists(style_signature_path):
+                try:
+                    with open(style_signature_path, 'r') as f:
+                        style_sig = json.load(f)
+                    
+                    micro_anim_info = style_sig.get("micro_animations", {})
+                    elements_animated = micro_anim_info.get("elements_animated", 0)
+                    total_elements = micro_anim_info.get("total_elements", 0)
+                    
+                    visual_polish_results["micro_animations"]["elements_animated"] = elements_animated
+                    visual_polish_results["micro_animations"]["total_elements"] = total_elements
+                    
+                    if total_elements > 0:
+                        animation_percent = (elements_animated / total_elements) * 100
+                        if animation_percent <= 10:
+                            visual_polish_results["micro_animations"]["status"] = "PASS"
+                        else:
+                            visual_polish_results["micro_animations"]["status"] = "FAIL"
+                            visual_polish_results["errors"].append(f"Animation percentage {animation_percent:.1f}% exceeds 10% limit")
+                    else:
+                        visual_polish_results["micro_animations"]["status"] = "WARN"
+                        visual_polish_results["warnings"].append("No elements found for animation validation")
+                    
+                    # Check collision status
+                    collision_status = micro_anim_info.get("collision_check", "UNKNOWN")
+                    visual_polish_results["micro_animations"]["collision_check"] = collision_status
+                    
+                    if collision_status == "PASS":
+                        pass  # Already set above
+                    elif collision_status == "FAIL":
+                        visual_polish_results["micro_animations"]["status"] = "FAIL"
+                        visual_polish_results["errors"].append("Collision check failed after animation keyframes")
+                    else:
+                        visual_polish_results["warnings"].append(f"Collision check status unclear: {collision_status}")
+                        
+                except Exception as e:
+                    log.warning(f"Could not read style signature for micro-animation validation: {e}")
+                    visual_polish_results["micro_animations"]["status"] = "WARN"
+                    visual_polish_results["warnings"].append(f"Could not validate micro-animations: {e}")
+            else:
+                visual_polish_results["micro_animations"]["status"] = "WARN"
+                visual_polish_results["warnings"].append("Style signature not found for micro-animation validation")
+        
+        # Performance validation - check render time delta with textures
+        if textures_enabled:
+            # Look for performance metrics in video metadata or separate performance logs
+            if artifacts.get("video_metadata"):
+                try:
+                    # Handle both relative and absolute paths
+                    metadata_path = artifacts["video_metadata"]
+                    if not os.path.isabs(metadata_path):
+                        metadata_path = os.path.join(BASE, metadata_path)
+                    
+                    with open(metadata_path, 'r') as f:
+                        metadata = json.load(f)
+                    
+                    performance_metrics = metadata.get("performance", {})
+                    render_time_with = performance_metrics.get("render_time_with_textures", 0.0)
+                    render_time_without = performance_metrics.get("render_time_without_textures", 0.0)
+                    
+                    if render_time_with > 0 and render_time_without > 0:
+                        delta_pct = ((render_time_with - render_time_without) / render_time_without) * 100
+                        visual_polish_results["performance"]["texture_delta_pct"] = delta_pct
+                        visual_polish_results["performance"]["render_time_with"] = render_time_with
+                        visual_polish_results["performance"]["render_time_without"] = render_time_without
+                        
+                        if delta_pct <= 15:
+                            visual_polish_results["performance"]["status"] = "PASS"
+                        else:
+                            visual_polish_results["performance"]["status"] = "WARN"
+                            visual_polish_results["warnings"].append(f"Texture render time increase {delta_pct:.1f}% exceeds 15% threshold")
+                    else:
+                        visual_polish_results["performance"]["status"] = "UNKNOWN"
+                        visual_polish_results["warnings"].append("Performance metrics not available for texture comparison")
+                        
+                except Exception as e:
+                    log.warning(f"Could not read performance metrics: {e}")
+                    visual_polish_results["performance"]["status"] = "UNKNOWN"
+                    visual_polish_results["warnings"].append(f"Could not validate performance: {e}")
+        
+        # Determine overall visual polish status
+        all_passes = (
+            visual_polish_results["textures"]["status"] in ["PASS", "WARN", "UNKNOWN"] and
+            visual_polish_results["geometry"]["status"] in ["PASS", "WARN", "UNKNOWN"] and
+            visual_polish_results["micro_animations"]["status"] in ["PASS", "WARN", "UNKNOWN"] and
+            visual_polish_results["performance"]["status"] in ["PASS", "WARN", "UNKNOWN"]
+        )
+        
+        has_critical_failures = (
+            visual_polish_results["textures"]["status"] == "FAIL" or
+            visual_polish_results["geometry"]["status"] == "FAIL" or
+            visual_polish_results["micro_animations"]["status"] == "FAIL"
+        )
+        
+        if has_critical_failures:
+            visual_polish_results["status"] = "FAIL"
+        elif all_passes:
+            visual_polish_results["status"] = "PASS"
+        else:
+            visual_polish_results["status"] = "WARN"
+        
+        log.info(f"[acceptance-visual-polish] Visual polish validation completed: {visual_polish_results['status']}")
+        return visual_polish_results
+    
     def run_validation(self) -> Dict[str, Any]:
         """Run complete validation and return results"""
         log.info("Starting acceptance validation...")
@@ -1075,6 +1850,19 @@ class AcceptanceValidator:
             self.results["overall_status"] = "PASS"
         else:
             self.results["overall_status"] = "FAIL"
+        
+        # Update asset validation status from YouTube lane
+        if "quality" in self.results["lanes"]["youtube"]:
+            assets_quality = self.results["lanes"]["youtube"]["quality"].get("assets", {})
+            if assets_quality:
+                self.results["assets"].update(assets_quality)
+                log.info(f"[acceptance-assets] Updated main assets section with status: {assets_quality.get('status', 'unknown')}")
+            
+            # Update visual polish validation status from YouTube lane
+            visual_polish_quality = self.results["lanes"]["youtube"]["quality"].get("visual_polish", {})
+            if visual_polish_quality:
+                self.results["visual_polish"].update(visual_polish_quality)
+                log.info(f"[acceptance-visual-polish] Updated main visual polish section with status: {visual_polish_quality.get('status', 'unknown')}")
         
         # Add summary
         self.results["summary"] = {

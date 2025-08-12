@@ -1,0 +1,33 @@
+# Prompt P2-5 — Acceptance Integration for Assets (Coverage, Reuse, Provenance)
+
+ROLE: Acceptance engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Extend acceptance to enforce asset-related quality: 100% coverage, reuse ratio visibility, palette compliance, and provenance reporting for generated items.
+
+MANDATORY CONTEXT
+- Acceptance: `bin/acceptance.py`
+- Manifest: `data/library_manifest.json`
+- Plan/Reports: `runs/<slug>/asset_plan.json`, `runs/<slug>/asset_generation_report.json`
+- Video metadata: `videos/<slug>.metadata.json`
+
+REQUIREMENTS
+- Checks to add:
+  - Fail if `asset_plan.gaps.length > 0`.
+  - Warn if `assets.reuse_ratio < threshold` when manifest has >50 assets.
+  - Fail if any resolved asset has palette violation.
+  - Record a `provenance` table in acceptance results listing generated items (path, seed, generator params).
+- Write results to `acceptance_results.json` with an `assets` section.
+
+DELIVERABLES
+- Updated acceptance results with assets section and clear pass/fail criteria.
+- Metadata updated with assets coverage & reuse.
+
+SUCCESS CRITERIA
+- Acceptance fails on unresolved gaps; passes on E2E run after P2-4 done.
+- Operators can see reuse %, counts, and provenance in one place.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/acceptance.py && jq '.assets' acceptance_results.json`
+2) `jq '.assets' videos/*/metadata.json`

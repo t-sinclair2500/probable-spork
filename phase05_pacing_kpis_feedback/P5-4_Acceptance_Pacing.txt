@@ -1,0 +1,33 @@
+# Prompt P5-4 — Acceptance Integration for Pacing (PASS/WARN/FAIL)
+
+ROLE: Acceptance engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Extend acceptance to include a `pacing` block that summarizes KPIs, flags vs intent bands, whether adjustments were applied, and final verdict per config (`strict` vs non-strict).
+
+MANDATORY CONTEXT
+- Acceptance: `bin/acceptance.py`
+- Reports: `runs/<slug>/pacing_report.json`
+- Metadata: `videos/<slug>.metadata.json`
+- Config: `conf/modules.yaml` (`pacing.enable`, `pacing.strict`)
+
+REQUIREMENTS
+- Add logic:
+  - If `pacing.enable=false` → SKIP with note.
+  - Else, read KPIs & flags. If outside band by >10% **after** feedback:
+    - `strict=true` → FAIL
+    - `strict=false` → WARN
+  - Include a compact table of metrics and bands in results.
+- Persist the `pacing` block to both acceptance results and metadata.
+
+DELIVERABLES
+- Updated acceptance with pacing verdict and operator-readable summary.
+
+SUCCESS CRITERIA
+- Acceptance reflects accurate PASS/WARN/FAIL according to config.
+- Operator can see in one place whether pacing needs attention.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/acceptance.py && jq '.pacing' acceptance_results.json`
+2) Confirm `metadata.pacing.adjusted` is true/false as expected.

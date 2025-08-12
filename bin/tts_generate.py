@@ -115,7 +115,24 @@ def main(brief=None, models_config=None):
         log_state("tts_generate", "SKIP", "no scripts")
         print("No scripts")
         return
-    files.sort(reverse=True)
+    # Sort files, prioritizing those with date prefixes (YYYY-MM-DD_)
+    # Also handle symlinks by checking the resolved target
+    def script_sort_key(filename):
+        filepath = os.path.join(scripts_dir, filename)
+        if os.path.islink(filepath):
+            # Resolve symlink to get the actual target
+            target = os.path.basename(os.path.realpath(filepath))
+            if target.startswith(('2025-', '2024-', '2023-')):  # Date-prefixed files
+                return (0, target)  # Higher priority
+            else:
+                return (1, target)  # Lower priority
+        else:
+            if filename.startswith(('2025-', '2024-', '2023-')):  # Date-prefixed files
+                return (0, filename)  # Higher priority
+            else:
+                return (1, filename)  # Lower priority
+    
+    files.sort(key=script_sort_key, reverse=True)
     sfile = os.path.join(scripts_dir, files[0])
     # Convert any bracketed stage directions to natural narration hints or remove them.
     import re as _re
@@ -130,7 +147,61 @@ def main(brief=None, models_config=None):
     # Idempotent: skip if exists
     if os.path.exists(out_mp3):
         log_state("tts_generate", "OK", os.path.basename(out_mp3))
-        print("Voiceover already exists; skipping.")
+        print("Voiceover already exists; checking for SRT generation...")
+        
+        # Always try to generate SRT captions if enabled and no real captions exist
+        if getattr(cfg.pipeline, "enable_captions", True) and getattr(cfg.pipeline, "enable_synthetic_srt", True):
+            try:
+                from bin.synthetic_srt import generate_synthetic_srt
+                
+                # Check if real captions already exist
+                # Use the same basename as the script file for consistency
+                script_basename = os.path.basename(sfile).replace(".txt", "")
+                srt_path = os.path.join(voice_dir, f"{script_basename}.srt")
+                if not os.path.exists(srt_path):
+                    # Find corresponding script file
+                    script_path = None
+                    if brief and brief.get('slug'):
+                        # Try to find script by slug
+                        script_path = os.path.join(BASE, "scripts", f"{brief['slug']}.txt")
+                    
+                    if not script_path or not os.path.exists(script_path):
+                        # Use the script we already found
+                        script_path = sfile
+                    
+                    if script_path and os.path.exists(script_path):
+                        # Get audio duration
+                        dur = ffprobe_duration(out_mp3)
+                        
+                        # Get WPM from config or brief
+                        wpm = getattr(cfg.tts, "rate_wpm", 160)
+                        if brief and brief.get('pacing'):
+                            pacing = brief['pacing'].lower()
+                            if pacing in ['slow', 'deliberate']:
+                                wpm = max(120, wpm - 20)
+                            elif pacing in ['fast', 'energetic']:
+                                wpm = min(200, wpm + 20)
+                        
+                        # Get seed from config for deterministic timing
+                        seed = None
+                        if hasattr(cfg, 'modules') and hasattr(cfg.modules, 'procedural'):
+                            seed = getattr(cfg.modules.procedural, 'seed', None)
+                        
+                        # Generate synthetic SRT
+                        generate_synthetic_srt(
+                            script_path=script_path,
+                            audio_duration_sec=dur,
+                            output_path=srt_path,
+                            wpm=wpm,
+                            max_words_per_caption=8,
+                            seed=seed
+                        )
+                        log.info(f"Generated synthetic SRT: {srt_path}")
+                    else:
+                        log.warning("No script file found for synthetic SRT generation")
+            except Exception as e:
+                log.warning(f"Failed to generate synthetic SRT: {e}")
+        
         return
 
     # Try Coqui TTS if available and configured; otherwise optional OpenAI TTS; else placeholder
@@ -198,6 +269,62 @@ def main(brief=None, models_config=None):
                 
                 # Return early since MP3 written
                 dur = ffprobe_duration(out_mp3)
+                
+                # Generate synthetic SRT captions if enabled and no real captions exist
+                if getattr(cfg.pipeline, "enable_captions", True) and getattr(cfg.pipeline, "enable_synthetic_srt", True):
+                    try:
+                        from bin.synthetic_srt import generate_synthetic_srt
+                        
+                        # Check if real captions already exist
+                        # Use the same basename as the script file for consistency
+                        script_basename = os.path.basename(sfile).replace(".txt", "")
+                        srt_path = os.path.join(voice_dir, f"{script_basename}.srt")
+                        if not os.path.exists(srt_path):
+                            # Find corresponding script file
+                            script_path = None
+                            if brief and brief.get('slug'):
+                                # Try to find script by slug
+                                script_path = os.path.join(BASE, "scripts", f"{brief['slug']}.txt")
+                            
+                            if not script_path or not os.path.exists(script_path):
+                                # Fallback: look for most recent script
+                                scripts_dir = os.path.join(BASE, "scripts")
+                                if os.path.exists(scripts_dir):
+                                    script_files = [f for f in os.listdir(scripts_dir) if f.endswith(".txt")]
+                                    if script_files:
+                                        script_files.sort(reverse=True)
+                                        script_path = os.path.join(scripts_dir, script_files[0])
+                            
+                            if script_path and os.path.exists(script_path):
+                                # Get WPM from config or brief
+                                wpm = getattr(cfg.tts, "rate_wpm", 160)
+                                if brief and brief.get('pacing'):
+                                    pacing = brief['pacing'].lower()
+                                    if pacing in ['slow', 'deliberate']:
+                                        wpm = max(120, wpm - 20)
+                                    elif pacing in ['fast', 'energetic']:
+                                        wpm = min(200, wpm + 20)
+                                
+                                # Get seed from config for deterministic timing
+                                seed = None
+                                if hasattr(cfg, 'modules') and hasattr(cfg.modules, 'procedural'):
+                                    seed = getattr(cfg.modules.procedural, 'seed', None)
+                                
+                                # Generate synthetic SRT
+                                generate_synthetic_srt(
+                                    script_path=script_path,
+                                    audio_duration_sec=dur,
+                                    output_path=srt_path,
+                                    wpm=wpm,
+                                    max_words_per_caption=8,
+                                    seed=seed
+                                )
+                                log.info(f"Generated synthetic SRT: {srt_path}")
+                            else:
+                                log.warning("No script file found for synthetic SRT generation")
+                    except Exception as e:
+                        log.warning(f"Failed to generate synthetic SRT: {e}")
+                
                 log_state("tts_generate", "OK", f"{os.path.basename(out_mp3)};prov={used};dur={round(dur,1)}s")
                 print(f"Wrote VO {out_mp3} via {used} ({round(dur,1)}s)")
                 return
@@ -268,6 +395,60 @@ def main(brief=None, models_config=None):
                     used = "openai"
                     # Clean up and return early since MP3 written
                     dur = ffprobe_duration(out_mp3)
+                    
+                    # Generate synthetic SRT captions if enabled and no real captions exist
+                    if getattr(cfg.pipeline, "enable_captions", True) and getattr(cfg.pipeline, "enable_synthetic_srt", True):
+                        try:
+                            from bin.synthetic_srt import generate_synthetic_srt
+                            
+                            # Check if real captions already exist
+                            srt_path = out_mp3.replace(".mp3", ".srt")
+                            if not os.path.exists(srt_path):
+                                # Find corresponding script file
+                                script_path = None
+                                if brief and brief.get('slug'):
+                                    # Try to find script by slug
+                                    script_path = os.path.join(BASE, "scripts", f"{brief['slug']}.txt")
+                                
+                                if not script_path or not os.path.exists(script_path):
+                                    # Fallback: look for most recent script
+                                    scripts_dir = os.path.join(BASE, "scripts")
+                                    if os.path.exists(scripts_dir):
+                                        script_files = [f for f in os.listdir(scripts_dir) if f.endswith(".txt")]
+                                        if script_files:
+                                            script_files.sort(reverse=True)
+                                            script_path = os.path.join(scripts_dir, script_files[0])
+                                
+                                if script_path and os.path.exists(script_path):
+                                    # Get WPM from config or brief
+                                    wpm = getattr(cfg.tts, "rate_wpm", 160)
+                                    if brief and brief.get('pacing'):
+                                        pacing = brief['pacing'].lower()
+                                        if pacing in ['slow', 'deliberate']:
+                                            wpm = max(120, wpm - 20)
+                                        elif pacing in ['fast', 'energetic']:
+                                            wpm = min(200, wpm + 20)
+                                    
+                                    # Get seed from config for deterministic timing
+                                    seed = None
+                                    if hasattr(cfg, 'modules') and hasattr(cfg.modules, 'procedural'):
+                                        seed = getattr(cfg.modules.procedural, 'seed', None)
+                                    
+                                    # Generate synthetic SRT
+                                    generate_synthetic_srt(
+                                        script_path=script_path,
+                                        audio_duration_sec=dur,
+                                        output_path=srt_path,
+                                        wpm=wpm,
+                                        max_words_per_caption=8,
+                                        seed=seed
+                                    )
+                                    log.info(f"Generated synthetic SRT: {srt_path}")
+                                else:
+                                    log.warning("No script file found for synthetic SRT generation")
+                        except Exception as e:
+                            log.warning(f"Failed to generate synthetic SRT: {e}")
+                    
                     log_state("tts_generate", "OK", f"{os.path.basename(out_mp3)};prov={used};dur={round(dur,1)}s")
                     print(f"Wrote VO {out_mp3} via {used} ({round(dur,1)}s)")
                     return
@@ -289,6 +470,60 @@ def main(brief=None, models_config=None):
         pass
 
     dur = ffprobe_duration(out_mp3)
+    
+    # Generate synthetic SRT captions if enabled and no real captions exist
+    if getattr(cfg.pipeline, "enable_captions", True) and getattr(cfg.pipeline, "enable_synthetic_srt", True):
+        try:
+            from bin.synthetic_srt import generate_synthetic_srt
+            
+            # Check if real captions already exist
+            srt_path = out_mp3.replace(".mp3", ".srt")
+            if not os.path.exists(srt_path):
+                # Find corresponding script file
+                script_path = None
+                if brief and brief.get('slug'):
+                    # Try to find script by slug
+                    script_path = os.path.join(BASE, "scripts", f"{brief['slug']}.txt")
+                
+                if not script_path or not os.path.exists(script_path):
+                    # Fallback: look for most recent script
+                    scripts_dir = os.path.join(BASE, "scripts")
+                    if os.path.exists(scripts_dir):
+                        script_files = [f for f in os.listdir(scripts_dir) if f.endswith(".txt")]
+                        if script_files:
+                            script_files.sort(reverse=True)
+                            script_path = os.path.join(scripts_dir, script_files[0])
+                
+                if script_path and os.path.exists(script_path):
+                    # Get WPM from config or brief
+                    wpm = getattr(cfg.tts, "rate_wpm", 160)
+                    if brief and brief.get('pacing'):
+                        pacing = brief['pacing'].lower()
+                        if pacing in ['slow', 'deliberate']:
+                            wpm = max(120, wpm - 20)
+                        elif pacing in ['fast', 'energetic']:
+                            wpm = min(200, wpm + 20)
+                    
+                    # Get seed from config for deterministic timing
+                    seed = None
+                    if hasattr(cfg, 'modules') and hasattr(cfg.modules, 'procedural'):
+                        seed = getattr(cfg.modules.procedural, 'seed', None)
+                    
+                    # Generate synthetic SRT
+                    generate_synthetic_srt(
+                        script_path=script_path,
+                        audio_duration_sec=dur,
+                        output_path=srt_path,
+                        wpm=wpm,
+                        max_words_per_caption=8,
+                        seed=seed
+                    )
+                    log.info(f"Generated synthetic SRT: {srt_path}")
+                else:
+                    log.warning("No script file found for synthetic SRT generation")
+        except Exception as e:
+            log.warning(f"Failed to generate synthetic SRT: {e}")
+    
     log_state("tts_generate", "OK", f"{os.path.basename(out_mp3)};prov={used};dur={round(dur,1)}s")
     print(f"Wrote VO {out_mp3} via {used} ({round(dur,1)}s)")
 

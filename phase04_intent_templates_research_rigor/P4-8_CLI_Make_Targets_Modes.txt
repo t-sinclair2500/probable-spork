@@ -1,0 +1,34 @@
+# Prompt P4-8 — CLI & Make Targets + Modes (Reuse vs Live) for Research
+
+ROLE: Developer experience engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Provide ergonomic CLIs and Make targets to run research in either `reuse` or `live` mode and to inspect caches and coverage quickly.
+
+MANDATORY CONTEXT
+- Modules from P4-3..P4-6
+- Makefile (or create), OPERATOR_RUNBOOK.md
+
+REQUIREMENTS
+- CLIs:
+  - `python bin/trending_intake.py --mode reuse|live ...`
+  - `python bin/research_collect.py --slug <slug> --mode reuse|live --max 50`
+  - `python bin/research_ground.py --slug <slug>`
+  - `python bin/fact_guard.py --slug <slug>`
+- Make targets:
+  - `make research-reuse SLUG=<slug>` (collect from cache → ground → fact-guard)
+  - `make research-live SLUG=<slug>` (live fetch → cache → ground → fact-guard; obey rate limits)
+  - `make research-report SLUG=<slug>` (prints citations stats and coverage)
+- Logs must include the tags from README.
+
+DELIVERABLES
+- New CLIs/targets; brief notes in OPERATOR_RUNBOOK.md.
+
+SUCCESS CRITERIA
+- Operator can run both modes; outputs deterministic in reuse mode.
+- Research-report prints a compact summary (min/max checks).
+
+TEST CRITERIA (paste outputs)
+1) `make research-reuse SLUG=eames-history`
+2) `make research-report SLUG=eames-history`

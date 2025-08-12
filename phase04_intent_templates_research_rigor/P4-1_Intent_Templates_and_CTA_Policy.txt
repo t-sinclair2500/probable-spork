@@ -1,0 +1,35 @@
+# Prompt P4-1 — Intent Templates & CTA Policy (Authoring + Loader)
+
+ROLE: Content strategy engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Define intent templates and CTA policy and provide a loader so outline/script stages can consume them deterministically.
+
+MANDATORY CONTEXT
+- New config: `conf/intent_templates.yaml`
+- Consumers: `bin/llm_outline.py`, `bin/llm_script.py`
+- Brief: `conf/brief.yaml` (must declare `intent:` key)
+
+REQUIREMENTS
+- Add `conf/intent_templates.yaml` with (at minimum) these intents:
+  - `narrative_history` (CTA: omit; tone: curious, authoritative; 4–6 beats with target_ms each)
+  - `explainer_howto` (CTA: optional; tone: helpful, concise; step beats)
+  - `review_ranking` (CTA: recommend; tone: neutral but decisive; criteria beats)
+  - `opinion_analysis` (CTA: optional; tone: analytical; argument beats)
+- Include: `cta_policy`, `tone`, `beats[]: {{id, label, target_ms}}`, `visual_density_target` (elements/scene), `evidence_load` (low/med/high).
+- Create `bin/intent_loader.py`:
+  - `load_intent_template(intent: str) -> dict`
+  - `cta_required(intent: str) -> str`  # 'require'|'optional'|'omit'
+
+DELIVERABLES
+- `conf/intent_templates.yaml` and `bin/intent_loader.py` with docstrings.
+- Brief validation: error clearly if `intent` missing or invalid.
+
+SUCCESS CRITERIA
+- Loader returns a stable template for each intent.
+- Unit smoke: requests for each template return expected shape.
+
+TEST CRITERIA (paste outputs)
+1) `python - << 'PY'\nfrom bin.intent_loader import load_intent_template, cta_required\nprint(list(load_intent_template('narrative_history').keys()))\nprint(cta_required('narrative_history'))\nPY`
+2) Show a YAML excerpt for one intent (beats + cta_policy).

@@ -1,0 +1,32 @@
+# Prompt P4-5 — Grounding Beats with Citations (Selection, Diversity, Normalization)
+
+ROLE: Research grounding engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Map collected snippets to outline beats, choosing diverse, high-quality sources and normalizing citations. Produce `grounded_beats.json` and `references.json`.
+
+MANDATORY CONTEXT
+- Inputs: `snippets.json`, outline beats, `conf/intent_templates.yaml`
+- Module: `bin/research_ground.py`
+- Models: research model for query expansion (if needed), but **selection must be heuristic & deterministic**
+
+REQUIREMENTS
+- Heuristics:
+  - Score snippets by domain quality, recency (where relevant), topical overlap (keyword cosine), and diversity (avoid same domain dominating).
+  - Assign ≥1 citation per beat where `needs_citations=true`.
+- Normalization:
+  - Produce `references.json` with deduped canonical entries `{id, url, title, domain, published_at?, accessed_at, quote?}`.
+  - In `grounded_beats.json`, for each beat add `citations: [id, ...]` and optionally `evidence_snippets` (short quotes).
+- Logs: `[ground]` with selection scores and diversity notes.
+
+DELIVERABLES
+- `grounded_beats.json` and `references.json` persisted; outline augmented with citation ids.
+
+SUCCESS CRITERIA
+- ≥60% beats have ≥1 citation; average ≥1 citation per beat for history/analysis intents.
+- No single domain exceeds 50% of citations unless insufficient alternatives are available (log WARN).
+
+TEST CRITERIA (paste outputs)
+1) Counts from `references.json` and per-beat coverage stats.
+2) Show one beat with assigned citations.

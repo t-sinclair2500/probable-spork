@@ -136,6 +136,14 @@ class AssetsCfg(BaseModel):
     max_per_section: int = 3
 
 
+class AudioCfg(BaseModel):
+    vo_lufs_target: float = -16.0      # Voiceover target LUFS
+    music_lufs_target: float = -23.0   # Music bed target LUFS  
+    true_peak_max: float = -1.0        # Maximum true peak in dBTP
+    ducking_min_db: float = 6.0        # Minimum ducking difference in dB
+    enable_auto_normalization: bool = True  # Auto-normalize if out of spec
+
+
 class RenderCfg(BaseModel):
     resolution: str = "1920x1080"
     fps: int = 30
@@ -148,6 +156,7 @@ class RenderCfg(BaseModel):
     crf: int = 23  # Quality setting (18-28 range, lower = better quality)
     threads: int = 0  # Auto-detect optimal thread count
     use_hardware_acceleration: bool = True  # Enable/disable hardware acceleration
+    audio: AudioCfg = Field(default_factory=AudioCfg)
 
 
 class UploadCfg(BaseModel):
@@ -324,6 +333,9 @@ def create_brief_context(brief: dict) -> str:
     if brief.get('title'):
         context_parts.append(f"Title: {brief['title']}")
     
+    if brief.get('intent'):
+        context_parts.append(f"Intent: {brief['intent']}")
+    
     if brief.get('audience'):
         audience_str = ', '.join(brief['audience'])
         context_parts.append(f"Audience: {audience_str}")
@@ -356,6 +368,62 @@ def create_brief_context(brief: dict) -> str:
         return "BRIEF CONTEXT:\n" + "\n".join(context_parts) + "\n\n"
     
     return ""
+
+
+def validate_brief_intent(brief: dict) -> tuple[bool, str]:
+    """
+    Validate that a brief has a valid intent field.
+    
+    Args:
+        brief: Brief configuration dictionary
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not brief:
+        return False, "No brief provided"
+    
+    if 'intent' not in brief:
+        return False, "Brief missing required 'intent' field"
+    
+    intent = brief['intent']
+    if not intent or not isinstance(intent, str):
+        return False, f"Invalid intent value: {intent}"
+    
+    try:
+        from bin.intent_loader import validate_intent
+        if not validate_intent(intent):
+            return False, f"Intent template '{intent}' validation failed"
+        return True, ""
+    except ImportError:
+        log.warning("Intent loader not available, skipping intent validation")
+        return True, ""
+    except Exception as e:
+        return False, f"Intent validation error: {e}"
+
+
+def get_brief_intent_template(brief: dict) -> dict:
+    """
+    Get the intent template for a brief.
+    
+    Args:
+        brief: Brief configuration dictionary
+        
+    Returns:
+        Intent template dictionary
+        
+    Raises:
+        KeyError: If intent field is missing or invalid
+        ImportError: If intent loader is not available
+    """
+    if not brief or 'intent' not in brief:
+        raise KeyError("Brief missing required 'intent' field")
+    
+    try:
+        from bin.intent_loader import load_intent_template
+        return load_intent_template(brief['intent'])
+    except ImportError:
+        raise ImportError("Intent loader not available")
 
 
 def filter_content_by_brief(content: str, brief: dict) -> tuple[str, list[str]]:

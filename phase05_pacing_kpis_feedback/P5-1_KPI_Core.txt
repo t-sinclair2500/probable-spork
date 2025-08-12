@@ -1,0 +1,37 @@
+# Prompt P5-1 — KPI Core (Words/Sec, Cuts/Min, Avg Scene, Speech/Music Ratio)
+
+ROLE: Narrative analytics engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Implement a pacing KPI module that computes: words/sec, cuts/min, average scene length, and speech/music ratio using script, SRT (if present), and scene timings. Persist an auditable report.
+
+MANDATORY CONTEXT
+- New module: `bin/pacing_kpi.py`
+- Inputs: final script text, `data/<slug>/captions.srt` (if exists), SceneScript (durations), assembled video duration.
+- Configs: `conf/render.yaml`, `conf/modules.yaml`
+
+REQUIREMENTS
+- Public API:
+  - `compute_pacing(script_text: str, scenes: list[dict], video_ms: int, srt_path: str|None) -> dict`
+    - Return fields: `{ "words_per_sec": float, "cuts_per_min": float, "avg_scene_s": float, "speech_music_ratio": float, "scenes": [{"id":..., "duration_ms":...}], "source": "vo|brief" }`
+- Definitions:
+  - **words/sec:** total words in final script / total **speech** seconds (from SRT if present, else from video_ms × speech_ratio heuristic configurable per intent).
+  - **cuts/min:** (# scene transitions + internal cut markers if available) / (video_minutes).
+  - **avg_scene_s:** mean(scene.duration_ms)/1000.
+  - **speech/music ratio:** speech_ms / (video_ms - speech_ms), clamp if zero.
+- Artifacts:
+  - Write `runs/<slug>/pacing_report.json` (include raw counts and any assumptions).
+  - Update `videos/<slug>.metadata.json.pacing` with KPI summary.
+
+DELIVERABLES
+- `bin/pacing_kpi.py` with docstrings, clear logs (`[pacing-kpi]`).
+
+SUCCESS CRITERIA
+- Deterministic metrics given identical inputs.
+- Works with and without SRT; clearly marks `source` as `vo` or `brief`.
+- Stores report and metadata cleanly.
+
+TEST CRITERIA (paste outputs)
+1) `jq '.' runs/<slug>/pacing_report.json | head -40`
+2) The `pacing` block from `videos/<slug>.metadata.json`.

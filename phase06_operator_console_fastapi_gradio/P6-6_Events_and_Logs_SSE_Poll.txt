@@ -1,0 +1,23 @@
+# Prompt P6-6 — Events & Logs Streaming (SSE + Polling Fallback)
+
+ROLE: Observability engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Provide a real‑time event stream for the UI and a polling fallback. Add a JSONL event sink per job and a structured logger that mirrors events to the console.
+
+REQUIREMENTS
+- `GET /jobs/{id}/events`: Server‑Sent Events (SSE) yielding `{ts, type, stage?, status?, message?, payload?}`
+- `GET /jobs/{id}/events/poll?since=<ts>`: returns recent events as JSON
+- Logger:
+  - Root logger adds job_id/stage/status fields where relevant.
+  - All orchestrator transitions emit an event and a log with tag `[events]`.
+- Heartbeats: emit `{"type":"heartbeat"}` every 5s while running.
+
+SUCCESS CRITERIA
+- UI can subscribe and show live progress; polling returns the same events.
+- Events are appended to `runs/<id>/events.jsonl` and never overwritten.
+
+TEST CRITERIA
+1) Start a job; tail SSE; confirm events and heartbeats.
+2) Fetch poll endpoint with `since` and confirm incremental results.

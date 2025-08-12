@@ -1,0 +1,52 @@
+{
+  "slug": "test_assets",
+  "resolved": [
+    {
+      "element_id": "scene_000_bg",
+      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
+      "reuse_type": "existing"
+    },
+    {
+      "element_id": "scene_000_character",
+      "asset": "assets/brand/characters/narrator.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "92c82b9ba86fdfff350310ca3106a5fa03c00fee",
+      "reuse_type": "existing"
+    },
+    {
+      "element_id": "scene_001_bg",
+      "asset": "assets/generated/bg_missing_bg_1755012480_6327.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "79e5ad1342d5abf42dd5014121245f8be61b96d6",
+      "reuse_type": "existing"
+    },
+    {
+      "element_id": "scene_000_clock",
+      "asset": "assets/generated/prop_nelson_sunburst_f0d243c9.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "9e5fd9da46df5d83a354c6d44083e19f7d49de59",
+      "reuse_type": "generated"
+    },
+    {
+      "element_id": "scene_001_missing_prop",
+      "asset": "assets/generated/prop_nonexistent_style_bfa2e57a.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "13b575579c9ea679f66801325c38294bf7117ea1",
+      "reuse_type": "generated"
+    }
+  ],
+  "gaps": [],
+  "reuse_ratio": 0.6,
+  "total_placeholders": 5,
+  "resolved_count": 5,
+  "gaps_count": 0,
+  "manifest_version": "1.0",
+  "generated_at": "2025-08-12T18:18:00.642288Z"
+}

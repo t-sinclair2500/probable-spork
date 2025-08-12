@@ -1,6 +1,6 @@
 {
   "slug": "eames",
-  "timestamp": 1755012520.165867,
+  "timestamp": 1755022467.6936152,
   "brand_style": {
     "colors": {
       "primary": "#2563eb",
@@ -61,13 +61,13 @@
     ]
   },
   "asset_library_stats": {
-    "total": 8,
+    "total": 10,
     "brand": 0,
-    "generated": 3
+    "generated": 5
   },
   "coverage_history": [
     {
-      "timestamp": 1755012520.165853,
+      "timestamp": 1755022467.693598,
       "total_requirements": 5,
       "covered_requirements": 5,
       "coverage_pct": 100.0,

@@ -1,0 +1,30 @@
+# Prompt P6-3 — Orchestrator State Machine (In‑Process Runner + Gates)
+
+ROLE: Orchestration engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Implement the job state machine that advances through pipeline stages, pauses at HITL gates, and resumes deterministically. Use in‑process tasks (ThreadPoolExecutor or BackgroundTasks) with cancellation.
+
+STAGES (minimum)
+outline → research → script → storyboard → assets → animatics → audio → assemble → acceptance
+
+REQUIREMENTS
+- Orchestrator functions (`fastapi_app/orchestrator.py`):
+  - `start_job(job: Job) -> None` (async-safe)
+  - `advance(job_id: str) -> None` (idempotent; resumes from current stage)
+  - `pause_for_gate(job_id: str, stage: Stage) -> None`
+  - `record_event(job_id: str, type: str, payload: dict)`
+- Pausing:
+  - When a stage with a required gate completes, set status=`needs_approval`, stage=`<stage>`; write artifacts; emit event.
+  - On `approve`, continue; on `reject`, mark status=`paused` and return control to operator (resume should rerun stage).
+- Cancellation: set status=`canceled`; runner must stop at next cooperative checkpoint.
+- Determinism: re‑entrancy safe; markers prevent duplicate work.
+
+SUCCESS CRITERIA
+- Two concurrent jobs can run without stepping on each other.
+- Approve/reject flows work; resume re‑runs the intended stage only.
+
+TEST CRITERIA
+1) Start a job and approve gates through to acceptance (use dummy stage functions if needed).
+2) Start a second job and reject at storyboard; resume after edits.

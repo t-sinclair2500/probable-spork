@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- METADATA: {"generator": "asset_generator.py", "seed": 42, "category": "prop", "style": "nelson_sunburst", "palette": ["#1C4FA1", "#D62828", "#F6BE00"], "generator_params": {"prop_type": "nelson_sunburst", "width": 200, "height": 200}, "notes": "Nelson sunburst clock prop"} -->
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 328 328">
+  <desc>Atomic starburst pattern with 12 spokes, mid-century geometric design</desc>
+  <line x1="112.0" y1="100.1" x2="148.4" y2="100.7" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="148.4" cy="100.7" r="3" fill="#D62828"/>
+  <line x1="110.5" y1="105.8" x2="142.2" y2="123.6" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="142.2" cy="123.6" r="3" fill="#D62828"/>
+  <line x1="106.0" y1="110.4" x2="123.6" y2="141.0" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="123.6" cy="141.0" r="3" fill="#D62828"/>
+  <line x1="100.1" y1="112.0" x2="99.2" y2="146.9" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="99.2" cy="146.9" r="3" fill="#D62828"/>
+  <line x1="93.9" y1="110.3" x2="75.0" y2="140.8" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="75.0" cy="140.8" r="3" fill="#D62828"/>
+  <line x1="89.6" y1="106.1" x2="58.5" y2="124.2" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="58.5" cy="124.2" r="3" fill="#D62828"/>
+  <line x1="88.0" y1="100.0" x2="52.5" y2="100.4" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="52.5" cy="100.4" r="3" fill="#D62828"/>
+  <line x1="89.5" y1="94.2" x2="57.8" y2="76.4" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="57.8" cy="76.4" r="3" fill="#D62828"/>
+  <line x1="94.0" y1="89.6" x2="77.1" y2="59.6" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="77.1" cy="59.6" r="3" fill="#D62828"/>
+  <line x1="99.9" y1="88.0" x2="101.0" y2="53.4" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="101.0" cy="53.4" r="3" fill="#D62828"/>
+  <line x1="106.2" y1="89.7" x2="123.9" y2="58.1" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="123.9" cy="58.1" r="3" fill="#D62828"/>
+  <line x1="110.4" y1="94.0" x2="140.4" y2="74.9" stroke="#1C4FA1" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="140.4" cy="74.9" r="3" fill="#D62828"/>
+  <circle cx="100" cy="100" r="6" fill="#D62828"/>
+</svg>

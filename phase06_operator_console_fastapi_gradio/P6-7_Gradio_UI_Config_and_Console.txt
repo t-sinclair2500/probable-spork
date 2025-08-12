@@ -1,0 +1,26 @@
+# Prompt P6-7 — Gradio UI (Two Pages: Config & Launch, Job Console)
+
+ROLE: UI engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Build a thin Gradio Blocks UI that talks to the FastAPI backend: page 1 for config edit + job start; page 2 for live job console with gate approvals and artifact previews.
+
+REQUIREMENTS
+- Config & Launch page:
+  - Load current brief/config from API; editable widgets for topic, intent, target length, models, texture/music toggles, testing mode (`reuse` vs `live`), seeds.
+  - Validate via `/config/validate`; on success, POST `/jobs` to create a job.
+- Job Console page:
+  - Dropdown to select job; shows stage cards in order with status, last event, and artifacts (script text, storyboard thumbnails, animatics GIF/MP4, audio metrics, acceptance summary).
+  - Gate controls: Approve/Reject + notes (+ optional patch upload) that call gate endpoints.
+  - Event stream panel subscribing to `/events` (SSE) with fallback to polling every 2s.
+  - Download buttons for artifacts.
+- Auth: text input for Admin Token stored in Gradio `State` and sent as header.
+
+SUCCESS CRITERIA
+- Operator can start a job, approve gates, and download the final video entirely from the UI.
+- UI remains responsive during long stages; event panel updates live.
+
+TEST CRITERIA
+1) Start the UI; create a job and navigate to the console; observe events.
+2) Approve/Reject flow at Script gate; verify state updates on screen.

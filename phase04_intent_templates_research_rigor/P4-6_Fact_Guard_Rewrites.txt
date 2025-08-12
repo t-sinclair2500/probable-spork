@@ -1,0 +1,31 @@
+# Prompt P4-6 — Fact Guard (Claim Checking, Rewrites, Redlines)
+
+ROLE: Fact-checking engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Enforce that factual claims in the script are supported by references. Remove or rewrite ungrounded claims and produce a fact-guard report.
+
+MANDATORY CONTEXT
+- Inputs: script text (draft), `grounded_beats.json`, `references.json`
+- Module: `bin/fact_guard.py`
+- Output: `fact_guard_report.json`, cleaned script
+
+REQUIREMENTS
+- Identify claims that require evidence (proper nouns, dates, “first/most/best” superlatives).
+- For each claim:
+  - If supported by citations in its beat: OK.
+  - If unsupported: either remove or rewrite to a cautious form **or** add a TODO flag for operator (configurable strictness).
+- Produce `fact_guard_report.json` with `{kept, removed, rewritten, flagged}` and rationale.
+- Logging: `[fact-guard]` with summary stats.
+
+DELIVERABLES
+- A cleaned, citation-safe script and detailed report.
+
+SUCCESS CRITERIA
+- No orphan claims remain; script reads smoothly.
+- Deterministic decisions with same inputs.
+
+TEST CRITERIA (paste outputs)
+1) Summary counts from `fact_guard_report.json`.
+2) One example of a rewritten line with old→new text.

@@ -273,8 +273,9 @@ def maybe_llm_beats(stext: str, cfg) -> list:
             beats = []
             for match in re.finditer(beat_pattern, stext):
                 beat_text = match.group(1).strip()
-                # Estimate 3 seconds per beat as default
-                beats.append({"text": beat_text, "sec": 3.0})
+                # Use configurable default duration from timing config
+                default_sec = getattr(cfg.timing, "default_scene_ms", 5000) / 1000.0
+                beats.append({"text": beat_text, "sec": default_sec})
             
             if beats:
                 log.info(f"Extracted {len(beats)} beats from script markers")

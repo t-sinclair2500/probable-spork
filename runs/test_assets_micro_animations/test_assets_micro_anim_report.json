@@ -1,0 +1,46 @@
+{
+  "enabled": true,
+  "scenes_processed": 2,
+  "total_elements": 5,
+  "total_animated": 2,
+  "animation_percentage": 40.0,
+  "seed": 42,
+  "scenes": [
+    {
+      "enabled": true,
+      "scene_id": "scene_000",
+      "elements_animated": 1,
+      "total_elements": 3,
+      "max_movement_px": 4,
+      "seed": 42,
+      "animations": [
+        {
+          "element_id": "scene_000_clock",
+          "element_type": "prop",
+          "animation_type": "scale",
+          "max_movement_px": 4,
+          "keyframe_count": 4,
+          "duration_sec": 5.0
+        }
+      ]
+    },
+    {
+      "enabled": true,
+      "scene_id": "scene_001",
+      "elements_animated": 1,
+      "total_elements": 2,
+      "max_movement_px": 4,
+      "seed": 42,
+      "animations": [
+        {
+          "element_id": "scene_001_missing_prop",
+          "element_type": "prop",
+          "animation_type": "translate",
+          "max_movement_px": 4,
+          "keyframe_count": 4,
+          "duration_sec": 5.0
+        }
+      ]
+    }
+  ]
+}

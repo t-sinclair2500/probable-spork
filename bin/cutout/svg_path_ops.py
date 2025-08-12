@@ -17,7 +17,26 @@ import logging
 import math
 import random
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Tuple, Union, Any, TYPE_CHECKING
+
+from .sdk import SAFE_MARGINS_PX
+from bin.core import get_logger
+
+log = get_logger("svg_path_ops")
+
+# Type aliases for optional dependencies
+if TYPE_CHECKING:
+    try:
+        import svgpathtools
+        from svgpathtools import Path as SVGPath, Line, CubicBezier, QuadraticBezier, Arc
+        SVG_PATHS_AVAILABLE = True
+    except ImportError:
+        SVG_PATHS_AVAILABLE = False
+        SVGPath = Any
+        Line = Any
+        CubicBezier = Any
+        QuadraticBezier = Any
+        Arc = Any
 
 try:
     import svgpathtools
@@ -25,6 +44,11 @@ try:
     SVG_PATHS_AVAILABLE = True
 except ImportError:
     SVG_PATHS_AVAILABLE = False
+    SVGPath = Any
+    Line = Any
+    CubicBezier = Any
+    QuadraticBezier = Any
+    Arc = Any
     log.warning("svgpathtools not available - advanced path operations disabled")
 
 try:
@@ -33,6 +57,8 @@ try:
     SVG_ELEMENTS_AVAILABLE = True
 except ImportError:
     SVG_ELEMENTS_AVAILABLE = False
+    SVG = Any
+    SVGElementPath = Any
     log.warning("svgelements not available - advanced path operations disabled")
 
 try:
@@ -42,6 +68,10 @@ try:
     SHAPELY_AVAILABLE = True
 except ImportError:
     SHAPELY_AVAILABLE = False
+    Polygon = Any
+    Point = Any
+    LineString = Any
+    unary_union = Any
     log.warning("shapely not available - safe area validation disabled")
 
 try:
@@ -49,12 +79,8 @@ try:
     SVGWRITE_AVAILABLE = True
 except ImportError:
     SVGWRITE_AVAILABLE = False
+    svgwrite = Any
     log.warning("svgwrite not available - SVG export disabled")
-
-from .sdk import SAFE_MARGINS_PX
-from bin.core import get_logger
-
-log = get_logger("svg_path_ops")
 
 
 class SVGPathProcessor:

@@ -204,6 +204,39 @@ pipeline-status:
 	@echo "Current pipeline configuration:"
 	@yq '.video' conf/global.yaml
 
+# -------- Asset Loop Management --------
+asset-rebuild:
+	@echo "Rebuilding asset library manifest..."
+	$(PY) bin/asset_manifest.py --rebuild
+
+asset-plan:
+	@echo "Usage: make asset-plan SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Creating asset plan for $(SLUG)..."
+	$(PY) bin/asset_librarian.py --slug $(SLUG)
+
+asset-fill:
+	@echo "Usage: make asset-fill SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Filling asset gaps for $(SLUG)..."
+	$(PY) bin/asset_generator.py --plan runs/$(SLUG)/asset_plan.json
+
+asset-reflow:
+	@echo "Usage: make asset-reflow SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Reflowing assets for $(SLUG)..."
+	$(PY) bin/reflow_assets.py --slug $(SLUG)
+
+asset-loop:
+	@echo "Usage: make asset-loop SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Running complete asset loop for $(SLUG)..."
+	$(MAKE) asset-rebuild
+	$(MAKE) asset-plan SLUG=$(SLUG)
+	$(MAKE) asset-fill SLUG=$(SLUG)
+	$(MAKE) asset-reflow SLUG=$(SLUG)
+	@echo "Asset loop completed for $(SLUG)"
+
 # -------- Raspberry Pi Helpers --------
 PI_HOST ?= onepi
 PI_DIR ?= ~/youtube_onepi_pipeline

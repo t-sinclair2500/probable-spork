@@ -119,7 +119,8 @@ def make_image_clip(img_path: str) -> ImageClip:
 
 def bg_gradient(
     style: BrandStyle,
-    motion: Literal["slow_pan", "slow_zoom"]
+    motion: Literal["slow_pan", "slow_zoom"],
+    duration: float = 5.0
 ) -> ColorClip:
     """
     Create a background gradient with motion.
@@ -127,6 +128,7 @@ def bg_gradient(
     Args:
         style: BrandStyle configuration
         motion: Motion type for background
+        duration: Duration in seconds (default: 5.0)
         
     Returns:
         ColorClip with gradient and motion
@@ -135,7 +137,7 @@ def bg_gradient(
     bg_clip = ColorClip(
         size=(VIDEO_W, VIDEO_H),
         color=(0, 100, 255),  # Blue RGB
-        duration=3.0  # Default 3 second duration
+        duration=duration
     )
     
     # Apply motion effects

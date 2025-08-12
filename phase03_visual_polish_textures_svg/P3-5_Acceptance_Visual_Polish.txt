@@ -1,0 +1,32 @@
+# Prompt P3-5 — Acceptance Extensions for Visual Polish (Textures/Geometry/Micro‑Anim)
+
+ROLE: Acceptance engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Extend acceptance to validate visual polish quality and performance budgets, and surface texture/geometry/micro‑animation details in results.
+
+MANDATORY CONTEXT
+- Acceptance: `bin/acceptance.py`
+- Metadata paths: `videos/<slug>.metadata.json`
+- Artifacts: `runs/<slug>/style_signature.json`, `runs/<slug>/geom_validation_report.json`
+
+REQUIREMENTS
+- Checks:
+  - If `textures.enable=true`, confirm metadata shows textures applied and contrast remains PASS.
+  - If `geometry.enable=true`, ensure `geom_validation_report.json` exists and has 0 critical errors.
+  - If `micro_anim.enable=true`, ensure ≤10% elements animated per scene and no collisions after animation keyframes.
+  - Performance: report scene render time delta with textures ON vs OFF; WARN if >15% average increase.
+- Results:
+  - Add `visual_polish` block to `acceptance_results.json` with PASS/WARN/FAIL and key metrics.
+
+DELIVERABLES
+- Enhanced acceptance with `visual_polish` block and clear operator hints on failures.
+
+SUCCESS CRITERIA
+- E2E acceptance passes with textures ON; geometry validated; micro‑anim within policy.
+- Operator can read one JSON to understand visual polish status.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/acceptance.py && jq '.visual_polish' acceptance_results.json`
+2) Show performance delta numbers (textures on vs off).

@@ -53,12 +53,16 @@
           "style": {
             "font_size": "body",
             "text_align": "center",
-            "max_width": 1152
+            "max_width": 1152,
+            "color": "#111827"
           },
           "metadata": null
         }
       ],
-      "metadata": null
+      "metadata": {
+        "duration_rationale": "Used duration_ms from grounded beats",
+        "duration_strategy": "beat"
+      }
     },
     {
       "id": "scene_001",
@@ -111,12 +115,16 @@
           "style": {
             "font_size": "body",
             "text_align": "center",
-            "max_width": 1152
+            "max_width": 1152,
+            "color": "#111827"
           },
           "metadata": null
         }
       ],
-      "metadata": null
+      "metadata": {
+        "duration_rationale": "Used duration_ms from grounded beats",
+        "duration_strategy": "beat"
+      }
     },
     {
       "id": "scene_002",
@@ -169,12 +177,16 @@
           "style": {
             "font_size": "body",
             "text_align": "center",
-            "max_width": 1152
+            "max_width": 1152,
+            "color": "#111827"
           },
           "metadata": null
         }
       ],
-      "metadata": null
+      "metadata": {
+        "duration_rationale": "Used duration_ms from grounded beats",
+        "duration_strategy": "beat"
+      }
     },
     {
       "id": "scene_003",
@@ -227,12 +239,16 @@
           "style": {
             "font_size": "body",
             "text_align": "center",
-            "max_width": 1152
+            "max_width": 1152,
+            "color": "#111827"
           },
           "metadata": null
         }
       ],
-      "metadata": null
+      "metadata": {
+        "duration_rationale": "Used duration_ms from grounded beats",
+        "duration_strategy": "beat"
+      }
     },
     {
       "id": "scene_004",
@@ -285,12 +301,16 @@
           "style": {
             "font_size": "body",
             "text_align": "center",
-            "max_width": 1152
+            "max_width": 1152,
+            "color": "#111827"
           },
           "metadata": null
         }
       ],
-      "metadata": null
+      "metadata": {
+        "duration_rationale": "Used duration_ms from grounded beats",
+        "duration_strategy": "beat"
+      }
     }
   ],
   "metadata": {

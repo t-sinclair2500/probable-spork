@@ -1,0 +1,44 @@
+{
+  "slug": "test_assets_with_gaps",
+  "resolved": [
+    {
+      "element_id": "scene_000_bg",
+      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
+      "reuse_type": "existing"
+    },
+    {
+      "element_id": "scene_000_clock",
+      "asset": "assets/generated/prop_nelson_sunburst_43da2a46.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "c198f1367430e6b0e442cb5a6af1a1250bd70bcd",
+      "reuse_type": "generated"
+    },
+    {
+      "element_id": "scene_001_background",
+      "asset": "assets/generated/background_starburst_1c28591c.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "a51077a2b0bf4bac79ad7ed036a4cd8c7402ffc4",
+      "reuse_type": "generated"
+    },
+    {
+      "element_id": "scene_002_prop",
+      "asset": "assets/generated/prop_nonexistent_style_0184e67b.svg",
+      "scale": 1.0,
+      "variant": "default",
+      "asset_hash": "d8047c43d5590724b53378e616248cd52cf5fb4b",
+      "reuse_type": "generated"
+    }
+  ],
+  "gaps": [],
+  "reuse_ratio": 0.25,
+  "total_placeholders": 4,
+  "resolved_count": 4,
+  "gaps_count": 0,
+  "manifest_version": "1.0",
+  "generated_at": "2025-08-12T18:35:00.000000Z"
+}

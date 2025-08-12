@@ -1,0 +1,36 @@
+# Prompt P2-4 — Storyboard Reflow with Concrete Assets + QA (Collisions/Contrast)
+
+ROLE: Storyboard integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+After assets are resolved (and generated), reflow each scene using actual asset sizes. Re-run layout constraints; auto-fix minor issues; and ensure QA passes (no collisions, margins respected, contrast OK).
+
+MANDATORY CONTEXT
+- Layout engine: `bin/cutout/layout_engine.py` (poisson, pack, constraints)
+- QA gates: `bin/cutout/qa_gates.py` (collisions/contrast)
+- Storyboard: `bin/storyboard_plan.py` (or a shared helper `layout_apply.py`)
+- Plan: `runs/<slug>/asset_plan.json`
+
+REQUIREMENTS
+- Implement `reflow_with_assets(scenescript, asset_plan, cfg, seed) -> (scenescript2, summary)`:
+  - Replace placeholder boxes with exact `w,h` from asset metadata.
+  - Run `apply_constraints` and re-check collisions until pass or max attempts (configurable; default 3).
+  - Minimal auto-fixes: shrink scale by ≤10%, nudge by ≤12px if needed.
+- Write `runs/<slug>/reflow_summary.json` with:
+  - per-scene before/after bboxes, attempts, fixes applied, final status.
+- Ensure the renderer now uses the **updated** positions/sizes.
+
+DELIVERABLES
+- Reflowed SceneScript with concrete positions/sizes.
+- QA-clean results; summary JSON persisted; logs with `[reflow]` + `[qa-assets]` tags.
+
+SUCCESS CRITERIA
+- 0 collisions after reflow; margins respected.
+- Contrast gate still passes after any scale/shade adjustments.
+- Deterministic reflow for same seed + plan.
+
+TEST CRITERIA (paste outputs)
+1) Excerpt of `reflow_summary.json` (one scene with before/after).
+2) `grep -n "\[qa-assets\]" logs/pipeline.log | tail -15`
+3) Confirmation that final render used reflowed positions (log evidence).

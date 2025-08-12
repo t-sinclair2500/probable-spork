@@ -1,0 +1,24 @@
+# Prompt P6-4 — Stage Adapters (Call Existing Pipeline Modules)
+
+ROLE: Integration engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Create thin adapters that call the existing Python modules for each stage, capture outputs, and register artifacts with the orchestrator.
+
+MANDATORY CONTEXT
+- Existing modules in `bin/` (e.g., `llm_outline.py`, `research_collect.py`, `storyboard_plan.py`, `animatics_generate.py`, `tts_generate.py`, `assemble_video.py`, `acceptance.py`)
+- Model lifecycle helper: `bin/model_runner.py` (load/unload)
+
+REQUIREMENTS
+- `fastapi_app/storage.py`: helpers to resolve per‑job paths and to copy/symlink key artifacts into `runs/<id>/artifacts/`.
+- `fastapi_app/orchestrator.py`: per‑stage adapter functions (e.g., `_run_outline(job)`) that call the module API (prefer in‑process calls over `subprocess`), catch exceptions, and emit structured events.
+- Resource discipline: ensure Ollama model load/unload occurs per stage batch (script vs research models), and always free on error.
+
+SUCCESS CRITERIA
+- Each stage produces at least one registered artifact.
+- Errors recorded with clear context; job transitions to `failed` state on unhandled exceptions.
+
+TEST CRITERIA
+1) Launch a job; show artifact list for `outline`, `storyboard`, `animatics`, `acceptance`.
+2) Simulate a stage failure and verify `failed` state + error event.

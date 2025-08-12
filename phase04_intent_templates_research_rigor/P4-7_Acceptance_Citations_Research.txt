@@ -1,0 +1,29 @@
+# Prompt P4-7 — Acceptance: Citations, Domain Quality, Research Coverage
+
+ROLE: Acceptance engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Extend acceptance to validate research quality and coverage and to surface a concise citations dashboard.
+
+MANDATORY CONTEXT
+- Acceptance: `bin/acceptance.py`
+- Artifacts: `references.json`, `grounded_beats.json`, `fact_guard_report.json`
+- Config: `conf/research.yaml` (min counts, whitelists)
+
+REQUIREMENTS
+- Add an `evidence` section with:
+  - Counts: total citations, unique domains, beats coverage (% >=1).
+  - Policy checks: min citations per intent; whitelist compliance; WARN on non-whitelisted unless override flag.
+  - Fact-guard summary: removed/rewritten/flagged counts; FAIL if flagged > 0 in strict mode.
+- Write `evidence` block to `acceptance_results.json` and copy key stats into `videos/<slug>.metadata.json`.
+
+DELIVERABLES
+- Acceptance extended with clear PASS/WARN/FAIL outcomes on research.
+
+SUCCESS CRITERIA
+- E2E acceptance passes in reuse mode for Eames; clear evidence dashboard present.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/acceptance.py && jq '.evidence' acceptance_results.json`
+2) Show coverage % and unique domain count.

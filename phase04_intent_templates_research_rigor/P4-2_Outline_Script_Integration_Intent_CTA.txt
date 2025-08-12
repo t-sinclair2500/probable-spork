@@ -1,0 +1,34 @@
+# Prompt P4-2 — Outline/Script Integration with Intent + CTA Enforcement
+
+ROLE: Outline & scripting integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Modify outline and script generators to consume intent templates and enforce CTA policy and tone. Ensure beats honor target durations and evidence load defaults.
+
+MANDATORY CONTEXT
+- `bin/llm_outline.py`, `bin/llm_script.py`
+- `bin/intent_loader.py`, `conf/intent_templates.yaml`
+- Timing: `bin/timing_utils.py`, `conf/render.yaml`
+- Models: `conf/models.yaml` (script vs research model selection)
+
+REQUIREMENTS
+- Outline must:
+  - Pull beat structure from template; populate beat labels; assign target_ms (subject to Phase 1 timing rules).
+  - Set `needs_citations` based on `evidence_load` (med/high → true).
+- Script must:
+  - Enforce `cta_policy`: **omit** for `narrative_history`; **require** for `review_ranking`.
+  - Apply `tone` hints; include **citation placeholders** where grounding is expected.
+- Logging: `[outline]` and `[script]` with selected intent, beats count, CTA action.
+
+DELIVERABLES
+- Updated outline/script producing intent-conforming outputs.
+- No CTA emitted for `narrative_history` unless overridden.
+
+SUCCESS CRITERIA
+- Outline matches template; script includes or omits CTA per policy.
+- Beats carry `needs_citations` for later grounding.
+
+TEST CRITERIA (paste outputs)
+1) Outline JSON beats list (ids, labels, target_ms). 
+2) Script excerpt showing CTA presence/absence per intent.

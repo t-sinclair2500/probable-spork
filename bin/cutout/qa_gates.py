@@ -70,12 +70,20 @@ def check_contrast(scene: Dict[str, Any]) -> QAResult:
     warnings = []
     details = {"contrast_checks": []}
     
-    # Extract background color
+    # Extract background color - check multiple possible locations
     bg_color = None
+    
+    # First check for explicit background color
     if "background" in scene and "color" in scene["background"]:
         bg_color = scene["background"]["color"]
     elif "composition_rules" in scene and "background_color" in scene["composition_rules"]:
         bg_color = scene["composition_rules"]["background_color"]
+    elif "bg" in scene and scene["bg"]:
+        # Map background identifier to actual color
+        bg_id = scene["bg"]
+        bg_color = map_background_to_color(bg_id)
+        if bg_color:
+            warnings.append(f"Mapped background identifier '{bg_id}' to color {bg_color}")
     
     if not bg_color:
         fails.append("No background color specified for contrast checking")
@@ -90,17 +98,24 @@ def check_contrast(scene: Dict[str, Any]) -> QAResult:
     
     # Check text elements
     elements = scene.get("elements", [])
-    text_elements = [e for e in elements if e.get("type") == "text" and "color" in e]
+    text_elements = [e for e in elements if e.get("type") == "text"]
     
     if not text_elements:
         warnings.append("No text elements found for contrast checking")
         return QAResult(ok=True, fails=fails, warnings=warnings, details=details)
     
     for element in text_elements:
-        text_color = element["color"]
+        # Get text color, defaulting to brand text color if not specified
+        text_color = element.get("color")
         if not text_color:
-            continue
-            
+            # Use default text color from brand style
+            text_color = get_default_text_color(bg_color)
+            if text_color:
+                warnings.append(f"Element '{element.get('id', 'unknown')}' using default text color {text_color}")
+            else:
+                fails.append(f"Element '{element.get('id', 'unknown')}' has no text color and no default available")
+                continue
+        
         try:
             text_rgb = hex_to_rgb(text_color)
             text_luminance = calculate_luminance(*text_rgb)
@@ -131,6 +146,155 @@ def check_contrast(scene: Dict[str, Any]) -> QAResult:
         warnings=warnings,
         details=details
     )
+
+
+def check_frame_contrast(img: "PIL.Image.Image", min_contrast_ratio: float = 4.5) -> QAResult:
+    """
+    Check contrast and legibility of a single image frame.
+    
+    Args:
+        img: PIL Image to check
+        min_contrast_ratio: Minimum acceptable contrast ratio (WCAG AA = 4.5)
+        
+    Returns:
+        QAResult with contrast validation results
+    """
+    fails = []
+    warnings = []
+    details = {"contrast_checks": [], "overall_contrast": 0.0}
+    
+    try:
+        # Convert to RGB if needed
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Get image dimensions
+        width, height = img.size
+        
+        # Sample points across the image for contrast analysis
+        sample_points = []
+        step = max(1, min(width, height) // 20)  # Sample every 20th pixel
+        
+        for y in range(0, height, step):
+            for x in range(0, width, step):
+                sample_points.append((x, y))
+        
+        # Limit samples to reasonable number
+        if len(sample_points) > 100:
+            sample_points = sample_points[::len(sample_points)//100]
+        
+        # Analyze contrast between adjacent samples
+        contrast_ratios = []
+        for i in range(len(sample_points) - 1):
+            x1, y1 = sample_points[i]
+            x2, y2 = sample_points[i + 1]
+            
+            # Get colors at sample points
+            color1 = img.getpixel((x1, y1))
+            color2 = img.getpixel((x2, y2))
+            
+            # Calculate luminance for each color
+            lum1 = calculate_luminance(*color1)
+            lum2 = calculate_luminance(*color2)
+            
+            # Calculate contrast ratio
+            contrast = calculate_contrast_ratio(lum1, lum2)
+            contrast_ratios.append(contrast)
+        
+        if contrast_ratios:
+            # Calculate overall contrast metrics
+            avg_contrast = sum(contrast_ratios) / len(contrast_ratios)
+            min_contrast = min(contrast_ratios)
+            max_contrast = max(contrast_ratios)
+            
+            details["overall_contrast"] = avg_contrast
+            details["min_contrast"] = min_contrast
+            details["max_contrast"] = max_contrast
+            details["sample_count"] = len(contrast_ratios)
+            
+            # Check if minimum contrast is met
+            if min_contrast < min_contrast_ratio:
+                fails.append(f"Minimum contrast ratio {min_contrast:.2f} below threshold {min_contrast_ratio}")
+            
+            # Warn if average contrast is low
+            if avg_contrast < min_contrast_ratio * 1.5:
+                warnings.append(f"Average contrast ratio {avg_contrast:.2f} is close to threshold")
+            
+            # Log contrast distribution
+            details["contrast_checks"].append({
+                "avg_contrast": avg_contrast,
+                "min_contrast": min_contrast,
+                "max_contrast": max_contrast,
+                "threshold": min_contrast_ratio
+            })
+        else:
+            fails.append("Unable to sample image for contrast analysis")
+            
+    except Exception as e:
+        fails.append(f"Contrast analysis failed: {e}")
+    
+    return QAResult(
+        ok=len(fails) == 0,
+        fails=fails,
+        warnings=warnings,
+        details=details
+    )
+
+
+def map_background_to_color(bg_id: str) -> Optional[str]:
+    """Map background identifier to actual hex color."""
+    # Try to load configuration first
+    try:
+        from bin.core import load_config
+        cfg = load_config()
+        background_mapping = getattr(cfg, 'legibility', {}).get('background_mapping', {})
+        
+        if bg_id in background_mapping:
+            return background_mapping[bg_id]
+    except Exception:
+        pass
+    
+    # Fallback background color mapping based on brand style
+    background_colors = {
+        "gradient1": "#f9fafb",  # Light gray from brand style
+        "paper": "#f9fafb",      # Paper texture background
+        "solid_white": "#ffffff", # Pure white
+        "solid_black": "#111827", # Brand black
+        "solid_primary": "#2563eb", # Brand primary blue
+        "solid_secondary": "#7c3aed", # Brand secondary purple
+        "solid_accent": "#f59e0b",   # Brand accent amber
+    }
+    
+    return background_colors.get(bg_id)
+
+
+def get_default_text_color(bg_color: str) -> Optional[str]:
+    """Get default text color that provides good contrast with background."""
+    try:
+        # Try to load configuration first
+        from bin.core import load_config
+        cfg = load_config()
+        text_color_fallback = getattr(cfg, 'legibility', {}).get('text_color_fallback', {})
+        
+        light_fallback = text_color_fallback.get('light_background', "#111827")
+        dark_fallback = text_color_fallback.get('dark_background', "#ffffff")
+    except Exception:
+        # Fallback to brand colors
+        light_fallback = "#111827"  # Brand black for light backgrounds
+        dark_fallback = "#ffffff"   # White for dark backgrounds
+    
+    try:
+        bg_rgb = hex_to_rgb(bg_color)
+        bg_luminance = calculate_luminance(*bg_rgb)
+        
+        # Use brand colors for good contrast
+        if bg_luminance > 0.5:  # Light background
+            return light_fallback
+        else:  # Dark background
+            return dark_fallback
+            
+    except (ValueError, TypeError):
+        return None
 
 
 def check_collisions(bboxes: List[Tuple[int, int, int, int]]) -> QAResult:

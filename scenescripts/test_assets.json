@@ -1,0 +1,71 @@
+{
+  "slug": "test_assets",
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "scene_000",
+      "duration_ms": 5000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_000_main",
+          "type": "text",
+          "content": "Test scene with assets",
+          "x": 640.0,
+          "y": 360.0,
+          "style": {
+            "font_size": "body",
+            "text_align": "center"
+          }
+        },
+        {
+          "id": "scene_000_clock",
+          "type": "prop",
+          "style": {
+            "type": "nelson_sunburst"
+          },
+          "x": 200.0,
+          "y": 200.0
+        },
+        {
+          "id": "scene_000_character",
+          "type": "character",
+          "style": {
+            "type": "narrator"
+          },
+          "x": 800.0,
+          "y": 200.0
+        }
+      ]
+    },
+    {
+      "id": "scene_001",
+      "duration_ms": 5000,
+      "bg": "missing_bg",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_001_main",
+          "type": "text",
+          "content": "Scene with missing background",
+          "x": 640.0,
+          "y": 360.0,
+          "style": {
+            "font_size": "body",
+            "text_align": "center"
+          }
+        },
+        {
+          "id": "scene_001_missing_prop",
+          "type": "prop",
+          "style": {
+            "type": "nonexistent_style"
+          },
+          "x": 400.0,
+          "y": 300.0
+        }
+      ]
+    }
+  ]
+}

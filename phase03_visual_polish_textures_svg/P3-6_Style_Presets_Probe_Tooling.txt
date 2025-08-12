@@ -1,0 +1,31 @@
+# Prompt P3-6 — Operator Ergonomics: Style Presets & Probe Tooling
+
+ROLE: Developer experience engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Provide easy operator controls and probes for visual polish: style presets and a quick probe tool to preview textures on representative frames.
+
+MANDATORY CONTEXT
+- Configs: `conf/render.yaml` (extend), `design/design_language.json` (palette)
+- Tools: `bin/cutout/texture_engine.py`, renderer hooks
+
+REQUIREMENTS
+- Style presets:
+  - Add `conf/style_presets.yaml` with named presets (e.g., `print-soft`, `print-strong`, `flat-noise`), mapping to texture params.
+  - CLI flag/env to select a preset which overrides `conf/render.yaml` texture params (without editing the file).
+- Probe tooling:
+  - Create `bin/texture_probe.py` to render a grid of small previews across (grain_strength × posterize_levels × halftone on/off) for one representative frame; save to `runs/<slug>/texture_probe_grid.png`.
+- Logging: record chosen preset and resolved parameters.
+
+DELIVERABLES
+- Style presets file and probe script with help text.
+- Updated OPERATOR_RUNBOOK.md describing how to pick a preset and run probe.
+
+SUCCESS CRITERIA
+- Operator can try presets quickly and see results without a full render.
+- Selected preset is reflected in metadata and logs.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/texture_probe.py --slug <slug> --preset print-soft`
+2) Show path to `texture_probe_grid.png` and the resolved params in logs.

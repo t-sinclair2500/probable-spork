@@ -1,0 +1,39 @@
+# Prompt P2-1 — Build Library Manifest (Index, Tags, Thumbnails, Provenance)
+
+ROLE: Asset Librarian (data indexer)
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Create/refresh a **library manifest** that indexes all local SVG assets (brand + generated), with tags, palette compliance, usage counts, size info, and preview thumbnails. Serve as the single source of truth for selection.
+
+MANDATORY CONTEXT
+- Directories (assume they exist; create if missing):
+  - `assets/design/svg/` (brand/core)
+  - `assets/generated/svg/` (generator outputs)
+  - `assets/thumbnails/` (PNG previews; same basename)
+- Configs: `conf/modules.yaml` (asset policy), `design/design_language.json` (palette, taxonomy)
+- Existing helper (if any): `bin/cutout/motif_generators.py`, `bin/cutout/svg_path_ops.py`
+
+REQUIREMENTS
+- Create `bin/asset_manifest.py` with CLI:
+  - `python bin/asset_manifest.py --rebuild` → rebuilds `data/library_manifest.json`
+  - `--filter palette-only` to flag assets with non-allowed colors.
+- Manifest fields per asset: `{ "path", "tags":[], "palette":[], "w", "h", "viewBox", "hash", "provenance": {"source":"brand|generated", "seed": <int|null>, "generator_params":{}} , "usage_count":0, "last_used": null }`
+- Generate/refresh PNG thumbnails to `assets/thumbnails/<name>.png` for quick UI previews.
+- Deterministic hash of SVG content; detect duplicates and keep one canonical entry.
+- Validate palette compliance against `design_language.json`; record violations in a `violations` list (and log WARN).
+
+DELIVERABLES
+- `bin/asset_manifest.py` and `data/library_manifest.json` with at least 50 assets indexed (brand + generated if present).
+- Thumbnails generated and cached.
+
+SUCCESS CRITERIA
+- Rebuild runs idempotently; manifest hash count matches unique assets.
+- Palette compliance check lists only true violations (0 false positives).
+- Thumbnails exist for all entries; missing sizes handled gracefully.
+
+TEST CRITERIA (paste outputs)
+1) `python bin/asset_manifest.py --rebuild`
+2) `jq '.assets | length' data/library_manifest.json`
+3) `jq '.violations | length' data/library_manifest.json`
+4) Show 3 entries including provenance + palette.

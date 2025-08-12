@@ -1,0 +1,110 @@
+# Style Presets for Texture Engine
+# These presets provide quick operator control over texture parameters
+# without editing the main global.yaml configuration
+
+# Paper/Print Style Presets
+print_soft:
+  description: "Subtle paper grain with minimal posterization"
+  textures:
+    enable: true
+    grain_strength: 0.08
+    feather_px: 1.0
+    posterize_levels: 4
+    halftone:
+      enable: false
+      cell_px: 6
+      angle_deg: 15
+      opacity: 0.08
+
+print_strong:
+  description: "Bold paper texture with visible grain and posterization"
+  textures:
+    enable: true
+    grain_strength: 0.18
+    feather_px: 2.0
+    posterize_levels: 8
+    halftone:
+      enable: false
+      cell_px: 6
+      angle_deg: 15
+      opacity: 0.12
+
+flat_noise:
+  description: "Flat design with subtle noise overlay"
+  textures:
+    enable: true
+    grain_strength: 0.12
+    feather_px: 0.5
+    posterize_levels: 2
+    halftone:
+      enable: false
+      cell_px: 6
+      angle_deg: 15
+      opacity: 0.0
+
+halftone_classic:
+  description: "Classic halftone dot pattern with moderate grain"
+  textures:
+    enable: true
+    grain_strength: 0.15
+    feather_px: 1.5
+    posterize_levels: 6
+    halftone:
+      enable: true
+      cell_px: 8
+      angle_deg: 22
+      opacity: 0.15
+
+vintage_paper:
+  description: "Aged paper feel with heavy grain and posterization"
+  textures:
+    enable: true
+    grain_strength: 0.25
+    feather_px: 2.5
+    posterize_levels: 12
+    halftone:
+      enable: true
+      cell_px: 4
+      angle_deg: 30
+      opacity: 0.20
+
+# Minimal/Modern Presets
+minimal:
+  description: "Clean, minimal texture with subtle edge softening"
+  textures:
+    enable: true
+    grain_strength: 0.05
+    feather_px: 0.8
+    posterize_levels: 2
+    halftone:
+      enable: false
+      cell_px: 6
+      angle_deg: 15
+      opacity: 0.0
+
+modern_flat:
+  description: "Modern flat design with minimal texture"
+  textures:
+    enable: true
+    grain_strength: 0.06
+    feather_px: 0.5
+    posterize_levels: 1
+    halftone:
+      enable: false
+      cell_px: 6
+      angle_deg: 15
+      opacity: 0.0
+
+# Disabled Preset
+"off":
+  description: "No texture effects applied"
+  textures:
+    enable: false
+    grain_strength: 0.0
+    feather_px: 0.0
+    posterize_levels: 1
+    halftone:
+      enable: false
+      cell_px: 6
+      angle_deg: 15
+      opacity: 0.0

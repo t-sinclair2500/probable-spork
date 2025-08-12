@@ -1,0 +1,22 @@
+# Prompt P6-8 — Auth, Security, and CORS
+
+ROLE: Security engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Lock down the API by default and make security posture explicit and configurable.
+
+REQUIREMENTS
+- Bearer token required for all non-`/healthz` routes; token read from `ADMIN_TOKEN` env var and/or `conf/operator.yaml`.
+- Bind to `127.0.0.1` by default; config option for `0.0.0.0` (explicit opt‑in).
+- CORS: disabled by default; if enabled, only allow origins specified in config.
+- Redact secrets from logs; never echo full config with secrets.
+- Rate limiting (simple): deny more than N job creations per minute (configurable).
+
+SUCCESS CRITERIA
+- Unauthorized requests are rejected; secrets never appear in logs/events.
+- Changing bind/CORS in config has immediate effect on next restart.
+
+TEST CRITERIA
+1) Attempt a request without token → 401.
+2) Enable CORS for `http://localhost:7860`; confirm preflight passes when UI hits API.

@@ -1,0 +1,35 @@
+# Prompt P5-3 — One‑Pass Feedback Adjuster (Deterministic Duration Nudge)
+
+ROLE: Storyboard timing integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+When KPIs are outside band by >10%, propose and apply **one** deterministic adjustment pass that nudges scene durations by ±0.5–1.0s to move toward band without violating VO alignment or layout/QA.
+
+MANDATORY CONTEXT
+- Storyboard + timing: `bin/storyboard_plan.py`, `bin/timing_utils.py`
+- Pacing: `runs/<slug>/pacing_report.json` (pre-adjust)
+- QA: `bin/cutout/qa_gates.py`, layout engine for reflow if needed
+- Config: `conf/modules.yaml` (`pacing.max_adjust_ms_per_scene`, `pacing.max_total_adjust_ms`, `pacing.strict`), `conf/render.yaml`
+
+REQUIREMENTS
+- New module: `bin/pacing_feedback.py` with:
+  - `suggest_adjustments(kpi: dict, bands: dict, scenes: list[dict], cfg: dict) -> list[dict]` returning per-scene `{"id":..., "delta_ms": ...}` (can be 0).
+  - `apply_adjustments(scenes: list[dict], adjustments: list[dict], cfg: dict) -> list[dict]` producing a new scenes list.
+- Rules:
+  - Respect `align_to_vo`: if ON with SRT, **do not change** per-scene windows; only adjust visuals inside windows (i.e., redistribute B‑roll timings but keep scene boundaries).
+  - Respect clamps (min/max per scene); cap total absolute adjustment by `pacing.max_total_adjust_ms`.
+  - Deterministic selection: prioritize adjusting scenes with the largest available slack to move KPI toward band.
+- Artifacts: write `runs/<slug>/pacing_adjustments.json` and update `runs/<slug>/pacing_report.json` with post values; set `metadata.pacing.adjusted=true`.
+
+DELIVERABLES
+- Deterministic nudge algorithm + integration into the pipeline after initial storyboard timing and before final render/QA.
+
+SUCCESS CRITERIA
+- If outside band by >10%, post‑KPI is closer to band (ideally inside) without any QA regressions.
+- If already within band, **no changes** applied and `adjusted=false`.
+
+TEST CRITERIA (paste outputs)
+1) Show `pacing_adjustments.json` (non‑empty when out‑of‑band).
+2) Before/after KPI snapshot from `pacing_report.json`.
+3) Evidence that QA still passes (log tail).

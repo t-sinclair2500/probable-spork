@@ -1,0 +1,50 @@
+# Prompt P3-1 — Texture Engine Core (Paper/Print: Grain, Feather, Posterize, Halftone)
+
+ROLE: Visual fidelity engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Complete a reusable texture engine that applies subtle paper/print effects to frames or clips with deterministic caching.
+
+MANDATORY CONTEXT
+- Expected module: `bin/cutout/texture_engine.py` (create or extend)
+- Integration points: `bin/animatics_generate.py` (post-composite, pre-encode), `conf/render.yaml`
+- Optional libs: `scikit-image`, `opensimplex` (or perlin), Pillow
+
+REQUIREMENTS
+- Public API (exact):
+  - `apply_textures_to_frame(img: "PIL.Image.Image", cfg: dict, seed: int) -> "PIL.Image.Image"`
+  - `apply_textures_to_clip(path_in: str, path_out: str, cfg: dict, seed: int) -> None`
+  - `texture_signature(cfg: dict) -> str`  # stable hash for cache key
+- Effects:
+  - **Grain:** opensimplex/perlin noise mixed in luminance; strength controlled (0..1).
+  - **Feather:** slight edge feather on alphas to soften hard cutouts.
+  - **Posterize:** optional levels (e.g., 6) for period print vibe.
+  - **Halftone:** optional dot grid (cell px, angle, opacity); apply only to midtones.
+- Caching:
+  - Cache per-clip in `render_cache/textures/` keyed by (`input_hash`, `texture_signature`, `seed`).
+  - Reuse cached outputs if available; log `[texture-core] cache_hit=true/false`.
+- Degradation:
+  - If `scikit-image` missing, skip feather; if noise lib missing, use low-frequency filtered white noise with WARN.
+
+DELIVERABLES
+- `bin/cutout/texture_engine.py` with docstrings + logs + tests (basic).
+- Config block in `conf/render.yaml` (if missing):
+  ```yaml
+  textures:
+    enable: true
+    grain_strength: 0.12
+    feather_px: 1.5
+    posterize_levels: 6
+    halftone: { enable: false, cell_px: 6, angle_deg: 15, opacity: 0.12 }
+  ```
+
+SUCCESS CRITERIA
+- Deterministic outputs for same seed/config.
+- Cache hits on re-run; no visible tiling artifacts.
+- Subtle effect: typography and key details remain legible.
+
+TEST CRITERIA (paste outputs)
+1) Run a single-scene render with textures on; report cache path + hit/miss.
+2) Save and show `runs/<slug>/texture_probe_grid.png` comparing parameter combos.
+3) Contrast gate still passes; show log `[texture-core]` lines.

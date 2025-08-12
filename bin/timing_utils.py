@@ -249,7 +249,7 @@ def compute_scene_durations(
         max_scene_ms = timing_config.get('max_scene_ms', 12000)
         clamped = [min(max(d, min_scene_ms), max_scene_ms) for d in durations]
         
-        log.info(f"Using beat-defined durations: {clamped}")
+        log.info(f"[duration-policy] Using beat-defined durations: {clamped}")
         return clamped, 'beat', 'Used duration_ms from grounded beats'
     
     # Strategy 2: Align to VO cues if available and enabled
@@ -262,7 +262,7 @@ def compute_scene_durations(
                 timing_config.get('max_scene_ms', 12000)
             )
             if durations:
-                log.info(f"Aligned to VO cues: {durations}")
+                log.info(f"[duration-policy] Aligned to VO cues: {durations}")
                 return durations, 'vo', 'Aligned scene durations to voiceover cue windows'
     
     # Strategy 3: Distribute by chosen strategy
@@ -277,7 +277,7 @@ def compute_scene_durations(
         durations = distribute_duration_uniform(len(beats), target_ms, min_scene_ms, max_scene_ms)
         rationale = f'Distributed {target_ms}ms across {len(beats)} beats using uniform strategy'
     
-    log.info(f"Computed durations using {strategy} strategy: {durations}")
+    log.info(f"[duration-policy] Computed durations using {strategy} strategy: {durations}")
     return durations, strategy, rationale
 
 

@@ -57,6 +57,17 @@ animatics:
   max_words_per_card: 12  # Maximum words per text element for legibility
   safe_margins_px: 80  # Safe margin from edges for text elements
 
+# Micro-animations settings
+micro_anim:
+  enable: true                    # Enable/disable micro-animations
+  max_elements_percent: 10        # Maximum percentage of elements to animate (≤10%)
+  max_movement_px: 4              # Maximum movement amplitude in pixels (≤4px)
+  max_movement_per_1000ms: 4      # Maximum movement per 1000ms
+  ease_in_out: true               # Use ease-in/ease-out timing
+  seed: 42                        # Seed for deterministic animations
+  collision_check: true            # Re-check collisions after animation
+  log_level: "info"               # Logging level for micro-animations
+
 # Procedural generation settings
 procedural:
   seed: 42  # Default seed for deterministic layouts (set to null for random)
@@ -85,3 +96,20 @@ layout:
   constraints:
     safe_margin_default: 64  # Default safe margin from edges
     thirds_snap_tolerance: 16  # Pixels within which to snap to rule-of-thirds
+
+# Asset management and validation settings
+assets:
+  reuse_ratio_threshold: 0.7  # Minimum reuse ratio when library has >50 assets
+  enable_palette_validation: true  # Enable strict palette compliance checking
+  enable_provenance_tracking: true  # Track generation parameters and seeds
+  max_generated_assets_per_run: 20  # Maximum new assets generated per pipeline run
+
+# Geometry engine settings
+geometry:
+  enable: false                   # Enable/disable SVG geometry operations
+  validate_paths: true            # Validate SVG paths for self-intersections
+  max_complexity: 1000           # Maximum path complexity (segments)
+  fallback_on_error: true        # Fallback to passthrough on geometry errors
+  library_versions:               # Track library versions for validation
+    shapely: "auto"              # Auto-detect or specify version
+    svgpathtools: "auto"         # Auto-detect or specify version

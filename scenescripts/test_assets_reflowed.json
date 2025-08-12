@@ -1,0 +1,99 @@
+{
+  "slug": "test_assets",
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "scene_000",
+      "duration_ms": 5000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_000_main",
+          "type": "text",
+          "content": "Test scene with assets",
+          "x": 640.0,
+          "y": 360.0,
+          "width": null,
+          "height": null,
+          "keyframes": [],
+          "style": {
+            "font_size": "body",
+            "text_align": "center"
+          },
+          "metadata": null
+        },
+        {
+          "id": "scene_000_clock",
+          "type": "prop",
+          "content": null,
+          "x": 200.0,
+          "y": 200.0,
+          "width": 328.0,
+          "height": 328.0,
+          "keyframes": [],
+          "style": {
+            "type": "nelson_sunburst"
+          },
+          "metadata": null,
+          "asset_path": "assets/generated/prop_nelson_sunburst_43da2a46.svg",
+          "asset_hash": "c198f1367430e6b0e442cb5a6af1a1250bd70bcd"
+        },
+        {
+          "id": "scene_000_character",
+          "type": "character",
+          "content": null,
+          "x": 800.0,
+          "y": 200.0,
+          "width": null,
+          "height": null,
+          "keyframes": [],
+          "style": {
+            "type": "narrator"
+          },
+          "metadata": null
+        }
+      ],
+      "metadata": null
+    },
+    {
+      "id": "scene_001",
+      "duration_ms": 5000,
+      "bg": "missing_bg",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_001_main",
+          "type": "text",
+          "content": "Scene with missing background",
+          "x": 640.0,
+          "y": 360.0,
+          "width": null,
+          "height": null,
+          "keyframes": [],
+          "style": {
+            "font_size": "body",
+            "text_align": "center"
+          },
+          "metadata": null
+        },
+        {
+          "id": "scene_001_missing_prop",
+          "type": "prop",
+          "content": null,
+          "x": 400.0,
+          "y": 300.0,
+          "width": null,
+          "height": null,
+          "keyframes": [],
+          "style": {
+            "type": "nonexistent_style"
+          },
+          "metadata": null
+        }
+      ],
+      "metadata": null
+    }
+  ],
+  "metadata": null
+}

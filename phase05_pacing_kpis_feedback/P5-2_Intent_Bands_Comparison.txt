@@ -1,0 +1,40 @@
+# Prompt P5-2 — Intent Bands & Comparison (Loader + Flags)
+
+ROLE: Content analytics integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Create intent-specific pacing bands and a comparator that labels KPIs as `ok`, `fast`, or `slow` per metric. Persist flags for acceptance and feedback.
+
+MANDATORY CONTEXT
+- New config: `conf/intent_profiles.yaml` (if not yet created; else extend)
+- Module: `bin/pacing_kpi.py` (extend) or `bin/pacing_compare.py` (new)
+
+REQUIREMENTS
+- Create/extend `conf/intent_profiles.yaml` including bands like:
+  ```yaml
+  narrative_history:
+    words_per_sec: [2.0, 3.0]
+    cuts_per_min:  [8, 18]
+    avg_scene_s:   [5.0, 9.0]
+    speech_ratio_default: 0.85   # for estimating when no SRT
+  explainer_howto:
+    words_per_sec: [2.5, 3.5]
+    cuts_per_min:  [10, 24]
+    avg_scene_s:   [4.0, 7.0]
+    speech_ratio_default: 0.8
+  ```
+- Comparator API:
+  - `compare_to_profile(kpi: dict, profile: dict) -> dict` returns metric flags and overall status.
+- Persist comparison result to `runs/<slug>/pacing_report.json` and metadata.
+
+DELIVERABLES
+- Intent bands config and a working comparator function with logs `[pacing-compare]`.
+
+SUCCESS CRITERIA
+- Given KPIs, comparator returns stable `ok/fast/slow` per metric and an overall verdict.
+- Results visible in both pacing report and metadata.
+
+TEST CRITERIA (paste outputs)
+1) Show bands loaded for the current intent.
+2) Show flags `{words_per_sec:'ok'|...}` in pacing report.

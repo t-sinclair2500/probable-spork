@@ -1,0 +1,33 @@
+# Prompt P3-2 — Texture Integration + QA Loop (Auto-Dial Back on Legibility Fail)
+
+ROLE: Rendering integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Integrate the texture engine into the renderer and add a QA loop that reduces texture strength if contrast/legibility fails, then retries (max 2 retries).
+
+MANDATORY CONTEXT
+- Renderer: `bin/animatics_generate.py`
+- QA: `bin/cutout/qa_gates.py` (contrast/legibility)
+- Texture: `bin/cutout/texture_engine.py`
+- Configs: `conf/render.yaml`
+
+REQUIREMENTS
+- Hook: after scene composition but before MP4 encode, apply textures to the clip.
+- QA loop:
+  - Run contrast/legibility check post-texture.
+  - On fail: reduce `grain_strength` by 30%, `posterize_levels` +1 (softer), or disable `halftone` if ON; retry up to 2 times.
+  - Log decisions under `[texture-qa]` and record final parameters to `videos/<slug>.metadata.json`.
+- Determinism: tuning steps must be deterministic given failures (i.e., same input → same dial-back sequence).
+
+DELIVERABLES
+- Integration code path; logs with `[texture-integrate]`, `[texture-qa]` tags.
+- Metadata includes `textures: { applied: true, attempts: n, final_params: {...} }`.
+
+SUCCESS CRITERIA
+- Acceptance legibility still passes with textures enabled.
+- Cache still works across retries (different signature for adjusted params).
+
+TEST CRITERIA (paste outputs)
+1) Logs of a failure→dialback→pass sequence (force with strong texture settings, then revert).
+2) Show `videos/<slug>.metadata.json` textures block.
