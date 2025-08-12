@@ -122,6 +122,7 @@ class Element(BaseModel):
     height: Optional[float] = Field(None, description="Height")
     keyframes: List[Keyframe] = Field(default_factory=list, description="Animation keyframes")
     style: Optional[Dict[str, Union[str, int, float]]] = Field(None, description="Element-specific style")
+    metadata: Optional[Dict[str, Union[str, int, float]]] = Field(None, description="Element metadata")
     
     @validator('type')
     def validate_type(cls, v):
@@ -139,6 +140,7 @@ class Scene(BaseModel):
     bg: Optional[str] = Field(None, description="Background identifier")
     audio_cue: Optional[str] = Field(None, description="Audio cue identifier")
     elements: List[Element] = Field(default_factory=list, description="Scene elements")
+    metadata: Optional[Dict[str, Union[str, int, float]]] = Field(None, description="Scene metadata")
     
     @validator('duration_ms')
     def validate_duration(cls, v):

@@ -1,0 +1,33 @@
+# Prompt P1-2 — Captions Availability (Synthetic SRT Generation)
+
+ROLE: Audio/Captions engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Guarantee an `.srt` file exists for each run even if ASR is not available. Generate a synthetic SRT from the final script using a word-rate model and store its path for ducking and acceptance.
+
+MANDATORY CONTEXT
+- Script: output location used by TTS (`bin/tts_generate.py`)
+- (If exists) ASR consumer: `bin/voice_cues.py`
+- Acceptance: `bin/acceptance.py` (add check for SRT presence)
+- Configs: `conf/render.yaml` (timing), `conf/global.yaml`
+
+RULES
+- When real ASR is disabled/unavailable, synthesize SRT with:
+  - Assumed reading rate default 160 wpm (configurable), adjustable by intent.
+  - Word-level or line-level timing; ensure continuous, non-overlapping windows.
+- Save to `data/<slug>/captions.srt`; record path in metadata.
+- Do not call external APIs.
+
+DELIVERABLES
+- Deterministic SRT generator with seedable segmentation behavior.
+- Acceptance updated to warn/fail if no SRT (after this task).
+
+SUCCESS CRITERIA
+- SRT file exists on every run; ducking can read its timings.
+- Acceptance no longer warns about missing captions.
+
+TEST CRITERIA (paste outputs)
+1) Path to generated SRT.
+2) First 10 lines of the SRT.
+3) Acceptance “captions” section status.

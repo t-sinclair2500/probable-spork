@@ -3,7 +3,7 @@ VENV := venv
 PY := $(VENV)/bin/python
 export PYTHONPATH := $(CURDIR)
 
-.PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health
+.PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health music-setup music-import music-stats music-validate
 
 install:
 	@echo "Checking Python version..."
@@ -44,11 +44,20 @@ docs:
 	@echo ""
 	@echo "🧪 TESTING & VALIDATION:"
 	@echo "  make test              - Run full test suite"
+	@echo "  make test-svg-ops      - Test SVG path operations"
+	@echo "  make demo-svg-ops      - Demonstrate SVG path operations"
 	@echo "  make check             - Validate environment setup"
 	@echo "  make check-llm         - Check Ollama LLM integration"
 	@echo "  make quick-run         - Test pipeline with short durations"
 	@echo "  make fact-check FILE=  - Fact-check markdown content"
 	@echo "  make asset-quality     - Analyze asset quality and relevance"
+	@echo ""
+	@echo "🎵 MUSIC LIBRARY MANAGEMENT:"
+	@echo "  make music-setup       - Setup music library structure"
+	@echo "  make music-import      - Import music from directory"
+	@echo "  make music-stats       - View library statistics"
+	@echo "  make music-validate    - Validate library integrity"
+	@echo "  make music-test        - Test music selection system"
 	@echo ""
 	@echo "🎬 PIPELINE OPERATIONS:"
 	@echo "  make run-once          - Full YouTube pipeline execution"
@@ -98,6 +107,24 @@ blog-once:
 	$(PY) bin/blog_post_wp.py
 	$(PY) bin/blog_ping_search.py
 
+# Music Library Management
+music-setup:
+	$(PY) bin/music_manager.py setup
+
+music-import:
+	@echo "Usage: make music-import SOURCE=/path/to/music LICENSE='license-type'"
+	$(PY) bin/music_manager.py import --source $(SOURCE) --license $(LICENSE)
+
+music-stats:
+	$(PY) bin/music_manager.py stats
+
+music-validate:
+	$(PY) bin/music_manager.py validate
+
+music-test:
+	@echo "Usage: make music-test SCRIPT=/path/to/script TONE=tone DURATION=duration"
+	$(PY) bin/music_manager.py test --script $(SCRIPT) --tone $(TONE) --duration $(DURATION)
+
 cron-install:
 	crontab ops/crontab.seed.txt
 
@@ -130,6 +157,14 @@ test:
 	TEST_ASSET_MODE=reuse $(PY) -m pytest tests/ -m "not liveapi" -v
 	@echo "Running E2E test in reuse mode..."
 	TEST_ASSET_MODE=reuse $(PY) bin/test_e2e.py
+
+test-svg-ops:
+	@echo "Testing SVG Path Operations..."
+	$(PY) test_svg_path_ops.py
+
+demo-svg-ops:
+	@echo "Demonstrating SVG Path Operations..."
+	$(PY) demo_svg_path_ops.py
 
 check-llm:
 	@echo "Checking Ollama LLM integration..."

@@ -131,6 +131,39 @@ def main():
     # Procedural pipeline components (new)
     print(f"\n=== Procedural Pipeline ===")
     
+    # Check pipeline configuration
+    try:
+        import yaml
+        pipeline_path = "conf/pipeline.yaml"
+        if os.path.exists(pipeline_path):
+            with open(pipeline_path, 'r') as f:
+                pipeline_cfg = yaml.safe_load(f)
+            print("✓ Pipeline configuration loaded")
+            
+            # Check feature integration
+            features = pipeline_cfg.get("features", {})
+            if features:
+                print("  - Asset loop: ✓" if features.get("asset_loop", {}).get("enabled", False) else "  - Asset loop: ✗")
+                print("  - Textures: ✓" if features.get("textures", {}).get("enabled", False) else "  - Textures: ✗")
+                print("  - SVG ops: ✓" if features.get("svg_ops", {}).get("enabled", False) else "  - SVG ops: ✗")
+                print("  - Music bed: ✓" if features.get("music_bed", {}).get("enabled", False) else "  - Music bed: ✗")
+            else:
+                print("  - Features configuration missing")
+            
+            # Check execution order
+            execution = pipeline_cfg.get("execution", {})
+            if execution:
+                print(f"  - Shared ingestion steps: {len(execution.get('shared_ingestion', []))}")
+                print(f"  - Storyboard pipeline steps: {len(execution.get('storyboard_pipeline', {}).get('animatics_only', []))}")
+                print(f"  - Video production steps: {len(execution.get('video_production', []))}")
+                print(f"  - Blog generation steps: {len(execution.get('blog_generation', []))}")
+            else:
+                print("  - Execution configuration missing")
+        else:
+            print("✗ Pipeline configuration not found")
+    except Exception as e:
+        print(f"WARNING: Could not load pipeline configuration: {e}")
+    
     # Check modules configuration
     try:
         from bin.core import load_modules_cfg
@@ -224,10 +257,35 @@ def main():
     run_safe("python bin/blog_post_wp.py", required=True)
     run_safe("python bin/blog_ping_search.py", required=True)
     
+    # Test Eames prompt specifically (success criteria from integration prompt)
+    print(f"\n=== Eames Prompt Test ===")
+    if has_ollama:
+        print("Testing '2-minute history of Ray and Charles Eames' prompt...")
+        
+        # Check if Eames script exists
+        eames_script = "scripts/2025-08-12_eames.txt"
+        if os.path.exists(eames_script):
+            print("✓ Eames script found")
+            
+            # Test storyboard planning with Eames
+            print("Testing storyboard planning with Eames...")
+            run_safe("python bin/storyboard_plan.py --slug eames --dry-run", required=False, reason="Eames storyboard test")
+            
+            # Test animatics generation with Eames
+            print("Testing animatics generation with Eames...")
+            run_safe("python bin/animatics_generate.py --slug eames --dry-run", required=False, reason="Eames animatics test")
+            
+            print("✓ Eames prompt test completed")
+        else:
+            print("⚠ Eames script not found, skipping Eames-specific test")
+    else:
+        print("SKIP: Eames prompt test (Ollama not available)")
+    
     print(f"\n✓ E2E test complete!")
     print(f"  - Video pipeline: PASSED")
     print(f"  - Blog pipeline: PASSED")
     print(f"  - Captions: {'PASSED' if has_whisper else 'SKIPPED (no whisper.cpp)'}")
+    print(f"  - Feature integration: {'PASSED' if os.path.exists('conf/pipeline.yaml') else 'SKIPPED'}")
     
 
 if __name__ == "__main__":

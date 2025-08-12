@@ -1,15 +1,64 @@
 {
-  "duration": {
-    "target_ms": 90000,
-    "actual_ms": 90000,
-    "deviation_pct": 0.0,
-    "source": "brief"
+  "slug": "eames",
+  "timestamp": "2025-08-12T16:39:54Z",
+  "coverage": {
+    "visual_coverage_pct": 100.0,
+    "beat_coverage_pct": 100.0,
+    "transition_count": 4,
+    "transition_density": 0.0,
+    "total_duration": 90.0,
+    "black_fallback_duration": 0.0,
+    "asset_coverage_beats": 22,
+    "total_beats": 22,
+    "meets_coverage_threshold": true,
+    "meets_transition_rule": true,
+    "source": "animatics"
   },
-  "timing_settings": {},
-  "validation": {
-    "duration_pass": true,
-    "scene_bounds_pass": true,
-    "vo_aligned": false
+  "scene_map": [
+    {
+      "scene_id": "scene_000",
+      "file": "scene_000.mp4",
+      "start_time": 0,
+      "duration": 15.0,
+      "source": "animatic"
+    },
+    {
+      "scene_id": "scene_001",
+      "file": "scene_001.mp4",
+      "start_time": 15.0,
+      "duration": 20.0,
+      "source": "animatic"
+    },
+    {
+      "scene_id": "scene_002",
+      "file": "scene_002.mp4",
+      "start_time": 35.0,
+      "duration": 20.0,
+      "source": "animatic"
+    },
+    {
+      "scene_id": "scene_003",
+      "file": "scene_003.mp4",
+      "start_time": 55.0,
+      "duration": 20.0,
+      "source": "animatic"
+    },
+    {
+      "scene_id": "scene_004",
+      "file": "scene_004.mp4",
+      "start_time": 75.0,
+      "duration": 15.0,
+      "source": "animatic"
+    }
+  ],
+  "durations": {
+    "scene_000": 15.0,
+    "scene_001": 20.0,
+    "scene_002": 20.0,
+    "scene_003": 20.0,
+    "scene_004": 15.0
   },
-  "generated_at": "2025-08-12T15:20:04.681266Z"
+  "assembly_version": "2.0",
+  "source_mode": "animatics",
+  "animatics_preferred": true
 }

@@ -1,0 +1,22 @@
+# Cursor Prompt: Add Texture & Paper Feel to Procedural Assets
+
+## Rule
+All SVG and rasterized elements in the animation pipeline should have a subtle, consistent texture overlay and edge styling inspired by mid-century modern print techniques.
+
+## Success Criteria
+- Texture mask generated once per render session and cached.
+- Noise: opensimplex/perlin for organic grain.
+- Edge treatment: scikit-image edge feathering and slight posterization.
+- Halftone effect for midtones to simulate period-accurate printing.
+- Apply uniformly without obscuring design details.
+
+## Test Criteria
+- Inspect 3 test frames from a generated animation to confirm consistent texture.
+- Confirm no visible pattern tiling or artifacts.
+- Ensure textures match defined brand palette and do not introduce new colors.
+
+## Implementation Guidance
+- Libraries: Pillow, opensimplex, scikit-image.
+- Apply texture to raster layers in Pillow before MP4 encoding.
+- Cache textures in `/cache/textures/` for reuse.
+- Parameterize grain density, halftone size, and edge feather amount in a YAML config.

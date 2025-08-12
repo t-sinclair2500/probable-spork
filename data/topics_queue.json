@@ -1,13 +1,22 @@
 [
   {
-    "topic": "eames",
-    "score": 0.8,
-    "hook": "5 eames to save hours",
+    "topic": "productivity tips",
+    "score": 0.6,
+    "hook": "5 productivity tips to save hours",
     "keywords": [
-      "eames",
-      "ray eames",
-      "charles eames"
+      "productivity",
+      "tips"
     ],
-    "created_at": "2025-08-12T08:48:26Z"
+    "created_at": "2025-08-12T16:38:11Z"
+  },
+  {
+    "topic": "space trivia",
+    "score": 0.5,
+    "hook": "10 wild space facts",
+    "keywords": [
+      "space",
+      "trivia"
+    ],
+    "created_at": "2025-08-12T16:38:11Z"
   }
 ]

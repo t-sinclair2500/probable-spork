@@ -1,0 +1,133 @@
+# Centralized Pipeline Configuration
+# Integrates storyboard asset loop, texture/paper feel, SVG path ops, and music bed policy
+
+# Pipeline execution order and dependencies
+execution:
+  # Phase 1: Shared ingestion (LLM-based content generation)
+  shared_ingestion:
+    - niche_trends          # Data collection (no LLM)
+    - llm_cluster          # Topic clustering with Llama 3.2
+    - llm_outline          # Content outline with Llama 3.2  
+    - llm_script           # Script generation with Llama 3.2
+    - research_collect      # Research with Mistral 7B
+    - research_ground      # Fact grounding with Mistral 7B (optional)
+    - fact_check           # Fact verification with Mistral 7B (optional)
+  
+  # Phase 2: Storyboard and asset pipeline (animatics vs legacy)
+  storyboard_pipeline:
+    # New procedural pipeline (default)
+    animatics_only:
+      - storyboard_plan     # Generate SceneScript with asset loop
+      - animatics_generate  # Render procedural animatics
+    # Legacy stock asset pipeline (fallback)
+    legacy_stock:
+      - fetch_assets        # Download stock assets (legacy)
+      - storyboard_plan     # Generate SceneScript (optional animatics)
+  
+  # Phase 3: Video production
+  video_production:
+    - tts_generate          # Generate voiceover
+    - generate_captions     # Generate captions (optional)
+    - assemble_video        # Assemble final video
+    - make_thumbnail        # Generate thumbnail
+    - upload_stage          # Stage for upload
+  
+  # Phase 4: Blog generation (staged)
+  blog_generation:
+    - blog_pick_topics      # Select blog topics
+    - blog_generate_post    # Generate blog content
+    - blog_render_html      # Render HTML with SEO
+    - blog_stage_local      # Stage locally
+    - blog_post_wp          # Post to WordPress (optional)
+    - blog_ping_search      # Ping search engines (optional)
+
+# Feature integration configuration
+features:
+  # Storyboard asset loop integration
+  asset_loop:
+    enabled: true
+    max_iterations: 3
+    coverage_threshold: 0.95
+    procedural_generation: true
+    brand_style_enforcement: true
+  
+  # Texture and paper feel
+  textures:
+    enabled: true
+    cache_dir: "render_cache/textures"
+    session_based: true
+    grain:
+      density: 0.15
+      scale: 2.0
+      intensity: 0.08
+      seed_variation: true
+    edges:
+      feather_radius: 1.5
+      posterization_levels: 8
+      edge_strength: 0.3
+    halftone:
+      enabled: true
+      dot_size: 1.2
+      dot_spacing: 3.0
+      angle: 45
+      intensity: 0.12
+  
+  # SVG path operations
+  svg_ops:
+    enabled: true
+    path_smoothing: true
+    bezier_optimization: true
+    morphing_enabled: true
+  
+  # Music bed policy
+  music_bed:
+    enabled: true
+    auto_select: true
+    require_music: false
+    fallback_to_silent: true
+    ducking:
+      enabled: true
+      threshold_db: -22
+      ratio: 4.0
+      attack_ms: 50
+      release_ms: 200
+
+# Module dependencies and execution order
+dependencies:
+  storyboard_plan:
+    requires: ["llm_script", "brand_style"]
+    provides: ["scenescript", "asset_coverage"]
+  
+  animatics_generate:
+    requires: ["storyboard_plan", "asset_loop"]
+    provides: ["animatics", "raster_cache"]
+  
+  assemble_video:
+    requires: ["tts_generate", "animatics_generate"]
+    provides: ["final_video"]
+  
+  tts_generate:
+    requires: ["llm_script"]
+    provides: ["voiceover"]
+
+# Quality gates and validation
+quality_gates:
+  asset_coverage:
+    minimum: 0.95
+    required: true
+  
+  duration_tolerance:
+    percentage: 5.0
+    required: true
+  
+  asset_quality:
+    resolution_min: "1920x1080"
+    format_preferred: ["svg", "png"]
+    required: true
+
+# Performance and resource limits
+performance:
+  max_concurrent_renders: 1  # Single-lane constraint
+  render_timeout_seconds: 3600
+  memory_limit_gb: 6  # Raspberry Pi 5 constraint
+  cache_cleanup_threshold: 0.8  # Cleanup when 80% full

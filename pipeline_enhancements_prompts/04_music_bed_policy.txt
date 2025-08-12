@@ -1,0 +1,21 @@
+# Cursor Prompt: Implement Music Bed Policy & Selection Agent
+
+## Rule
+All videos must have a music bed selected and mixed to target loudness without overpowering narration.
+
+## Success Criteria
+- Music bed selected to match pacing (BPM) and tone of video.
+- Track library stored locally or licensed from a provider.
+- Automatic ducking during voiceover segments.
+- Fades in/out aligned to scene transitions.
+
+## Test Criteria
+- For 3 test videos, verify music complements tone.
+- Confirm narration is clearly audible over music.
+- Ensure no abrupt music cuts.
+
+## Implementation Guidance
+- Use pydub for audio manipulation (mixing, ducking, fading).
+- Tag music library with BPM and mood metadata.
+- Match pacing KPI from script analysis to track BPM.
+- Integrate into final assembly step post-render.

@@ -1,0 +1,32 @@
+# Prompt P1-3 — Audio Acceptance (LUFS, True Peak, Ducking Verification)
+
+ROLE: Audio pipeline engineer
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Measure and enforce VO and music loudness targets and ensure ducking is applied during speech segments. Add these checks to acceptance and auto-normalize once if out of spec.
+
+MANDATORY CONTEXT
+- Mixer/Assembler: `bin/assemble_video.py`, audio mix code path
+- Music integration: (if present) `bin/audio_bed.py` or similar
+- Acceptance: `bin/acceptance.py`
+- Utilities: `ffmpeg` availability, or `pyloudnorm`
+
+RULES
+- Targets: VO ≈ −16 LUFS, Music ≈ −23 LUFS, true peak ≤ −1 dBTP.
+- Validate ducking by measuring average bed level within speech windows vs non-speech windows (≥6 dB difference).
+- If out of spec: one automatic normalization/re-mix attempt, then fail with guidance.
+- Record metrics in `videos/<slug>.metadata.json` under `audio`.
+
+DELIVERABLES
+- LUFS/peak measurement routine, ducking validator, acceptance hooks.
+- One-pass corrective normalization with logs.
+
+SUCCESS CRITERIA
+- Acceptance includes audio section with PASS and reported metrics.
+- Final mux has no clipping; ducking is clearly active under speech.
+
+TEST CRITERIA (paste outputs)
+1) Audio metrics JSON from metadata (LUFS, peak, ducking delta).
+2) Excerpt from acceptance results showing PASS.
+3) `ffprobe` or metrics log snippet.

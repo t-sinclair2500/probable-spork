@@ -237,3 +237,46 @@
 {"ts": "2025-08-12T14:20:38Z", "step": "animatics_generate", "status": "COMPLETED", "notes": "Rendered 1/1 scenes for test_layout"}
 {"ts": "2025-08-12T14:43:15Z", "step": "animatics_generate", "status": "COMPLETED", "notes": "Rendered 5/5 scenes for eames"}
 {"ts": "2025-08-12T14:44:12Z", "step": "animatics_generate", "status": "COMPLETED", "notes": "Rendered 5/5 scenes for eames"}
+{"ts": "2025-08-12T15:28:52Z", "step": "animatics_generate", "status": "COMPLETED", "notes": "Rendered 5/5 scenes for eames"}
+{"ts": "2025-08-12T16:34:36Z", "step": "niche_trends", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:34:36Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-12T16:34:42Z", "step": "niche_trends", "status": "OK", "notes": "rows=136"}
+{"ts": "2025-08-12T16:34:42Z", "step": "llm_cluster", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:35:15Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-12T16:35:15Z", "step": "llm_outline", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:36:13Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-12_productivity-tips.outline.json"}
+{"ts": "2025-08-12T16:36:14Z", "step": "llm_script", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:36:54Z", "step": "llm_script", "status": "OK", "notes": "2025-08-12_productivity-tips.txt"}
+{"ts": "2025-08-12T16:36:55Z", "step": "tts_generate", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:36:55Z", "step": "tts_generate", "status": "OK", "notes": "eames.mp3"}
+{"ts": "2025-08-12T16:36:56Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:36:58Z", "step": "generate_captions", "status": "OK", "notes": "eames_normalized.srt"}
+{"ts": "2025-08-12T16:36:58Z", "step": "generate_captions", "status": "METRIC", "notes": "dur=10.0s;wpm=0;conf~0%"}
+{"ts": "2025-08-12T16:36:59Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:37:37Z", "step": "niche_trends", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:37:38Z", "step": "niche_trends_youtube", "status": "INFO", "notes": "cat=27;fallback_no_category_used"}
+{"ts": "2025-08-12T16:37:43Z", "step": "niche_trends", "status": "OK", "notes": "rows=136"}
+{"ts": "2025-08-12T16:37:43Z", "step": "llm_cluster", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:38:11Z", "step": "llm_cluster", "status": "OK", "notes": "topics=2"}
+{"ts": "2025-08-12T16:38:11Z", "step": "llm_outline", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:39:02Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-12_productivity-tips.outline.json"}
+{"ts": "2025-08-12T16:39:03Z", "step": "llm_script", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:39:50Z", "step": "llm_script", "status": "OK", "notes": "2025-08-12_productivity-tips.txt"}
+{"ts": "2025-08-12T16:39:51Z", "step": "tts_generate", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:39:51Z", "step": "tts_generate", "status": "OK", "notes": "eames.mp3"}
+{"ts": "2025-08-12T16:39:51Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:39:53Z", "step": "generate_captions", "status": "OK", "notes": "eames_normalized.srt"}
+{"ts": "2025-08-12T16:39:53Z", "step": "generate_captions", "status": "METRIC", "notes": "dur=10.0s;wpm=0;conf~0%"}
+{"ts": "2025-08-12T16:39:54Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:40:41Z", "step": "assemble_video", "status": "OK", "notes": "eames.mp4"}
+{"ts": "2025-08-12T16:40:42Z", "step": "upload_stage", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-12T16:40:42Z", "step": "upload_stage", "status": "OK", "notes": "eames.mp4"}
+{"ts": "2025-08-12T16:40:42Z", "step": "blog_pick_topics", "status": "START", "notes": "no brief"}
+{"ts": "2025-08-12T16:40:42Z", "step": "blog_pick_topics", "status": "OK", "notes": "productivity tips"}
+{"ts": "2025-08-12T16:42:01Z", "step": "blog_generate_post", "status": "VALIDATE_WARN", "notes": "issues=2"}
+{"ts": "2025-08-12T16:42:01Z", "step": "blog_generate_post", "status": "OK", "notes": "post.md"}
+{"ts": "2025-08-12T16:42:01Z", "step": "blog_render_html", "status": "START", "notes": "no brief"}
+{"ts": "2025-08-12T16:42:01Z", "step": "blog_render_html", "status": "OK", "notes": "post.html"}
+{"ts": "2025-08-12T16:42:02Z", "step": "blog_post_wp", "status": "START", "notes": "no brief"}
+{"ts": "2025-08-12T16:42:02Z", "step": "blog_post_wp", "status": "SKIP", "notes": "publish_disabled_in_config"}
+{"ts": "2025-08-12T16:42:02Z", "step": "blog_ping_search", "status": "OK", "notes": "google:404"}

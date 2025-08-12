@@ -1,0 +1,109 @@
+{
+  "slug": "test_integration",
+  "timestamp": 1755012590.378026,
+  "brand_style": {
+    "colors": {
+      "primary": "#2563eb",
+      "secondary": "#7c3aed",
+      "accent": "#f59e0b",
+      "success": "#10b981",
+      "warning": "#f59e0b",
+      "error": "#ef4444",
+      "neutral": "#6b7280",
+      "white": "#ffffff",
+      "black": "#111827",
+      "background": "#f9fafb",
+      "text_primary": "#111827",
+      "text_secondary": "#6b7280"
+    },
+    "fonts": {
+      "primary": "Inter",
+      "secondary": "Georgia",
+      "monospace": "JetBrains Mono",
+      "display": "Poppins",
+      "fallback": "Arial, sans-serif"
+    },
+    "font_sizes": {
+      "hook": 48,
+      "body": 24,
+      "lower_third": 32,
+      "caption": 18,
+      "tiny": 14
+    },
+    "safe_margins_px": 64,
+    "corner_radius": 8,
+    "stroke": {
+      "width": 2,
+      "color": "#e5e7eb",
+      "style": "solid"
+    },
+    "shadow": {
+      "x_offset": 0,
+      "y_offset": 4,
+      "blur": 12,
+      "color": "rgba(0, 0, 0, 0.1)",
+      "spread": 0
+    },
+    "backgrounds": [
+      "gradient1",
+      "paper",
+      "solid_white",
+      "solid_black"
+    ],
+    "icon_palette": [
+      "#2563eb",
+      "#7c3aed",
+      "#f59e0b",
+      "#10b981",
+      "#6b7280",
+      "#ffffff",
+      "#111827"
+    ]
+  },
+  "asset_library_stats": {
+    "total": 8,
+    "brand": 0,
+    "generated": 3
+  },
+  "coverage_history": [
+    {
+      "timestamp": 1755012590.377929,
+      "total_requirements": 2,
+      "covered_requirements": 2,
+      "coverage_pct": 100.0,
+      "is_fully_covered": true,
+      "requirements": [
+        {
+          "asset_type": "background",
+          "identifier": "missing_background",
+          "coverage_status": "generated",
+          "asset_path": null,
+          "generated_path": "assets/generated/bg_missing_background_1755012590_1542.svg"
+        },
+        {
+          "asset_type": "prop",
+          "identifier": "missing_prop",
+          "coverage_status": "generated",
+          "asset_path": null,
+          "generated_path": "assets/generated/prop_missing_prop_1755012590_1542.svg"
+        }
+      ]
+    }
+  ],
+  "final_requirements": [
+    {
+      "asset_type": "background",
+      "identifier": "missing_background",
+      "coverage_status": "generated",
+      "asset_path": null,
+      "generated_path": "assets/generated/bg_missing_background_1755012590_1542.svg"
+    },
+    {
+      "asset_type": "prop",
+      "identifier": "missing_prop",
+      "coverage_status": "generated",
+      "asset_path": null,
+      "generated_path": "assets/generated/prop_missing_prop_1755012590_1542.svg"
+    }
+  ]
+}

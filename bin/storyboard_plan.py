@@ -24,6 +24,7 @@ from bin.cutout.sdk import (
     MAX_WORDS_PER_CARD, SAFE_MARGINS_PX, VIDEO_W, VIDEO_H,
     load_style, validate_scene_script, save_scene_script, Paths
 )
+from bin.cutout.asset_loop import run_asset_loop
 from bin.cutout.qa_gates import run_all as run_qa_gates, qa_result_to_dict
 from bin.cutout.layout_apply import auto_layout_scene
 from bin.timing_utils import compute_scene_durations
@@ -324,6 +325,15 @@ def main(brief=None, models_config=None):
             font_sizes={"hook": 48, "body": 24, "lower_third": 32}
         )
     
+    # Get seed for deterministic asset generation
+    try:
+        from bin.core import load_config
+        cfg = load_config()
+        seed = getattr(cfg.procedural, 'seed', 42) if hasattr(cfg, 'procedural') else 42
+    except Exception as e:
+        log.warning(f"Failed to load config for seed: {e}, using default seed 42")
+        seed = 42
+    
     # Create storyboard
     storyboard = create_storyboard(args.slug, beats, brief, brand_style)
     
@@ -357,6 +367,24 @@ def main(brief=None, models_config=None):
     # Log QA summary
     total_qa_issues = sum(1 for r in qa_results if not r.ok)
     log.info(f"QA Gates completed: {len(qa_results)} scenes checked, {total_qa_issues} with issues")
+
+    # Run asset loop to ensure 100% asset coverage
+    log.info("Starting asset loop to ensure complete asset coverage...")
+    try:
+        updated_storyboard, coverage_results = run_asset_loop(args.slug, storyboard, brand_style, seed=42)
+        
+        if coverage_results["is_fully_covered"]:
+            log.info("Asset loop completed successfully - 100% coverage achieved")
+            storyboard = updated_storyboard
+        else:
+            log.warning(f"Asset loop completed with {coverage_results['coverage_pct']:.1f}% coverage")
+            # Continue with partial coverage - assets will be generated during rendering
+        
+        log.info(f"Asset coverage: {coverage_results['covered_requirements']}/{coverage_results['total_requirements']} ({coverage_results['coverage_pct']:.1f}%)")
+        
+    except Exception as e:
+        log.error(f"Asset loop failed: {e}")
+        log.warning("Continuing with original storyboard - assets will be generated during rendering")
 
     # Save to scenescripts directory
     output_path = Path("scenescripts") / f"{args.slug}.json"

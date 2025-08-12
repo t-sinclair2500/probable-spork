@@ -95,9 +95,19 @@ def get_background_path(bg_id: str, style: BrandStyle) -> Optional[str]:
     return None
 
 
-def rasterize_element_assets(elements: List[Element], style: BrandStyle) -> Dict[str, str]:
-    """Rasterize SVG assets for elements and return path mapping."""
+def rasterize_element_assets(elements: List[Element], style: BrandStyle, texture_config: Optional[Dict] = None) -> Dict[str, str]:
+    """Rasterize SVG assets for elements and return path mapping with optional texture overlay."""
     asset_paths = {}
+    
+    # Load brand palette for texture constraints
+    brand_palette = []
+    try:
+        from design.design_language import load_design_colors
+        brand_palette = list(load_design_colors().values())
+    except ImportError:
+        # Fallback to style colors if available
+        if hasattr(style, 'colors'):
+            brand_palette = list(style.colors.values())
     
     for element in elements:
         if element.type in ["prop", "character"] and element.asset_path:
@@ -110,8 +120,25 @@ def rasterize_element_assets(elements: List[Element], style: BrandStyle) -> Dict
                         height=element.height or 200
                     )
                     if raster_path:
-                        asset_paths[element.id] = raster_path
-                        log.debug(f"Rasterized {element.asset_path} -> {raster_path}")
+                        # Apply texture overlay if enabled
+                        if texture_config and texture_config.get("enabled", False):
+                            try:
+                                from .cutout.texture_integration import process_rasterized_with_texture
+                                textured_path = process_rasterized_with_texture(
+                                    raster_path, texture_config, brand_palette
+                                )
+                                if textured_path != raster_path:
+                                    asset_paths[element.id] = textured_path
+                                    log.debug(f"Applied texture to {element.asset_path} -> {textured_path}")
+                                else:
+                                    asset_paths[element.id] = raster_path
+                                    log.debug(f"Rasterized {element.asset_path} -> {raster_path}")
+                            except ImportError:
+                                log.warning("Texture integration not available, using untextured version")
+                                asset_paths[element.id] = raster_path
+                        else:
+                            asset_paths[element.id] = raster_path
+                            log.debug(f"Rasterized {element.asset_path} -> {raster_path}")
             except Exception as e:
                 log.warning(f"Failed to rasterize {element.asset_path}: {e}")
     
@@ -396,7 +423,10 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         for scene in scenes_to_render:
             all_elements.extend(scene.elements)
         
-        asset_paths = rasterize_element_assets(all_elements, style)
+        # Get texture configuration
+        texture_config = getattr(cfg, 'textures', {})
+        
+        asset_paths = rasterize_element_assets(all_elements, style, texture_config)
         log.info(f"Rasterized {len(asset_paths)} assets")
         
         # Render each scene

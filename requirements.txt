@@ -27,6 +27,14 @@ pillow==9.5.0
 moviepy==1.0.3
 # SVG rasterization - cairosvg preferred, Pillow fallback
 cairosvg==2.7.1
+# Advanced SVG path operations
+svgpathtools==1.6.1
+svgelements==1.9.6
+shapely==2.0.2
+
+# Texture and paper feel processing
+opensimplex==0.4.3
+scikit-image==0.22.0; python_version < "3.12"
 
 # TTS and audio processing
 # Optional TTS (Coqui). Install on Pi if using real TTS; otherwise placeholder is used.

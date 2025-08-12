@@ -1,0 +1,35 @@
+# Prompt P1-1 — Scene Legibility Defaults (Background + WCAG Text)
+
+ROLE: Rendering integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Ensure every scene has a deterministic background color and WCAG-compliant text colors. Remove the acceptance failure “No background color specified” and guarantee AA contrast (≥4.5:1).
+
+MANDATORY CONTEXT
+- Storyboard: `bin/storyboard_plan.py`
+- Renderer: `bin/animatics_generate.py`
+- QA: `bin/cutout/qa_gates.py` (contrast), `bin/cutout/color_engine.py` (if present)
+- Configs: `conf/global.yaml`, `conf/render.yaml` (palette, defaults)
+
+RULES
+- If a scene lacks `background_color`, inject a brand default from palette (config-driven).
+- Text color selection must use palette + contrast check; auto-adjust to nearest legible variant if needed.
+- Do not change existing scene keys. Add fields additively.
+- Log each auto-default with `[legibility-defaults]` tag.
+
+DELIVERABLES
+- Background defaulting logic and legible text color resolution.
+- Logs proving defaulting occurred only when necessary.
+- Updated acceptance passing legibility checks.
+
+SUCCESS CRITERIA
+- No acceptance errors about missing backgrounds.
+- All text passes WCAG AA contrast in QA.
+- Re-runs are deterministic (same seed → same colors).
+
+TEST CRITERIA (paste outputs)
+1) Dry-run Eames topic.
+2) `grep -n "\[legibility-defaults\]" logs/pipeline.log | tail -20`
+3) Show acceptance legibility section from `acceptance_results.json`.
+4) Confirm `videos/<slug>.metadata.json` includes `background_color` per scene.

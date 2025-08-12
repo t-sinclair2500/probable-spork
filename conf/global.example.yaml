@@ -46,11 +46,39 @@ assets:
     # - "unsplash"   # Optional; requires UNSPLASH_ACCESS_KEY in .env and attribution
   max_per_section: 3
 
+# Music bed policy configuration
+music:
+  enabled: true                  # Enable/disable music bed functionality
+  library_path: "assets/music"   # Path to music library
+  auto_select: true              # Automatically select music based on content
+  require_music: false           # Whether music is required for all videos
+  fallback_to_silent: true      # Fallback to silent if no music available
+  
+  # Music selection criteria
+  selection:
+    bpm_weight: 0.4              # Weight for BPM matching (0.0-1.0)
+    mood_weight: 0.4             # Weight for mood matching (0.0-1.0)
+    genre_weight: 0.2            # Weight for genre matching (0.0-1.0)
+    
+  # Audio processing settings
+  processing:
+    enable_ducking: true         # Enable sidechain ducking
+    enable_fades: true           # Enable fade in/out effects
+    fade_in_ms: 500             # Fade-in duration in milliseconds
+    fade_out_ms: 500            # Fade-out duration in milliseconds
+    loop_strategy: "seamless"    # seamless, crossfade, or extend
+    
+  # Quality and licensing
+  quality:
+    min_bitrate: "128k"          # Minimum music bitrate
+    preferred_formats: ["mp3", "wav", "m4a"]
+    require_license_info: true   # Require license information for tracks
+
 render:
   resolution: "1920x1080"
   fps: 30
-  music_db: -22
-  duck_db: -15
+  music_db: -22                 # Music volume in dB (negative = quieter)
+  duck_db: -15                  # Ducking level in dB when VO present
   xfade_ms: 250
   target_bitrate: "4000k"
 

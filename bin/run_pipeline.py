@@ -32,6 +32,21 @@ from bin.core import (
     single_lock
 )
 
+def load_pipeline_config():
+    """Load centralized pipeline configuration."""
+    try:
+        import yaml
+        pipeline_path = os.path.join(BASE, "conf", "pipeline.yaml")
+        if os.path.exists(pipeline_path):
+            with open(pipeline_path, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f)
+        else:
+            log.warning("No pipeline.yaml found, using default configuration")
+            return {}
+    except Exception as e:
+        log.warning(f"Failed to load pipeline configuration: {e}")
+        return {}
+
 log = get_logger("run_pipeline")
 
 # Blog publish checking now handled by centralized get_publish_flags() in bin.core
@@ -321,16 +336,19 @@ def run_youtube_lane(cfg, dry_run: bool = False, brief_env: Dict[str, str] = Non
     
     success = True
     
+    # Load pipeline configuration for video production steps
+    pipeline_cfg = load_pipeline_config()
+    
     # Phase 4: YouTube lane (per spec)
-    steps = [
+    video_steps = pipeline_cfg.get("execution", {}).get("video_production", [
         ("tts_generate", True),
         ("generate_captions", False),  # Optional - graceful skip if whisper.cpp missing
         ("assemble_video", True),
         ("make_thumbnail", True),
         ("upload_stage", True)
-    ]
+    ])
     
-    for step_name, required in steps:
+    for step_name, required in video_steps:
         step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data)
         if not step_success and required:
             success = False
@@ -349,14 +367,17 @@ def run_blog_lane(cfg, dry_run: bool = False, brief_env: Dict[str, str] = None, 
     
     success = True
     
+    # Load pipeline configuration for blog generation steps
+    pipeline_cfg = load_pipeline_config()
+    
     # Phase 5: Blog lane (staged only per spec)
-    steps = [
+    blog_steps = pipeline_cfg.get("execution", {}).get("blog_generation", [
         ("blog_pick_topics", True),
         ("blog_generate_post", True), 
         ("blog_render_html", True)
-    ]
+    ])
     
-    for step_name, required in steps:
+    for step_name, required in blog_steps:
         step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data)
         if not step_success and required:
             success = False
@@ -393,6 +414,9 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
     
     success = True
     
+    # Load pipeline configuration
+    pipeline_cfg = load_pipeline_config()
+    
     # Load models configuration if not provided
     if models_config is None:
         try:
@@ -409,25 +433,26 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
             log.warning(f"Failed to load models configuration: {e}")
             models_config = {}
     
+    # Get execution steps from pipeline configuration or use defaults
+    shared_steps = pipeline_cfg.get("execution", {}).get("shared_ingestion", [
+        "niche_trends", "llm_cluster", "llm_outline", "llm_script", 
+        "research_collect", "research_ground", "fact_check"
+    ])
+    
     # Define execution batches by model type
     batches = [
         {
             "name": "Llama 3.2 Batch (Cluster + Outline + Script)",
             "model": models_config.get("models", {}).get("cluster", {}).get("name", "llama3.2:latest") if models_config else "llama3.2:latest",
             "steps": [
-                ("niche_trends", True),      # Data collection (no LLM)
-                ("llm_cluster", True),       # Llama 3.2
-                ("llm_outline", True),       # Llama 3.2
-                ("llm_script", True),        # Llama 3.2
+                (step, True) for step in shared_steps[:4]  # First 4 steps are required
             ]
         },
         {
             "name": "Mistral 7B Batch (Research + Fact-Check)",
             "model": models_config.get("models", {}).get("research", {}).get("name", "mistral:7b-instruct") if models_config else "mistral:7b-instruct",
             "steps": [
-                ("research_collect", True),  # Mistral 7B
-                ("research_ground", False),  # Mistral 7B (optional - requires script path, skip if no script)
-                ("fact_check", False),       # Mistral 7B (optional)
+                (step, False) for step in shared_steps[4:]  # Remaining steps are optional
             ]
         }
     ]
@@ -528,6 +553,9 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
     
     # Phase 3: Asset pipeline routing (animatics vs legacy)
     if success:
+        # Load pipeline configuration for storyboard pipeline
+        pipeline_cfg = load_pipeline_config()
+        
         # Check pipeline mode configuration
         animatics_only = cfg.video.animatics_only
         enable_legacy = cfg.video.enable_legacy_stock
@@ -535,6 +563,9 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
         if animatics_only and not enable_legacy:
             log.info("=== EXECUTING ANIMATICS-ONLY PIPELINE ===")
             log.info("Pipeline mode: animatics_only=true, enable_legacy_stock=false")
+            
+            # Get storyboard pipeline steps from configuration
+            storyboard_steps = pipeline_cfg.get("execution", {}).get("storyboard_pipeline", {}).get("animatics_only", ["storyboard_plan", "animatics_generate"])
             
             # Extract slug from the most recent script file
             import glob
@@ -551,59 +582,56 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
                 slug = script_basename.split('_', 1)[1].replace('.txt', '')
                 log.info(f"Using script {latest_script} with slug: {slug}")
                 
-                # Generate storyboard from script
-                storyboard_success = run_step("storyboard_plan", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
-                if not storyboard_success:
-                    log.error("Storyboard planning failed")
-                    success = False
-                else:
-                    # Generate animatics from storyboard
-                    animatics_success = run_step("animatics_generate", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
-                    if not animatics_success:
-                        log.error("Animatics generation failed")
-                        success = False
+                # Execute storyboard pipeline steps
+                for step_name in storyboard_steps:
+                    if step_name == "storyboard_plan":
+                        step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+                    elif step_name == "animatics_generate":
+                        step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
                     else:
-                        log.info("Animatics generation completed successfully")
+                        step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+                    
+                    if not step_success:
+                        log.error(f"Storyboard pipeline step failed: {step_name}")
+                        success = False
+                        break
+                    else:
+                        log.info(f"Storyboard pipeline step completed: {step_name}")
                     
         else:
             log.info("=== EXECUTING LEGACY STOCK ASSET PIPELINE ===")
             log.info(f"Pipeline mode: animatics_only={animatics_only}, enable_legacy_stock={enable_legacy}")
             
-            # Legacy path: fetch stock assets
-            success = run_step("fetch_assets", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+            # Get legacy storyboard pipeline steps from configuration
+            legacy_steps = pipeline_cfg.get("execution", {}).get("storyboard_pipeline", {}).get("legacy_stock", ["fetch_assets", "storyboard_plan"])
             
-            # Optional animatics generation if enabled
-            if success and getattr(cfg, 'animatics', None) and getattr(cfg.animatics, 'enabled', True):
-                log.info("=== EXECUTING ANIMATICS GENERATION (LEGACY MODE) ===")
-                
-                # Extract slug from the most recent script file
-                import glob
-                script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
-                if not script_files:
-                    log.error("No script files found for storyboard planning")
-                    success = False
-                else:
-                    # Use the most recent script file
-                    script_files.sort(reverse=True)
-                    latest_script = script_files[0]
-                    # Extract slug from filename (e.g., "2025-08-12_eames.txt" -> "eames")
-                    script_basename = os.path.basename(latest_script)
-                    slug = script_basename.split('_', 1)[1].replace('.txt', '')
-                    log.info(f"Using script {latest_script} with slug: {slug}")
-                    
-                    # Generate storyboard from script
-                    storyboard_success = run_step("storyboard_plan", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
-                    if not storyboard_success:
-                        log.error("Storyboard planning failed")
+            # Execute legacy pipeline steps
+            for step_name in legacy_steps:
+                if step_name == "fetch_assets":
+                    step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+                elif step_name == "storyboard_plan":
+                    # Extract slug for storyboard planning
+                    import glob
+                    script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
+                    if not script_files:
+                        log.error("No script files found for storyboard planning")
                         success = False
+                        break
                     else:
-                        # Generate animatics from storyboard
-                        animatics_success = run_step("animatics_generate", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
-                        if not animatics_success:
-                            log.error("Animatics generation failed")
-                            success = False
-                        else:
-                            log.info("Animatics generation completed successfully")
+                        latest_script = script_files[0]
+                        script_basename = os.path.basename(latest_script)
+                        slug = script_basename.split('_', 1)[1].replace('.txt', '')
+                        log.info(f"Using script {latest_script} with slug: {slug}")
+                        step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+                else:
+                    step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+                
+                if not step_success:
+                    log.error(f"Legacy pipeline step failed: {step_name}")
+                    success = False
+                    break
+                else:
+                    log.info(f"Legacy pipeline step completed: {step_name}")
     
     # Log pipeline mode for state tracking
     pipeline_mode = "animatics_only" if (cfg.video.animatics_only and not cfg.video.enable_legacy_stock) else "legacy_stock"

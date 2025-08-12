@@ -1,0 +1,34 @@
+# Prompt P1-4 — Duration Policy Verification (Respect Beats/Brief; No 3s Defaults)
+
+ROLE: Storyboard timing integrator
+FIRST: Read README in this zip, then proceed.
+
+OBJECTIVE
+Ensure scene durations come from beats, VO alignment, or target-length distribution—never hard-coded 3s defaults. Enforce ±5% tolerance vs brief (or VO total when VO alignment is on).
+
+MANDATORY CONTEXT
+- Storyboard builder: `bin/storyboard_plan.py`
+- Timing utilities: `bin/timing_utils.py` (if present)
+- Renderer: `bin/animatics_generate.py`
+- Acceptance: `bin/acceptance.py`
+- Configs: `conf/brief.yaml`, `conf/render.yaml`
+
+RULES
+- Priority order: beats.duration_ms → VO-aligned windows → distributed target.
+- Min/max clamps come from config; no hard-coded 3s anywhere.
+- Renderer must not override storyboard durations.
+- Write chosen rationale per scene: 'beat' | 'vo' | 'brief-weighted'.
+
+DELIVERABLES
+- Verified timing path and removal of any hidden defaults.
+- Acceptance timing section enforces ±5% tolerance.
+
+SUCCESS CRITERIA
+- Dry-run meets target within tolerance.
+- Reruns are deterministic for same seed.
+- Metadata records duration rationale per scene.
+
+TEST CRITERIA (paste outputs)
+1) `jq '.duration' videos/*/metadata.json`
+2) Acceptance timing section excerpt.
+3) Log lines with `[duration-policy]` showing rationale per scene.

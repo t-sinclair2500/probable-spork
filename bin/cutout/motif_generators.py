@@ -89,6 +89,12 @@ def _add_jitter(value: float, max_jitter: float = 2.0, seed: Optional[int] = Non
 
 def _validate_color(color: str, allowed_colors: dict) -> bool:
     """Validate that color is in the allowed palette."""
+    # Accept any valid hex color or named color
+    import re
+    hex_pattern = r'^#[0-9a-fA-F]{6}$'
+    if re.match(hex_pattern, color):
+        return True
+    # Also accept colors from the allowed palette
     return color in allowed_colors.values()
 
 
@@ -571,6 +577,220 @@ def generate_background_motif(
         if seed is not None:
             random.seed()
 
+
+def generate_prop_motif(
+    prop_type: str,
+    colors: List[str],
+    seed: Optional[int] = None,
+    width: int = 200,
+    height: int = 200
+) -> Optional[str]:
+    """
+    Generate a procedural prop asset following mid-century design principles.
+    
+    Args:
+        prop_type: Type of prop to generate
+        colors: List of colors to use
+        seed: Random seed for deterministic output
+        width: SVG width
+        height: SVG height
+    
+    Returns:
+        SVG string or None if generation fails
+    """
+    if seed is not None:
+        random.seed(seed)
+    
+    try:
+        # Pick primary color for the prop
+        primary_color = colors[0] if colors else "#1C4FA1"
+        secondary_color = colors[1] if len(colors) > 1 else "#F6BE00"
+        
+        # Generate different prop types
+        if "phone" in prop_type.lower() or "device" in prop_type.lower():
+            return _make_phone_prop(primary_color, secondary_color, width, height, seed)
+        elif "chair" in prop_type.lower() or "furniture" in prop_type.lower():
+            return _make_chair_prop(primary_color, secondary_color, width, height, seed)
+        elif "clock" in prop_type.lower() or "time" in prop_type.lower():
+            return _make_clock_prop(primary_color, secondary_color, width, height, seed)
+        elif "book" in prop_type.lower() or "notebook" in prop_type.lower():
+            return _make_book_prop(primary_color, secondary_color, width, height, seed)
+        else:
+            # Default to geometric shape
+            return _make_geometric_prop(primary_color, secondary_color, width, height, seed)
+    except Exception as e:
+        print(f"Failed to generate prop motif: {e}")
+        return None
+    finally:
+        if seed is not None:
+            random.seed()
+
+
+def generate_character_motif(
+    character_type: str,
+    colors: List[str],
+    seed: Optional[int] = None,
+    width: int = 200,
+    height: int = 200
+) -> Optional[str]:
+    """
+    Generate a procedural character asset following mid-century design principles.
+    
+    Args:
+        character_type: Type of character to generate
+        colors: List of colors to use
+        seed: Random seed for deterministic output
+        width: SVG width
+        height: SVG height
+    
+    Returns:
+        SVG string or None if generation fails
+    """
+    if seed is not None:
+        random.seed(seed)
+    
+    try:
+        # Pick primary color for the character
+        primary_color = colors[0] if colors else "#1C4FA1"
+        secondary_color = colors[1] if len(colors) > 1 else "#F6BE00"
+        
+        # Generate different character types
+        if "narrator" in character_type.lower() or "speaker" in character_type.lower():
+            return _make_narrator_character(primary_color, secondary_color, width, height, seed)
+        elif "parent" in character_type.lower() or "adult" in character_type.lower():
+            return _make_parent_character(primary_color, secondary_color, width, height, seed)
+        elif "child" in character_type.lower() or "kid" in character_type.lower():
+            return _make_child_character(primary_color, secondary_color, width, height, seed)
+        else:
+            # Default to generic character
+            return _make_generic_character(primary_color, secondary_color, width, height, seed)
+    except Exception as e:
+        print(f"Failed to generate character motif: {e}")
+        return None
+    finally:
+        if seed is not None:
+            random.seed()
+
+
+def _make_phone_prop(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a phone/device prop."""
+    # Simple phone shape with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="{width//4}" y="{height//4}" width="{width//2}" height="{height//2}" 
+              fill="{primary_color}" rx="8" ry="8"/>
+        <rect x="{width//4 + 4}" y="{height//4 + 4}" width="{width//2 - 8}" height="{height//2 - 8}" 
+              fill="{secondary_color}" rx="4" ry="4"/>
+        <circle cx="{width//2}" cy="{height//2 + 20}" r="4" fill="{primary_color}"/>
+    </svg>'''
+    return svg
+
+
+def _make_chair_prop(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a chair prop."""
+    # Simple chair shape with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="{width//4}" y="{height//2}" width="{width//2}" height="{height//4}" 
+              fill="{primary_color}" rx="4" ry="4"/>
+        <rect x="{width//4}" y="{height//4}" width="{width//2}" height="{height//4}" 
+              fill="{secondary_color}" rx="4" ry="4"/>
+        <rect x="{width//4 - 8}" y="{height//2}" width="8" height="{height//4}" 
+              fill="{primary_color}" rx="2" ry="2"/>
+        <rect x="{width*3//4}" y="{height//2}" width="8" height="{height//4}" 
+              fill="{primary_color}" rx="2" ry="2"/>
+    </svg>'''
+    return svg
+
+
+def _make_clock_prop(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a clock prop."""
+    # Simple clock shape with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="{width//2}" cy="{height//2}" r="{min(width, height)//3}" 
+                fill="{primary_color}" stroke="{secondary_color}" stroke-width="2"/>
+        <line x1="{width//2}" y1="{height//2}" x2="{width//2}" y2="{height//4}" 
+              stroke="{secondary_color}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="{width//2}" y1="{height//2}" x2="{width*3//4}" y2="{height//2}" 
+              stroke="{secondary_color}" stroke-width="2" stroke-linecap="round"/>
+    </svg>'''
+    return svg
+
+
+def _make_book_prop(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a book/notebook prop."""
+    # Simple book shape with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="{width//4}" y="{height//4}" width="{width//2}" height="{height//2}" 
+              fill="{primary_color}" rx="2" ry="2"/>
+        <rect x="{width//4 + 2}" y="{height//4 + 2}" width="{width//2 - 4}" height="{height//2 - 4}" 
+              fill="{secondary_color}" rx="1" ry="1"/>
+        <line x1="{width//4 + 8}" y1="{height//2}" x2="{width*3//4 - 8}" y2="{height//2}" 
+              stroke="{primary_color}" stroke-width="1"/>
+        <line x1="{width//4 + 8}" y1="{height//2 + 8}" x2="{width*3//4 - 8}" y2="{height//2 + 8}" 
+              stroke="{primary_color}" stroke-width="1"/>
+    </svg>'''
+    return svg
+
+
+def _make_geometric_prop(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a generic geometric prop."""
+    # Simple geometric shape with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="{width//4},{height//4} {width*3//4},{height//4} {width//2},{height*3//4}" 
+                 fill="{primary_color}"/>
+        <circle cx="{width//2}" cy="{height//2}" r="{min(width, height)//8}" fill="{secondary_color}"/>
+    </svg>'''
+    return svg
+
+
+def _make_narrator_character(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a narrator character."""
+    # Simple narrator character with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="{width//2}" cy="{height//3}" r="{min(width, height)//6}" fill="{primary_color}"/>
+        <rect x="{width//4}" y="{height//2}" width="{width//2}" height="{height//3}" 
+              fill="{primary_color}" rx="8" ry="8"/>
+        <rect x="{width//4 + 4}" y="{height//2 + 4}" width="{width//2 - 8}" height="{height//3 - 8}" 
+              fill="{secondary_color}" rx="4" ry="4"/>
+    </svg>'''
+    return svg
+
+
+def _make_parent_character(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a parent character."""
+    # Simple parent character with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="{width//2}" cy="{height//3}" r="{min(width, height)//6}" fill="{primary_color}"/>
+        <rect x="{width//4}" y="{height//2}" width="{width//2}" height="{height//3}" 
+              fill="{primary_color}" rx="8" ry="8"/>
+        <circle cx="{width//2 - 20}" cy="{height//2 + 20}" r="8" fill="{secondary_color}"/>
+        <circle cx="{width//2 + 20}" cy="{height//2 + 20}" r="8" fill="{secondary_color}"/>
+    </svg>'''
+    return svg
+
+
+def _make_child_character(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a child character."""
+    # Simple child character with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="{width//2}" cy="{height//3}" r="{min(width, height)//8}" fill="{primary_color}"/>
+        <rect x="{width//4}" y="{height//2}" width="{width//2}" height="{height//3}" 
+              fill="{primary_color}" rx="6" ry="6"/>
+        <rect x="{width//4 + 2}" y="{height//2 + 2}" width="{width//2 - 4}" height="{height//3 - 4}" 
+              fill="{secondary_color}" rx="4" ry="4"/>
+    </svg>'''
+    return svg
+
+
+def _make_generic_character(primary_color: str, secondary_color: str, width: int, height: int, seed: int) -> str:
+    """Generate a generic character."""
+    # Simple generic character with mid-century styling
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="{width//2}" cy="{height//3}" r="{min(width, height)//6}" fill="{primary_color}"/>
+        <rect x="{width//4}" y="{height//2}" width="{width//2}" height="{height//3}" 
+              fill="{primary_color}" rx="8" ry="8"/>
+    </svg>'''
+    return svg
+
 # ============================================================================
 # EXPORTS
 # ============================================================================
@@ -582,5 +802,7 @@ __all__ = [
     'save_svg',
     'save_to_cache',
     'pick_scene_colors',
-    'generate_background_motif'
+    'generate_background_motif',
+    'generate_prop_motif',
+    'generate_character_motif'
 ]

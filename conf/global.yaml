@@ -84,6 +84,37 @@ render:
   threads: 0  # Auto-detect optimal thread count
   use_hardware_acceleration: true  # Enable/disable hardware acceleration
 
+# Texture and paper feel settings
+textures:
+  enabled: true                    # Enable/disable texture overlay
+  cache_dir: "render_cache/textures"  # Texture cache directory
+  session_based: true              # Generate new textures per render session
+  
+  # Noise settings
+  grain:
+    density: 0.15                  # Grain density (0.0-1.0)
+    scale: 2.0                     # Noise scale factor
+    intensity: 0.08                # Grain intensity (0.0-1.0)
+    seed_variation: true           # Vary seed per session
+  
+  # Edge treatment
+  edges:
+    feather_radius: 1.5            # Edge feathering radius in pixels
+    posterization_levels: 8        # Number of posterization levels (2-16)
+    edge_strength: 0.3             # Edge detection strength (0.0-1.0)
+  
+  # Halftone effect
+  halftone:
+    enabled: true                  # Enable halftone dot pattern
+    dot_size: 1.2                  # Halftone dot size in pixels
+    dot_spacing: 3.0               # Spacing between dots
+    angle: 45                      # Halftone angle in degrees
+    intensity: 0.12                # Halftone effect intensity (0.0-1.0)
+  
+  # Color constraints
+  color_preservation: true         # Ensure textures don't introduce new colors
+  brand_palette_only: true         # Use only brand palette colors for textures
+
 # Procedural generation settings
 procedural:
   seed: 42                          # Random seed for reproducible generation

@@ -1,0 +1,25 @@
+# Cursor Prompt: Integrate New Features into Full Pipeline & E2E Test
+
+## Rule
+Integrate storyboard asset loop, texture/paper feel, SVG path ops, and music bed policy into the existing procedural animation pipeline. Remove unused legacy steps.
+
+## Success Criteria
+- End-to-end run with “2-minute history of Ray and Charles Eames” prompt completes successfully.
+- All new modules executed in correct order.
+- Legacy unused modules removed from codebase.
+- Duration target met (±5% tolerance).
+
+## Test Criteria
+- Run E2E test and confirm duration compliance.
+- Inspect final video for:
+  * Correct asset integration
+  * Consistent texture/feel
+  * Music bed applied
+  * Procedural SVG morphs
+- Validate acceptance tests pass.
+
+## Implementation Guidance
+- Centralize config in `/config/pipeline.yaml`.
+- Define import order in `main.py`.
+- Ensure all agents/modules use standardized naming from config.
+- Run test harness after integration.

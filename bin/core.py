@@ -184,6 +184,38 @@ class ProceduralCfg(BaseModel):
     })
 
 
+class TextureGrainCfg(BaseModel):
+    density: float = 0.15
+    scale: float = 2.0
+    intensity: float = 0.08
+    seed_variation: bool = True
+
+
+class TextureEdgesCfg(BaseModel):
+    feather_radius: float = 1.5
+    posterization_levels: int = 8
+    edge_strength: float = 0.3
+
+
+class TextureHalftoneCfg(BaseModel):
+    enabled: bool = True
+    dot_size: float = 1.2
+    dot_spacing: float = 3.0
+    angle: int = 45
+    intensity: float = 0.12
+
+
+class TextureCfg(BaseModel):
+    enabled: bool = True
+    cache_dir: str = "render_cache/textures"
+    session_based: bool = True
+    grain: TextureGrainCfg = Field(default_factory=TextureGrainCfg)
+    edges: TextureEdgesCfg = Field(default_factory=TextureEdgesCfg)
+    halftone: TextureHalftoneCfg = Field(default_factory=TextureHalftoneCfg)
+    color_preservation: bool = True
+    brand_palette_only: bool = True
+
+
 class GlobalCfg(BaseModel):
     storage: StorageCfg
     pipeline: PipelineCfg
@@ -197,6 +229,7 @@ class GlobalCfg(BaseModel):
     licenses: LicensesCfg
     limits: LimitsCfg = Field(default_factory=LimitsCfg)
     procedural: ProceduralCfg = Field(default_factory=ProceduralCfg)
+    textures: TextureCfg = Field(default_factory=TextureCfg)
 
 
 def load_yaml(path: str) -> dict:

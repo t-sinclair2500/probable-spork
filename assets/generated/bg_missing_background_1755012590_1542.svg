@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 1208">
+  <desc>Atomic starburst pattern with 12 spokes, mid-century geometric design</desc>
+  <line x1="972.0" y1="539.9" x2="1007.6" y2="539.4" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="1007.6" cy="539.4" r="3" fill="#7c3aed"/>
+  <line x1="970.5" y1="545.9" x2="1003.2" y2="564.7" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="1003.2" cy="564.7" r="3" fill="#7c3aed"/>
+  <line x1="966.1" y1="550.3" x2="983.0" y2="579.9" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="983.0" cy="579.9" r="3" fill="#7c3aed"/>
+  <line x1="960.1" y1="552.0" x2="959.5" y2="587.0" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="959.5" cy="587.0" r="3" fill="#7c3aed"/>
+  <line x1="954.1" y1="550.5" x2="937.5" y2="582.8" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="937.5" cy="582.8" r="3" fill="#7c3aed"/>
+  <line x1="949.5" y1="545.9" x2="919.0" y2="564.3" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="919.0" cy="564.3" r="3" fill="#7c3aed"/>
+  <line x1="948.0" y1="540.1" x2="913.3" y2="541.9" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="913.3" cy="541.9" r="3" fill="#7c3aed"/>
+  <line x1="949.6" y1="534.0" x2="918.5" y2="516.0" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="918.5" cy="516.0" r="3" fill="#7c3aed"/>
+  <line x1="954.0" y1="529.6" x2="936.3" y2="498.5" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="936.3" cy="498.5" r="3" fill="#7c3aed"/>
+  <line x1="960.1" y1="528.0" x2="960.0" y2="491.5" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="960.0" cy="491.5" r="3" fill="#7c3aed"/>
+  <line x1="965.9" y1="529.5" x2="985.0" y2="499.6" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="985.0" cy="499.6" r="3" fill="#7c3aed"/>
+  <line x1="970.4" y1="534.0" x2="1001.9" y2="516.4" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="1001.9" cy="516.4" r="3" fill="#7c3aed"/>
+  <circle cx="960" cy="540" r="6" fill="#7c3aed"/>
+</svg>

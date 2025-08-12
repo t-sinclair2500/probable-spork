@@ -11,7 +11,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 from bin.core import get_logger
 
@@ -24,15 +24,24 @@ CACHE_DIR.mkdir(exist_ok=True)
 # Supported output formats
 OUTPUT_FORMAT = "png"
 
+# Try to import texture engine
+try:
+    from .texture_engine import create_texture_engine
+    TEXTURE_ENGINE_AVAILABLE = True
+except ImportError:
+    TEXTURE_ENGINE_AVAILABLE = False
+    log.debug("Texture engine not available")
 
-def _get_cache_key(svg_path: str, width: int, height: int) -> str:
+
+def _get_cache_key(svg_path: str, width: int, height: int, texture_config: Optional[Dict] = None) -> str:
     """
-    Generate cache key from SVG path, dimensions, and file modification time.
+    Generate cache key from SVG path, dimensions, file modification time, and texture config.
     
     Args:
         svg_path: Path to SVG file
         width: Target width in pixels
         height: Target height in pixels
+        texture_config: Optional texture configuration for cache key
     
     Returns:
         Cache key string
@@ -45,8 +54,14 @@ def _get_cache_key(svg_path: str, width: int, height: int) -> str:
     except OSError:
         mtime = 0
     
-    # Create cache key from path, dimensions, and mtime
+    # Create cache key from path, dimensions, mtime, and texture config
     key_data = f"{svg_path}:{width}x{height}:{mtime}"
+    
+    # Include texture configuration in cache key if available
+    if texture_config and texture_config.get("enabled", False):
+        texture_hash = hashlib.md5(str(sorted(texture_config.items())).encode()).hexdigest()[:8]
+        key_data += f":texture_{texture_hash}"
+    
     return hashlib.sha1(key_data.encode()).hexdigest()
 
 
@@ -249,17 +264,61 @@ def _rasterize_with_pillow(svg_path: str, width: int, height: int, output_path: 
         return False
 
 
-def rasterize_svg(svg_path: str, width: int, height: int) -> str:
+def apply_texture_to_image(image_path: str, texture_config: Dict, brand_palette: Optional[list] = None) -> str:
     """
-    Rasterize SVG to PNG with intelligent caching and fallback methods.
+    Apply texture overlay to a rasterized image.
+    
+    Args:
+        image_path: Path to input image
+        texture_config: Texture configuration dictionary
+        brand_palette: Optional brand color palette
+        
+    Returns:
+        Path to textured image
+    """
+    if not TEXTURE_ENGINE_AVAILABLE:
+        log.warning("Texture engine not available, returning original image")
+        return image_path
+    
+    if not texture_config.get("enabled", False):
+        log.debug("Textures disabled, returning original image")
+        return image_path
+    
+    try:
+        # Create texture engine
+        texture_engine = create_texture_engine(texture_config, brand_palette)
+        
+        # Apply texture overlay
+        textured_path = texture_engine.process_image(image_path)
+        
+        log.info(f"Applied texture overlay to {image_path}")
+        return textured_path
+        
+    except Exception as e:
+        log.error(f"Failed to apply texture to {image_path}: {e}")
+        # Return original image on failure
+        return image_path
+
+
+def rasterize_svg_with_texture(
+    svg_path: str, 
+    width: int, 
+    height: int, 
+    texture_config: Optional[Dict] = None,
+    brand_palette: Optional[list] = None
+) -> str:
+    """
+    Rasterize SVG to PNG with optional texture overlay.
     
     Args:
         svg_path: Path to SVG file
         width: Target width in pixels
         height: Target height in pixels
+        texture_config: Optional texture configuration
+        brand_palette: Optional brand color palette for texture constraints
     
     Returns:
-        Path to rasterized PNG file
+        Path to rasterized PNG file (with texture if enabled)
     
     Raises:
         FileNotFoundError: If SVG file doesn't exist
@@ -270,16 +329,16 @@ def rasterize_svg(svg_path: str, width: int, height: int) -> str:
     if not svg_path.exists():
         raise FileNotFoundError(f"SVG file not found: {svg_path}")
     
-    # Check cache first
-    cached_path = get_cached(str(svg_path), width, height)
+    # Check cache first (including texture config)
+    cached_path = get_cached_with_texture(str(svg_path), width, height, texture_config)
     if cached_path:
         return cached_path
     
     # Generate cache key and output path
-    cache_key = _get_cache_key(str(svg_path), width, height)
+    cache_key = _get_cache_key(str(svg_path), width, height, texture_config)
     output_path = _get_cached_path(cache_key)
     
-    log.info(f"Rasterizing {svg_path} to {width}x{height} pixels")
+    log.info(f"Rasterizing {svg_path} to {width}x{height} pixels with texture: {bool(texture_config and texture_config.get('enabled'))}")
     start_time = time.time()
     
     # Try rasterization methods in order of preference
@@ -300,10 +359,65 @@ def rasterize_svg(svg_path: str, width: int, height: int) -> str:
     if not success:
         raise RuntimeError(f"All rasterization methods failed for {svg_path}")
     
+    # Apply texture overlay if enabled
+    if texture_config and texture_config.get("enabled", False):
+        try:
+            textured_path = apply_texture_to_image(str(output_path), texture_config, brand_palette)
+            if textured_path != str(output_path):
+                # Replace original with textured version
+                output_path = Path(textured_path)
+                log.info(f"Applied texture overlay, saved to {output_path}")
+        except Exception as e:
+            log.warning(f"Texture application failed, using untextured version: {e}")
+    
     elapsed_ms = int((time.time() - start_time) * 1000)
     log.info(f"Rasterized {svg_path} in {elapsed_ms}ms, saved to {output_path}")
     
     return str(output_path)
+
+
+def rasterize_svg(svg_path: str, width: int, height: int) -> str:
+    """
+    Rasterize SVG to PNG with intelligent caching and fallback methods.
+    Legacy function for backward compatibility.
+    
+    Args:
+        svg_path: Path to SVG file
+        width: Target width in pixels
+        height: Target height in pixels
+    
+    Returns:
+        Path to rasterized PNG file
+    
+    Raises:
+        FileNotFoundError: If SVG file doesn't exist
+        RuntimeError: If all rasterization methods fail
+    """
+    return rasterize_svg_with_texture(svg_path, width, height)
+
+
+def get_cached_with_texture(svg_path: str, width: int, height: int, texture_config: Optional[Dict] = None) -> Optional[str]:
+    """
+    Check if a rasterized version with texture exists in cache.
+    
+    Args:
+        svg_path: Path to SVG file
+        width: Target width in pixels
+        height: Target height in pixels
+        texture_config: Optional texture configuration
+    
+    Returns:
+        Path to cached file if exists, None otherwise
+    """
+    cache_key = _get_cache_key(svg_path, width, height, texture_config)
+    cached_path = _get_cached_path(cache_key)
+    
+    if cached_path.exists():
+        log.debug(f"Cache hit for {svg_path} at {width}x{height} with texture: {bool(texture_config and texture_config.get('enabled'))}")
+        return str(cached_path)
+    
+    log.debug(f"Cache miss for {svg_path} at {width}x{height} with texture: {bool(texture_config and texture_config.get('enabled'))}")
+    return None
 
 
 def clear_cache() -> None:
@@ -311,6 +425,14 @@ def clear_cache() -> None:
     if CACHE_DIR.exists():
         for cache_file in CACHE_DIR.glob(f"*.{OUTPUT_FORMAT}"):
             cache_file.unlink()
+        
+        # Also clear texture cache if it exists
+        texture_cache_dir = CACHE_DIR / "textures"
+        if texture_cache_dir.exists():
+            for texture_file in texture_cache_dir.glob("*.png"):
+                texture_file.unlink()
+            log.info(f"Cleared texture cache ({texture_cache_dir})")
+        
         log.info(f"Cleared raster cache ({CACHE_DIR})")
 
 
@@ -325,12 +447,21 @@ def get_cache_stats() -> dict:
     total_files = 0
     total_size = 0
     
+    # Count raster cache files
     for cache_file in CACHE_DIR.glob(f"*.{OUTPUT_FORMAT}"):
         total_files += 1
         total_size += cache_file.stat().st_size
     
+    # Count texture cache files
+    texture_cache_dir = CACHE_DIR / "textures"
+    if texture_cache_dir.exists():
+        for texture_file in texture_cache_dir.glob("*.png"):
+            total_files += 1
+            total_size += texture_file.stat().st_size
+    
     return {
         "total_files": total_files,
         "total_size_bytes": total_size,
-        "cache_dir": str(CACHE_DIR)
+        "cache_dir": str(CACHE_DIR),
+        "texture_cache_dir": str(texture_cache_dir) if texture_cache_dir.exists() else None
     }

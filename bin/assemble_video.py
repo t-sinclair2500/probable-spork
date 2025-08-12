@@ -24,6 +24,7 @@ from bin.core import (  # noqa: E402
     estimate_beats,
 )
 from bin.core import parse_llm_json  # noqa: E402
+from bin.music_integration import MusicIntegrationManager  # noqa: E402
 
 from moviepy.editor import (
     AudioFileClip,
@@ -723,48 +724,79 @@ def main(brief=None, slug=None):
     if short_secs:
         vo_clip = vo_clip.subclip(0, min(float(short_secs), float(getattr(vo_clip, "duration", 0.0) or 0.0)))
     
-    bg_path = os.path.join(topic_assets_dir if not has_animatics else os.path.join(adir, key), "bg.mp3")
+    # Initialize music integration manager
+    music_manager = MusicIntegrationManager(cfg)
+    
+    # Prepare music for video based on content analysis
     audio = vo_clip
-    if os.path.exists(bg_path):
+    
+    # Load modules configuration for music settings
+    try:
+        from bin.core import load_modules_cfg
+        modules_cfg = load_modules_cfg()
+        music_enabled = modules_cfg.get("music", {}).get("enabled", True)
+    except Exception:
+        music_enabled = True
+    
+    if music_enabled:
         try:
-            music = AudioFileClip(bg_path)
-            # Apply sidechain ducking: compress music when VO is present
-            duck_db = float(getattr(cfg.render, 'duck_db', -15))
-            music_db = float(getattr(cfg.render, 'music_db', -22))
+            # Get video metadata for music selection
+            video_metadata = {
+                'tone': getattr(cfg.pipeline, 'tone', 'conversational'),
+                'duration': float(getattr(vo_clip, 'duration', 30.0)),
+                'pacing_wpm': int(getattr(cfg.tts, 'rate_wpm', 165))
+            }
             
-            # Create ducked music track using ffmpeg's sidechaincompress
-            temp_music_path = os.path.join(vodir, key + "_music_temp.mp3")
-            ducked_music_path = os.path.join(vodir, key + "_music_ducked.mp3")
-            
-            # First normalize music duration to match VO
-            music_duration = min(music.duration, vo_clip.duration)
-            music.subclip(0, music_duration).write_audiofile(temp_music_path, verbose=False, logger=None)
-            
-            # Apply sidechain compression: duck music when VO is present
-            cmd = f'ffmpeg -y -i "{temp_music_path}" -i "{vo_normalized_path}" -filter_complex "[0:a][1:a]sidechaincompress=threshold=0.1:ratio=4:attack=5:release=50[music]; [music]volume={music_db}dB[final]" -map "[final]" "{ducked_music_path}"'
-            result = subprocess.run(cmd, shell=True, capture_output=True)
-            
-            if result.returncode == 0 and os.path.exists(ducked_music_path):
-                ducked_music = AudioFileClip(ducked_music_path)
-                audio = CompositeAudioClip([vo_clip, ducked_music])
-                log.info(f"Applied sidechain ducking: music dB={music_db}, duck dB={duck_db}")
+            # Prepare music based on script content
+            script_path = os.path.join(adir, key + ".txt")
+            if os.path.exists(script_path):
+                music_path = music_manager.prepare_music_for_video(
+                    script_path, vo_normalized_path, vodir, video_metadata
+                )
+                
+                if music_path and os.path.exists(music_path):
+                    # Integrate music with voiceover using new system
+                    mixed_audio_path = os.path.join(vodir, key + "_mixed_audio.mp3")
+                    
+                    if music_manager.integrate_music_with_video(
+                        vo_normalized_path, music_path, mixed_audio_path, video_metadata
+                    ):
+                        # Use the mixed audio
+                        audio = AudioFileClip(mixed_audio_path)
+                        log.info(f"Successfully integrated music: {music_path}")
+                    else:
+                        log.warning("Music integration failed, using voiceover only")
+                else:
+                    log.info("No suitable music found, using voiceover only")
             else:
-                # Fallback to simple volume mixing
+                log.info("Script not found, skipping music selection")
+                
+        except Exception as e:
+            log.warning(f"Music integration failed: {e}")
+            log.info("Continuing with voiceover only")
+    
+    # Fallback to legacy music handling if new system fails
+    try:
+        fallback_to_silent = modules_cfg.get("music", {}).get("fallback_to_silent", True)
+    except Exception:
+        fallback_to_silent = True
+    
+    if audio == vo_clip and fallback_to_silent:
+        bg_path = os.path.join(topic_assets_dir if not has_animatics else os.path.join(adir, key), "bg.mp3")
+        if os.path.exists(bg_path):
+            try:
+                music = AudioFileClip(bg_path)
+                duck_db = float(getattr(cfg.render, 'duck_db', -15))
+                music_db = float(getattr(cfg.render, 'music_db', -22))
+                
+                # Simple volume mixing as fallback
                 gain = pow(10.0, music_db / 20.0)
                 audio = CompositeAudioClip([vo_clip, music.volumex(gain)])
-                log.warning("Sidechain ducking failed, using simple volume mixing")
-                
-            # Cleanup temp files
-            for temp_file in [temp_music_path, ducked_music_path]:
-                try:
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                except Exception:
-                    pass
+                log.info("Applied fallback music mixing")
                     
-        except Exception as e:
-            log.warning(f"Music processing failed: {e}")
-            pass
+            except Exception as e:
+                log.warning(f"Fallback music processing failed: {e}")
+                pass
     
     # Clamp final duration to avoid seeking past end of audio due to float rounding.
     safe_audio_dur = max(0.0, float(getattr(vo_clip, "duration", 0.0)) - 0.05)

@@ -40,6 +40,14 @@ from .raster_cache import (
     get_cache_stats,
 )
 
+from .svg_path_ops import (
+    SVGPathProcessor,
+    MotifVariantGenerator,
+    create_path_processor,
+    create_variant_generator,
+    generate_motif_variants,
+)
+
 from .anim_fx import (
     make_text_clip,
     make_image_clip,
@@ -73,6 +81,11 @@ __all__ = [
     "get_cached",
     "clear_cache",
     "get_cache_stats",
+    "SVGPathProcessor",
+    "MotifVariantGenerator",
+    "create_path_processor",
+    "create_variant_generator",
+    "generate_motif_variants",
     "make_text_clip",
     "make_image_clip",
     "bg_gradient",
