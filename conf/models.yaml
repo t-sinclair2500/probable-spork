@@ -1,0 +1,81 @@
+# Model Configuration for Multi-Model Pipeline
+# This file defines which models are used for different tasks
+
+profile: "laptop_m2_8gb"  # Hardware profile for optimization hints
+
+ollama:
+  server: "http://localhost:11434"
+  timeout_s: 120
+  retry_attempts: 3
+  retry_delay_s: 2
+
+models:
+  # Research and fact-checking - Mistral 7B for reasoning
+  research:
+    name: "mistral:7b-instruct"
+    num_ctx: 4096
+    temperature: 0.3
+    top_p: 0.9
+    repeat_penalty: 1.1
+    description: "Used for research planning, fact-guard, and reasoning tasks"
+  
+  # Scriptwriting - Llama 3.2 for creative content
+  scriptwriter:
+    name: "llama3.2:latest"
+    num_ctx: 8192
+    temperature: 0.7
+    top_p: 0.9
+    repeat_penalty: 1.1
+    description: "Used for script generation and creative writing"
+  
+  # Outlining - Llama 3.2 for structured planning
+  outline:
+    name: "llama3.2:latest"
+    num_ctx: 4096
+    temperature: 0.3
+    top_p: 0.9
+    repeat_penalty: 1.1
+    description: "Used for outline generation and structure planning"
+  
+  # Clustering - Llama 3.2 for topic organization
+  cluster:
+    name: "llama3.2:latest"
+    num_ctx: 4096
+    temperature: 0.2
+    top_p: 0.9
+    repeat_penalty: 1.1
+    description: "Used for topic clustering and categorization"
+  
+  # Embeddings - Optional for semantic search
+  embed:
+    name: "nomic-embed-text"
+    dim: 768
+    description: "Used for semantic search and content similarity"
+
+voice:
+  # Text-to-Speech with Piper
+  tts:
+    provider: "piper"
+    voice_id: "en_US-amy-medium"
+    rate: "medium"  # slow, medium, fast
+    pitch: 0  # -20 to +20
+    pause_ms: 120  # Default pause between sentences
+    ssml: true  # Enable SSML-lite parsing
+    lufs_target: -16.0  # Loudness normalization target
+    cache_dir: "voice_cache"  # Directory for audio caching
+  
+  # Speech-to-Text with Whisper
+  asr:
+    provider: "whisper.cpp"
+    model: "small.en"
+    language: "en"
+    task: "transcribe"
+
+# Research grounding settings
+research:
+  max_sources: 8
+  chunk_size_tokens: 1200
+  max_chunks_per_source: 5
+  min_relevance_score: 0.6
+  citation_format: "inline"  # inline, footnote, endnote
+  database: "data/research.db"  # SQLite database for research data

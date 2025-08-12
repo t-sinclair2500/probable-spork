@@ -1,0 +1,33 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Audio sync engineer.
+
+GOAL
+- Align scenes to voiceover cues using SRT or word timings.
+
+RULES
+- Allow ±300 ms tolerance per scene.
+
+TASKS
+1) `bin/voice_cues.py` reads `voiceovers/<slug>.srt` → writes `data/<slug>/vo_cues.json`.
+2) `animatics_generate.py` respects `scene.audio_cue` if present (start/end ms).
+
+SUCCESS CRITERIA
+- Scenes that have cues align within ±300 ms.
+
+TEST CRITERIA
+python bin/voice_cues.py --slug demo
+python bin/animatics_generate.py --slug demo

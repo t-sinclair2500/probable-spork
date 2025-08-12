@@ -1,0 +1,42 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Brand systems engineer.
+
+GOAL
+- Create a brandable design system and example assets that all renders use.
+
+RULES
+- Keep assets under `assets/brand/`; do not hardcode colors in code—read from style.yaml.
+- Characters are layered SVG (head, mouth_AE, mouth_O, torso, armL, armR).
+
+TASKS
+1) Create `assets/brand/style.yaml` from example; include sensible defaults.
+2) Add example SVGs:
+   - `assets/brand/characters/parent.svg`, `narrator.svg` (layered groups with ids)
+   - `assets/brand/props/blanket.svg`, `phone.svg`
+   - `assets/brand/backgrounds/gradient1.svg` and `paper.png`
+3) Extend `sdk.load_style()` with validation & defaults.
+
+SUCCESS CRITERIA
+- `load_style()` returns a BrandStyle with fonts, colors, sizes.
+- Example assets exist and are referenced by predictable names.
+
+TEST CRITERIA
+python - << 'PY'
+from bin.cutout.sdk import load_style
+s=load_style()
+print('fonts',s.fonts,'colors',list(s.colors)[:3])
+PY

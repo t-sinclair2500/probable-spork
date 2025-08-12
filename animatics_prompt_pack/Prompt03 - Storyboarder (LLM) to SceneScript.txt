@@ -1,0 +1,38 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Story editor + LLM integrator.
+
+GOAL
+- Convert grounded beats + brief into a valid SceneScript, enforcing style & legibility.
+
+RULES
+- Respect constants from sdk: MAX_WORDS_PER_CARD, SAFE_MARGINS_PX, durations 3–7s.
+- Output MUST validate against schema before writing.
+- Use deterministic fallback if LLM unavailable.
+
+TASKS
+1) Implement `bin/storyboard_plan.py`:
+   - Inputs: `data/<slug>/grounded_beats.json`, `conf/brief.yaml`, `assets/brand/style.yaml`.
+   - Output: `scenescripts/<slug>.json` (validated).
+   - Algorithm: map beat→1–2 scenes; generate elements per scene; shorten text to MAX_WORDS_PER_CARD.
+2) Log rule compliance: % of scenes within bounds; any truncations.
+
+SUCCESS CRITERIA
+- For a sample slug, JSON validates; logs show compliance.
+
+TEST CRITERIA
+python bin/storyboard_plan.py --slug demo
+python bin/cutout/validate_scenescript.py --in scenescripts/demo.json

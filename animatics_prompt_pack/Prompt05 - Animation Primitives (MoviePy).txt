@@ -1,0 +1,41 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Motion engineer.
+
+GOAL
+- Implement reusable primitives for text/images/backgrounds and keyframe application.
+
+RULES
+- All time values are milliseconds; convert internally to seconds via FPS.
+- Entrance/exit types limited to AnimType in sdk.
+
+TASKS
+1) Create `bin/cutout/anim_fx.py`:
+   - `make_text_clip(text, style: BrandStyle, kind: 'hook'|'body'|'lower_third') -> Clip`
+   - `make_image_clip(img_path) -> Clip`
+   - `bg_gradient(style, motion: 'slow_pan'|'slow_zoom') -> Clip`
+   - `apply_keyframes(clip, keyframes: list[Keyframe]) -> Clip`
+   - `entrance(clip, type)`, `exit(clip, type)`
+2) Include minimal unit tests rendering short 2–3s mp4s in /tmp.
+
+SUCCESS CRITERIA
+- Primitives render without errors; durations consistent within 3%.
+
+TEST CRITERIA
+python - << 'PY'
+from bin.cutout.anim_fx import *
+print('ok primitives')
+PY

@@ -98,6 +98,54 @@ python bin/upload_stage.py
 - Asset fetcher records license info per asset directory. You must respect each source’s license terms.
 - Cloud services are optional and OFF by default; enabling them may incur costs.
 
+## Model Lifecycle Management
+
+The pipeline uses a deterministic batch-by-model execution strategy to optimize memory usage and ensure stable performance on limited hardware (8GB RAM).
+
+### Batching Strategy
+
+**Batch A: Llama 3.2 (Cluster + Outline + Script)**
+- `niche_trends` → `llm_cluster` → `llm_outline` → `llm_script`
+- Uses `llama3.2:latest` for creative content generation
+- Model is explicitly unloaded after completion
+
+**Batch B: Mistral 7B (Research + Fact-Check)**
+- `research_collect` → `research_ground` → `fact_check`
+- Uses `mistral:7b-instruct` for reasoning and fact-checking
+- Model is explicitly unloaded after completion
+
+**Batch C: Optional Script Refinement**
+- `script_refinement` (only if different model from Batch A)
+- Uses separate scriptwriter model if configured differently
+- Model is explicitly unloaded after completion
+
+### Environment Controls
+
+- `OLLAMA_NUM_PARALLEL=1`: Ensures only one model is active at a time
+- `OLLAMA_TIMEOUT=120`: Sets reasonable timeout for single-lane operation
+- Models are automatically loaded on first use and unloaded between batches
+
+### Pipeline Control
+
+- **Default execution**: Full pipeline with all batches (A→B→C)
+- **Skip refinement**: Use `--no-style-rewrite` flag to skip Batch C
+- **Resume from step**: Use `--from-step <step_name>` to resume from specific point
+- **Dry run**: Use `--dry-run` to test without actual execution
+
+### Verification
+
+Monitor model lifecycle during execution:
+```bash
+# Check active models during pipeline run
+ollama ps
+
+# Verify model unloading in logs
+grep -n "ollama stop" logs/pipeline.log | tail -5
+
+# Run tests to verify behavior
+pytest -q tests/test_model_runner.py tests/test_pipeline_batching.py
+```
+
 ## Python Version Compatibility
 
 ### Version Checker

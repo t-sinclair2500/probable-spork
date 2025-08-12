@@ -1,0 +1,27 @@
+{"ts": "2025-08-12T06:18:34Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'blog_only': False, 'from_step': 'llm_cluster', 'dry_run': True, 'brief': None};brief=Local SEO for Dentists;source=unknown"}
+{"ts": "2025-08-12T06:18:34Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=191"}
+{"ts": "2025-08-12T06:18:34Z", "step": "llm_outline", "status": "START", "notes": "brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:19:10Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-12_google-business-profile.outline.json;brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:19:10Z", "step": "llm_outline", "status": "OK", "notes": "elapsed_ms=36164"}
+{"ts": "2025-08-12T06:19:11Z", "step": "llm_script", "status": "START", "notes": "brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:19:29Z", "step": "llm_script", "status": "OK", "notes": "2025-08-12_google-business-profile.txt;brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:19:29Z", "step": "llm_script", "status": "OK", "notes": "elapsed_ms=18986"}
+{"ts": "2025-08-12T06:19:29Z", "step": "research_collect", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=330"}
+{"ts": "2025-08-12T06:31:39Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'blog_only': False, 'from_step': 'llm_cluster', 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=Local SEO for Dentists;source=unknown"}
+{"ts": "2025-08-12T06:31:39Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=261"}
+{"ts": "2025-08-12T06:31:39Z", "step": "llm_outline", "status": "START", "notes": "brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:32:03Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-12_google-business-profile.outline.json;brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:32:04Z", "step": "llm_outline", "status": "OK", "notes": "elapsed_ms=24451"}
+{"ts": "2025-08-12T06:32:04Z", "step": "llm_script", "status": "START", "notes": "brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:32:26Z", "step": "llm_script", "status": "OK", "notes": "2025-08-12_google-business-profile.txt;brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:32:26Z", "step": "llm_script", "status": "OK", "notes": "elapsed_ms=22508"}
+{"ts": "2025-08-12T06:32:27Z", "step": "research_collect", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=873"}
+{"ts": "2025-08-12T06:33:25Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'blog_only': False, 'from_step': 'llm_cluster', 'dry_run': True, 'brief': None, 'no_style_rewrite': True};brief=Local SEO for Dentists;source=unknown"}
+{"ts": "2025-08-12T06:33:25Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=241"}
+{"ts": "2025-08-12T06:33:25Z", "step": "llm_outline", "status": "START", "notes": "brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:33:48Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-12_google-business-profile.outline.json;brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:33:49Z", "step": "llm_outline", "status": "OK", "notes": "elapsed_ms=23398"}
+{"ts": "2025-08-12T06:33:49Z", "step": "llm_script", "status": "START", "notes": "brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:34:18Z", "step": "llm_script", "status": "OK", "notes": "2025-08-12_google-business-profile.txt;brief=Local SEO for Dentists"}
+{"ts": "2025-08-12T06:34:18Z", "step": "llm_script", "status": "OK", "notes": "elapsed_ms=29644"}
+{"ts": "2025-08-12T06:34:19Z", "step": "research_collect", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=333"}

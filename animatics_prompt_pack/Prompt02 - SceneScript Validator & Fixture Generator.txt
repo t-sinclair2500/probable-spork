@@ -1,0 +1,35 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Validation engineer.
+
+GOAL
+- Provide a validator and a demo SceneScript fixture for development and tests.
+
+RULES
+- Validator must exit non-zero on schema violation and print first error.
+- Fixtures must respect MAX_WORDS_PER_CARD and duration bounds (3–7s).
+
+TASKS
+1) `bin/cutout/validate_scenescript.py --in scenescripts/<slug>.json` → validates against schema and prints summary.
+2) `bin/cutout/make_fixture_scenes.py` → writes `scenescripts/demo.json` with 6–10 scenes, various element types.
+
+SUCCESS CRITERIA
+- Demo file validates against schema; validator exits 0.
+- Violating a key should exit 1 with an actionable message.
+
+TEST CRITERIA
+python bin/cutout/make_fixture_scenes.py
+python bin/cutout/validate_scenescript.py --in scenescripts/demo.json

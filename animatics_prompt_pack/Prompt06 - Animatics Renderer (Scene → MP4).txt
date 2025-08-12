@@ -1,0 +1,35 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Renderer engineer.
+
+GOAL
+- Render each Scene from SceneScript into `assets/<slug>/animatics/sN.mp4` using primitives and cache.
+
+RULES
+- Duration per scene = duration_ms (±3%).
+- Element types supported: text, prop, character, list_step, shape, lower_third, counter.
+
+TASKS
+1) Implement `bin/animatics_generate.py` (CLI): `--slug <slug> [--scene sN]`.
+2) Load style + SceneScript; rasterize needed SVGs; map elements to clips; compose via MoviePy; write mp4 per scene.
+3) Log per-scene render times and cache stats.
+
+SUCCESS CRITERIA
+- Demo slug renders all scenes; generated files exist.
+
+TEST CRITERIA
+python bin/animatics_generate.py --slug demo
+ls -lah assets/demo/animatics | head -20

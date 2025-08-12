@@ -74,11 +74,24 @@ def loudnorm_to_mp3(wav_in: str, mp3_out: str, max_seconds: int | None = None):
         pass
 
 
-def main(brief=None):
+def main(brief=None, models_config=None):
     """Main function for TTS generation with optional brief context"""
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
+    
+    # Load models configuration if not provided
+    if models_config is None:
+        try:
+            import yaml
+            models_path = os.path.join(BASE, "conf", "models.yaml")
+            if os.path.exists(models_path):
+                with open(models_path, 'r', encoding='utf-8') as f:
+                    models_config = yaml.safe_load(f)
+                log.info("Loaded models configuration")
+        except Exception as e:
+            log.warning(f"Failed to load models configuration: {e}")
+            models_config = {}
     
     # Log brief context if available
     if brief:
@@ -153,7 +166,46 @@ def main(brief=None):
                 # Faster pacing - this would need TTS provider support
                 log.info("Applied fast pacing preference")
     
+    # Try new voice adapter first, fallback to legacy TTS
     try:
+        if models_config and 'voice' in models_config:
+            # Use new multi-TTS system
+            try:
+                from bin.voice_adapter import VoiceAdapter
+                adapter = VoiceAdapter(models_config)
+                
+                # Create temporary script file for synthesis
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+                    f.write(text)
+                    temp_script = f.name
+                
+                # Synthesize using voice adapter
+                audio_path = adapter.synthesize_script(Path(temp_script), Path(voice_dir))
+                
+                # Convert to MP3 if needed
+                if audio_path.suffix == '.wav':
+                    loudnorm_to_mp3(str(audio_path), out_mp3, max_seconds=short_secs)
+                    used = "voice_adapter"
+                else:
+                    # Already MP3, just copy/rename
+                    import shutil
+                    shutil.copy2(audio_path, out_mp3)
+                    used = "voice_adapter"
+                
+                # Clean up temp script
+                os.unlink(temp_script)
+                
+                # Return early since MP3 written
+                dur = ffprobe_duration(out_mp3)
+                log_state("tts_generate", "OK", f"{os.path.basename(out_mp3)};prov={used};dur={round(dur,1)}s")
+                print(f"Wrote VO {out_mp3} via {used} ({round(dur,1)}s)")
+                return
+                
+            except Exception as e:
+                log.warning(f"Voice adapter failed, falling back to legacy TTS: {e}")
+        
+        # Fallback to legacy TTS system
         provider = getattr(cfg.tts, "provider", "coqui").lower()
         if provider == "coqui":
             try:

@@ -33,7 +33,20 @@ except Exception:
             raise ValueError("No JSON object found in LLM output.")
 
 
-def call_ollama(prompt, cfg):
+def call_ollama(prompt, cfg, models_config=None):
+    """Call Ollama with specified model configuration."""
+    if models_config and 'cluster' in models_config.get('models', {}):
+        # Use new multi-model system
+        try:
+            from bin.llm_client import OllamaClient
+            client = OllamaClient(models_config)
+            return client.chat('cluster', 
+                              "You are a helpful assistant for clustering topics.", 
+                              prompt)
+        except Exception as e:
+            log.warning(f"Multi-model system failed, falling back to legacy: {e}")
+    
+    # Fallback to legacy system
     url = cfg["llm"]["endpoint"]
     model = cfg["llm"]["model"]
     payload = {"model": model, "prompt": prompt, "stream": False}
@@ -43,9 +56,22 @@ def call_ollama(prompt, cfg):
     return r.json().get("response", "")
 
 
-def main(brief=None):
+def main(brief=None, models_config=None):
     cfg = load_config()
     os.makedirs(os.path.join(BASE, "data"), exist_ok=True)
+    
+    # Load models configuration if not provided
+    if models_config is None:
+        try:
+            import yaml
+            models_path = os.path.join(BASE, "conf", "models.yaml")
+            if os.path.exists(models_path):
+                with open(models_path, 'r', encoding='utf-8') as f:
+                    models_config = yaml.safe_load(f)
+                log.info("Loaded models configuration")
+        except Exception as e:
+            log.warning(f"Failed to load models configuration: {e}")
+            models_config = {}
     
     # Log brief context if available
     if brief:
@@ -83,7 +109,7 @@ def main(brief=None):
     # Call local LLM
     topics = []
     try:
-        out = call_ollama(prompt, cfg)
+        out = call_ollama(prompt, cfg, models_config)
         parsed = parse_llm_json(out)
         topics = parsed.get("topics", [])
     except Exception:

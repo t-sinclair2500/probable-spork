@@ -1,0 +1,35 @@
+# Cursor Prompt Library — Branded Animatics Pipeline
+# Generated: 2025-08-12 06:14:35Z UTC
+
+## CONTEXT TO REVIEW (MANDATORY)
+- Read repo_audit_probable_spork_v2.md top sections (Orchestrator, Acceptance).
+- Open: conf/global.yaml, conf/render.yaml, conf/blog.yaml, conf/brief.yaml (or brief.md front‑matter).
+- Inspect: bin/run_pipeline.py, bin/assemble_video.py, existing voice/acceptance steps.
+- Use centralized names from sdk: SceneScript, Element, Keyframe, BrandStyle, Beat, Animatic Clip.
+
+## WORKING FRAMEWORK — THINK → PLAN → APPLY → VERIFY
+- THINK: Summarize constraints, dependencies, and risks (≤10 bullets). Reference this prompt’s RULES.
+- PLAN: List exact files, functions, signatures, schemas; step-by-step edits; rollback.
+- APPLY: Implement code, keep diffs small & cohesive; instrument logs.
+- VERIFY: Run the Test Criteria commands and paste outputs + a date-stamped changelog at the bottom of the file.
+
+ROLE: Integrator + QA.
+
+GOAL
+- Insert storyboard and animatics into the run; extend acceptance tests for style and coverage.
+
+RULES
+- Do not break DRY_RUN or blog staging; animatics_only toggle should be honored.
+
+TASKS
+1) In `bin/run_pipeline.py`, insert: storyboard_plan → animatics_generate between script/fact_guard and assemble.
+2) In `bin/acceptance.py`, add checks:
+   - SceneScript validates; ≥90% scenes pass legibility (MAX_WORDS_PER_CARD, safe margins heuristic).
+   - Coverage ≥ 0.85; if animatics_only=true → assert no stock assets present.
+
+SUCCESS CRITERIA
+- `python bin/acceptance.py` PASS on demo; fails when rules violated.
+
+TEST CRITERIA
+python bin/run_pipeline.py --dry-run --from-step llm_script
+python bin/acceptance.py

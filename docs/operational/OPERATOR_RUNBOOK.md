@@ -149,13 +149,48 @@ python -c "from bin.core import get_publish_summary; print(get_publish_summary()
 python bin/run_pipeline.py --dry-run
 ```
 
+## Model Lifecycle Management
+
+**Deterministic Batch-by-Model Execution** - The pipeline runs heavy LLM stages in batches per model, then explicitly unloads that model before switching to the next. This prevents memory accumulation and ensures stable operation on limited hardware.
+
+**Default Batching Order:**
+1. **Batch A (Llama 3.2)**: `niche_trends` → `llm_cluster` → `llm_outline` → `llm_script`
+2. **Batch B (Mistral 7B)**: `research_collect` → `research_ground` → `fact_check`
+3. **Batch C (Optional Llama 3.2)**: `script_refinement` (only if different from cluster model)
+
+**Model Assignments:**
+- **Llama 3.2 (3B "latest")**: Cluster, outline, script generation
+- **Mistral 7B Instruct (Q4)**: Research planning, fact-checking, grounding
+
+**Environment Controls:**
+```bash
+# Set single-model operation (prevents parallel model loading)
+export OLLAMA_NUM_PARALLEL=1
+
+# Skip optional style rewrite batch
+python bin/run_pipeline.py --no-style-rewrite
+
+# Resume from specific step (respects batching)
+python bin/run_pipeline.py --from-step llm_cluster
+```
+
+**Verification Commands:**
+```bash
+# Dry run with model lifecycle logging
+python bin/run_pipeline.py --dry-run --from-step llm_cluster
+
+# Check active models (should be empty between batches)
+ollama ps
+
+# Verify model unloading in logs
+grep -n "ollama stop" logs/pipeline.log | tail -5
+```
+
+**Memory Management:**
+- Models are automatically unloaded after each batch via `ollama stop <model_name>`
+- HTTP sessions are closed to free connection resources
+- Memory remains stable when switching from Llama → Mistral → (optional) Llama
+- No swap spikes during model transitions
+
 ## Troubleshooting
-- Check `logs/pipeline.log` and `jobs/state.jsonl`.
-- Ensure GPU split low and swap on SSD.
-- If CPU temp > 75°C, pipeline defers heavy steps.
-- **Publishing Issues**: Use `get_publish_summary()` to check flag hierarchy and current settings.
-- **Missing API keys**: The comprehensive `.env.example` file documents all available environment variables. Copy to `.env` and configure your actual API keys. `make check` reports missing keys and suggests which features will be skipped.
-  - Asset providers: `PIXABAY_API_KEY`, `PEXELS_API_KEY`, `UNSPLASH_ACCESS_KEY` (optional)
-  - Data ingestion: `YOUTUBE_API_KEY`, Reddit API credentials
-  - Optional services: OpenAI API key for TTS/ASR fallbacks
-- **Note**: `.env` files are excluded from version control for security. Always use `.env.example` as your template.
+- Check `logs/pipeline.log`
