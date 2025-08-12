@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Atomic star shape -->
+  <g fill="#F6BE00">
+    <!-- Center star -->
+    <polygon points="100,40 110,60 130,60 115,75 120,95 100,85 80,95 85,75 70,60 90,60"/>
+    
+    <!-- Outer rays -->
+    <polygon points="100,20 105,35 115,35 110,50 115,65 100,55 85,65 90,50 85,35 95,35"/>
+    <polygon points="180,100 165,105 165,115 150,110 135,115 140,100 135,85 150,90 165,85 165,95"/>
+    <polygon points="100,180 95,165 85,165 90,150 85,135 100,140 115,135 110,150 115,165 105,165"/>
+    <polygon points="20,100 35,95 35,85 50,90 65,85 60,100 65,115 50,110 35,115 35,105"/>
+  </g>
+  
+  <!-- Inner detail -->
+  <circle cx="100" cy="100" r="8" fill="#FFFFFF"/>
+  <circle cx="100" cy="100" r="4" fill="#1A1A1A"/>
+  
+  <desc>Atomic star - midcentury atomic age geometric star with radiating rays</desc>
+</svg>

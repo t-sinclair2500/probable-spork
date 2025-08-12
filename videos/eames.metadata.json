@@ -1,0 +1,15 @@
+{
+  "duration": {
+    "target_ms": 90000,
+    "actual_ms": 90000,
+    "deviation_pct": 0.0,
+    "source": "brief"
+  },
+  "timing_settings": {},
+  "validation": {
+    "duration_pass": true,
+    "scene_bounds_pass": true,
+    "vo_aligned": false
+  },
+  "generated_at": "2025-08-12T15:20:04.681266Z"
+}

@@ -1,0 +1,124 @@
+{
+  "slug": "long_text_test",
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "scene_000",
+      "duration_ms": 3500,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_000_main",
+          "type": "text",
+          "content": "This is an extremely long text that contains many more words than...",
+          "x": 640.0,
+          "y": 360.0,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 3200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 3500,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_001",
+      "duration_ms": 3500,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_001_main",
+          "type": "text",
+          "content": "Short text here",
+          "x": 640.0,
+          "y": 360.0,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 3200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 3500,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "compliance_percent": 100.0,
+    "truncation_count": 0,
+    "total_scenes": 2,
+    "target_duration_sec": 7
+  }
+}

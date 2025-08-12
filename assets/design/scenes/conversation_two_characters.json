@@ -1,0 +1,94 @@
+{
+  "scene_id": "conversation_two_characters",
+  "name": "Conversation Two Characters Scene",
+  "description": "Scene with two characters in conversation layout",
+  "background": {
+    "type": "svg",
+    "asset": "backgrounds/geometric_pattern.svg",
+    "color": "#F8F1E5"
+  },
+  "safe_margin": 40,
+  "elements": [
+    {
+      "id": "character_1",
+      "type": "svg",
+      "asset": "characters/adult_male_neutral.svg",
+      "position": {"x": 400, "y": 400},
+      "scale": 2.0,
+      "animation": {
+        "type": "slide",
+        "direction": "left",
+        "duration": 1.0,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "character_2",
+      "type": "svg",
+      "asset": "characters/adult_female_neutral.svg",
+      "position": {"x": 1200, "y": 400},
+      "scale": 2.0,
+      "animation": {
+        "type": "slide",
+        "direction": "right",
+        "duration": 1.0,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "speech_bubble_1",
+      "type": "text",
+      "content": "Hello there!",
+      "position": {"x": 400, "y": 200},
+      "font_family": "Helvetica Neue, Arial, sans-serif",
+      "font_size": 24,
+      "color": "#1A1A1A",
+      "background_color": "#FFFFFF",
+      "padding": 20,
+      "border_radius": 15,
+      "animation": {
+        "type": "fade",
+        "duration": 1.2,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "speech_bubble_2",
+      "type": "text",
+      "content": "Hi! Nice to meet you.",
+      "position": {"x": 1200, "y": 200},
+      "font_family": "Helvetica Neue, Arial, sans-serif",
+      "font_size": 24,
+      "color": "#1A1A1A",
+      "background_color": "#FFFFFF",
+      "padding": 20,
+      "border_radius": 15,
+      "animation": {
+        "type": "fade",
+        "duration": 1.4,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "decorative_element",
+      "type": "svg",
+      "asset": "objects/coffee_mug.svg",
+      "position": {"x": 800, "y": 700},
+      "scale": 1.5,
+      "animation": {
+        "type": "scale",
+        "duration": 1.6,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    }
+  ],
+  "composition_rules": {
+    "max_colors": 3,
+    "background_color": "#F8F1E5",
+    "safe_margin": 40
+  },
+  "animation_principles": {
+    "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+    "duration_range": "1.0-1.6s"
+  }
+}

@@ -25,7 +25,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from bin.core import BASE, get_logger, load_config, log_state, single_lock
-from bin.llm_client import OllamaClient
+from bin.model_runner import model_session
 
 log = get_logger("research_collect")
 
@@ -36,7 +36,6 @@ class ResearchCollector:
         """Initialize research collector."""
         self.config = load_config()
         self.models_config = models_config or self._load_models_config()
-        self.llm_client = OllamaClient(self.models_config)
         self.research_config = self.models_config.get('research', {})
         
         # Database setup
@@ -276,11 +275,43 @@ class ResearchCollector:
         # Placeholder for source type handling
         log.info(f"Fetching from source type: {source_type}")
         return None
+    
+    def plan_research(self, topic: str) -> Dict:
+        """Generate research plan using the research model."""
+        try:
+            model_name = self.research_config.get('name', 'mistral:7b-instruct')
+            
+            with model_session(model_name) as session:
+                system_prompt = """You are a research planner. Generate a structured research plan for the given topic.
+                
+Return your response as JSON with the following structure:
+{
+  "queries": ["search query 1", "search query 2", ...],
+  "sources": ["source type 1", "source type 2", ...],
+  "focus_areas": ["area 1", "area 2", ...]
+}"""
+                
+                response = session.chat(
+                    system=system_prompt,
+                    user=f"Create a research plan for: {topic}"
+                )
+                
+                try:
+                    import json
+                    return json.loads(response)
+                except:
+                    log.warning("Failed to parse research plan as JSON")
+                    return {"queries": [topic], "sources": ["web"], "focus_areas": [topic]}
+                    
+        except Exception as e:
+            log.error(f"Research planning failed: {e}")
+            return {"queries": [topic], "sources": ["web"], "focus_areas": [topic]}
 
-def main():
+def main(brief=None, models_config=None):
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Collect research content for content creation")
     parser.add_argument("--brief", help="Path to brief file")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
     args = parser.parse_args()
     
@@ -289,7 +320,15 @@ def main():
     
     try:
         # Load brief
-        if args.brief:
+        brief = None
+        if args.brief_data:
+            try:
+                brief = json.loads(args.brief_data)
+                log.info(f"Loaded brief from --brief-data: {brief.get('title', 'Untitled')}")
+            except (json.JSONDecodeError, TypeError) as e:
+                log.error(f"Failed to parse brief data: {e}")
+                return 1
+        elif args.brief:
             brief_path = Path(args.brief)
             if brief_path.exists():
                 import yaml
@@ -326,4 +365,21 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description="Collect research content for content creation")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    parser.add_argument("--brief", help="Path to brief file")
+    parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
+    with single_lock():
+        main(brief, models_config=None)  # models_config not passed via CLI

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "intro",
+    "text": "Learn the secrets of successful entrepreneurs",
+    "type": "hook",
+    "duration_target": 4
+  },
+  {
+    "id": "secret1",
+    "text": "They focus on solving real customer problems",
+    "type": "point",
+    "duration_target": 5
+  },
+  {
+    "id": "secret2",
+    "text": "They build systems and processes for scalability",
+    "type": "point",
+    "duration_target": 5
+  },
+  {
+    "id": "secret3",
+    "text": "They never stop learning and adapting",
+    "type": "point",
+    "duration_target": 5
+  },
+  {
+    "id": "closing",
+    "text": "Apply these principles to your own journey",
+    "type": "cta",
+    "duration_target": 4
+  }
+]

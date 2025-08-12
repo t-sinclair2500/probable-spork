@@ -1,0 +1,92 @@
+{
+  "scene_id": "split_screen_text_image",
+  "name": "Split Screen Text and Image Scene",
+  "description": "Split screen layout with text on left and image on right",
+  "background": {
+    "type": "svg",
+    "asset": "backgrounds/solid_accent_cream.svg",
+    "color": "#F8F1E5"
+  },
+  "safe_margin": 40,
+  "elements": [
+    {
+      "id": "left_panel",
+      "type": "panel",
+      "position": {"x": 40, "y": 40},
+      "size": {"width": 880, "height": 1000},
+      "background_color": "#FFFFFF",
+      "border_radius": 20
+    },
+    {
+      "id": "right_panel",
+      "type": "panel",
+      "position": {"x": 1000, "y": 40},
+      "size": {"width": 880, "height": 1000},
+      "background_color": "#1C4FA1",
+      "border_radius": 20
+    },
+    {
+      "id": "title_text",
+      "type": "text",
+      "content": "Section Title",
+      "position": {"x": 80, "y": 100},
+      "font_family": "Futura, Helvetica Neue, sans-serif",
+      "font_size": 48,
+      "color": "#1A1A1A",
+      "animation": {
+        "type": "slide",
+        "direction": "left",
+        "duration": 1.0,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "body_text",
+      "type": "text",
+      "content": "Your body text content goes here. This can be multiple lines of text explaining the concept or idea.",
+      "position": {"x": 80, "y": 200},
+      "font_family": "Helvetica Neue, Arial, sans-serif",
+      "font_size": 24,
+      "color": "#1A1A1A",
+      "max_width": 800,
+      "animation": {
+        "type": "fade",
+        "duration": 1.2,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "featured_image",
+      "type": "svg",
+      "asset": "objects/eames_lounge_chair.svg",
+      "position": {"x": 1200, "y": 300},
+      "scale": 2.0,
+      "animation": {
+        "type": "scale",
+        "duration": 1.5,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "decorative_element",
+      "type": "svg",
+      "asset": "objects/matisse_coral.svg",
+      "position": {"x": 1300, "y": 700},
+      "scale": 1.2,
+      "animation": {
+        "type": "float",
+        "duration": 1.8,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    }
+  ],
+  "composition_rules": {
+    "max_colors": 3,
+    "background_color": "#F8F1E5",
+    "safe_margin": 40
+  },
+  "animation_principles": {
+    "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+    "duration_range": "1.0-1.8s"
+  }
+}

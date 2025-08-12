@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-VENV := .venv
+VENV := venv
 PY := $(VENV)/bin/python
 export PYTHONPATH := $(CURDIR)
 
@@ -45,6 +45,7 @@ docs:
 	@echo "🧪 TESTING & VALIDATION:"
 	@echo "  make test              - Run full test suite"
 	@echo "  make check             - Validate environment setup"
+	@echo "  make check-llm         - Check Ollama LLM integration"
 	@echo "  make quick-run         - Test pipeline with short durations"
 	@echo "  make fact-check FILE=  - Fact-check markdown content"
 	@echo "  make asset-quality     - Analyze asset quality and relevance"
@@ -130,6 +131,10 @@ test:
 	@echo "Running E2E test in reuse mode..."
 	TEST_ASSET_MODE=reuse $(PY) bin/test_e2e.py
 
+check-llm:
+	@echo "Checking Ollama LLM integration..."
+	$(PY) bin/check_llm_integration.py $(ARGS)
+
 test-live:
 	@echo "Running LIVE mode tests (requires API keys)..."
 	@echo "WARNING: This will make actual API calls and consume quota!"
@@ -140,6 +145,29 @@ test-all:
 	@echo "Running ALL tests (reuse + live modes)..."
 	$(MAKE) test
 	$(MAKE) test-live
+
+# Pipeline mode toggles
+animatics-only:
+	@echo "Setting pipeline to animatics-only mode..."
+	@yq -yi '.video.animatics_only = true | .video.enable_legacy_stock = false' conf/global.yaml
+	@echo "✅ Pipeline now in animatics-only mode (default)"
+
+legacy-on:
+	@echo "Enabling legacy stock asset pipeline..."
+	@yq -yi '.video.animatics_only = false | .video.enable_legacy_stock = true' conf/global.yaml
+	@echo "✅ Legacy stock asset pipeline enabled"
+
+procedural-pipeline:
+	@echo "Running procedural animatics pipeline..."
+	$(PY) bin/run_pipeline.py --dry-run --topic "2-minute history of Ray & Charles Eames"
+
+procedural-pipeline-live:
+	@echo "Running procedural animatics pipeline (live mode)..."
+	$(PY) bin/run_pipeline.py --topic "2-minute history of Ray & Charles Eames"
+
+pipeline-status:
+	@echo "Current pipeline configuration:"
+	@yq '.video' conf/global.yaml
 
 # -------- Raspberry Pi Helpers --------
 PI_HOST ?= onepi

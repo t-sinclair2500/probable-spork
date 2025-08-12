@@ -27,6 +27,7 @@ from bin.core import (
     guard_system, 
     load_config,
     load_env,
+    load_modules_cfg,
     log_state,
     single_lock
 )
@@ -425,7 +426,7 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
             "model": models_config.get("models", {}).get("research", {}).get("name", "mistral:7b-instruct") if models_config else "mistral:7b-instruct",
             "steps": [
                 ("research_collect", True),  # Mistral 7B
-                ("research_ground", True),   # Mistral 7B
+                ("research_ground", False),  # Mistral 7B (optional - requires script path, skip if no script)
                 ("fact_check", False),       # Mistral 7B (optional)
             ]
         }
@@ -479,6 +480,36 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
                 # This would call the script refinement logic
                 continue
                 
+            # Special handling for research_ground - pass script path
+            if step_name == "research_ground":
+                # Find the most recent script file
+                import glob
+                script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
+                if not script_files:
+                    log.info("No script files found, skipping research_ground")
+                    log_state(step_name, "SKIP", "no_script_files")
+                    continue
+                else:
+                    # Use the most recent script file, prioritizing Eames if available
+                    script_files.sort(reverse=True)
+                    # Try to find Eames script first
+                    eames_scripts = [s for s in script_files if 'eames' in s.lower()]
+                    if eames_scripts:
+                        latest_script = eames_scripts[0]
+                        log.info(f"Found Eames script: {latest_script}")
+                    else:
+                        latest_script = script_files[0]
+                        log.info(f"Using most recent script: {latest_script}")
+                    
+                    script_basename = os.path.basename(latest_script)
+                    # Pass the script path as an argument
+                    step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=[latest_script])
+                    if not step_success and required:
+                        batch_success = False
+                        log.error(f"Required step failed: {step_name}")
+                        break
+                    continue
+            
             step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
             if not step_success and required:
                 batch_success = False
@@ -495,10 +526,88 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
         # Explicit model unloading happens automatically when the model_session context exits
         # This ensures memory is freed before the next batch starts
     
-    # Phase 3: Asset fetching (no LLM required)
+    # Phase 3: Asset pipeline routing (animatics vs legacy)
     if success:
-        log.info("=== EXECUTING ASSET FETCHING ===")
-        success = run_step("fetch_assets", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+        # Check pipeline mode configuration
+        animatics_only = cfg.video.animatics_only
+        enable_legacy = cfg.video.enable_legacy_stock
+        
+        if animatics_only and not enable_legacy:
+            log.info("=== EXECUTING ANIMATICS-ONLY PIPELINE ===")
+            log.info("Pipeline mode: animatics_only=true, enable_legacy_stock=false")
+            
+            # Extract slug from the most recent script file
+            import glob
+            script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
+            if not script_files:
+                log.error("No script files found for storyboard planning")
+                success = False
+            else:
+                # Use the most recent script file
+                script_files.sort(reverse=True)
+                latest_script = script_files[0]
+                # Extract slug from filename (e.g., "2025-08-12_eames.txt" -> "eames")
+                script_basename = os.path.basename(latest_script)
+                slug = script_basename.split('_', 1)[1].replace('.txt', '')
+                log.info(f"Using script {latest_script} with slug: {slug}")
+                
+                # Generate storyboard from script
+                storyboard_success = run_step("storyboard_plan", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+                if not storyboard_success:
+                    log.error("Storyboard planning failed")
+                    success = False
+                else:
+                    # Generate animatics from storyboard
+                    animatics_success = run_step("animatics_generate", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+                    if not animatics_success:
+                        log.error("Animatics generation failed")
+                        success = False
+                    else:
+                        log.info("Animatics generation completed successfully")
+                    
+        else:
+            log.info("=== EXECUTING LEGACY STOCK ASSET PIPELINE ===")
+            log.info(f"Pipeline mode: animatics_only={animatics_only}, enable_legacy_stock={enable_legacy}")
+            
+            # Legacy path: fetch stock assets
+            success = run_step("fetch_assets", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+            
+            # Optional animatics generation if enabled
+            if success and getattr(cfg, 'animatics', None) and getattr(cfg.animatics, 'enabled', True):
+                log.info("=== EXECUTING ANIMATICS GENERATION (LEGACY MODE) ===")
+                
+                # Extract slug from the most recent script file
+                import glob
+                script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
+                if not script_files:
+                    log.error("No script files found for storyboard planning")
+                    success = False
+                else:
+                    # Use the most recent script file
+                    script_files.sort(reverse=True)
+                    latest_script = script_files[0]
+                    # Extract slug from filename (e.g., "2025-08-12_eames.txt" -> "eames")
+                    script_basename = os.path.basename(latest_script)
+                    slug = script_basename.split('_', 1)[1].replace('.txt', '')
+                    log.info(f"Using script {latest_script} with slug: {slug}")
+                    
+                    # Generate storyboard from script
+                    storyboard_success = run_step("storyboard_plan", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+                    if not storyboard_success:
+                        log.error("Storyboard planning failed")
+                        success = False
+                    else:
+                        # Generate animatics from storyboard
+                        animatics_success = run_step("animatics_generate", required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+                        if not animatics_success:
+                            log.error("Animatics generation failed")
+                            success = False
+                        else:
+                            log.info("Animatics generation completed successfully")
+    
+    # Log pipeline mode for state tracking
+    pipeline_mode = "animatics_only" if (cfg.video.animatics_only and not cfg.video.enable_legacy_stock) else "legacy_stock"
+    log_state("run_pipeline", "MODE", f"pipeline_mode={pipeline_mode}")
     
     log.info(f"=== SHARED INGESTION {'COMPLETED' if success else 'FAILED'} ===")
     return success
@@ -522,6 +631,7 @@ def main():
     
     # Load configuration and check system health
     cfg = load_config()
+    modules_cfg = load_modules_cfg()
     env = load_env()
     
     # Load models configuration

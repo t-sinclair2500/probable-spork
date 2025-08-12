@@ -94,6 +94,44 @@ def check_service_status():
     except Exception as e:
         services['whisper_cpp'] = {"status": "error", "error": str(e)}
     
+    # Check procedural pipeline components
+    try:
+        from bin.core import load_modules_cfg
+        modules_cfg = load_modules_cfg()
+        
+        if modules_cfg:
+            # Check procedural settings
+            procedural = modules_cfg.get("procedural", {})
+            if procedural:
+                services['procedural_pipeline'] = {
+                    "status": "ok",
+                    "seed": procedural.get("seed"),
+                    "max_colors": procedural.get("max_colors_per_scene"),
+                    "placement": procedural.get("placement", {}),
+                    "motion": procedural.get("motion", {})
+                }
+            else:
+                services['procedural_pipeline'] = {"status": "missing_config"}
+            
+            # Check render settings
+            render = modules_cfg.get("render", {})
+            if render:
+                services['render_pipeline'] = {
+                    "status": "ok",
+                    "resolution": render.get("resolution"),
+                    "fps": render.get("fps"),
+                    "codec": render.get("codec")
+                }
+            else:
+                services['render_pipeline'] = {"status": "missing_config"}
+        else:
+            services['procedural_pipeline'] = {"status": "missing_modules_yaml"}
+            services['render_pipeline'] = {"status": "missing_modules_yaml"}
+            
+    except Exception as e:
+        services['procedural_pipeline'] = {"status": "error", "error": str(e)}
+        services['render_pipeline'] = {"status": "error", "error": str(e)}
+    
     return services
 
 
@@ -276,6 +314,10 @@ def main():
             errors.append("Ollama service unavailable")
         if health_report["services"]["whisper_cpp"]["status"] not in ["ok", "missing"]:
             warnings.append("whisper.cpp error")
+        if health_report["services"]["procedural_pipeline"]["status"] not in ["ok", "missing"]:
+            warnings.append("Procedural pipeline error")
+        if health_report["services"]["render_pipeline"]["status"] not in ["ok", "missing"]:
+            warnings.append("Render pipeline error")
         
         # API key checks
         if not health_report["api_keys"]["asset_providers"]["any_available"]:

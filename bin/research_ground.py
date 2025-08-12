@@ -21,7 +21,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from bin.core import BASE, get_logger, load_config, log_state, single_lock
-from bin.llm_client import OllamaClient
+from bin.model_runner import model_session
 
 log = get_logger("research_ground")
 
@@ -32,7 +32,7 @@ class ResearchGrounder:
         """Initialize research grounder."""
         self.config = load_config()
         self.models_config = models_config or self._load_models_config()
-        self.llm_client = OllamaClient(self.models_config)
+        # Model runner will be used directly in methods
         self.research_config = self.models_config.get('research', {})
         
         # Database setup
@@ -91,8 +91,16 @@ class ResearchGrounder:
         # Generate grounded script
         grounded_script = self._generate_grounded_script(script_content, grounded_beats)
         
-        # Save results
-        output_dir = script_path.parent
+        # Save results to data directory with slug
+        script_basename = script_path.stem
+        # Extract slug from filename (e.g., "2025-08-12_eames.txt" -> "eames")
+        if '_' in script_basename:
+            slug = script_basename.split('_', 1)[1]
+        else:
+            slug = script_basename
+        
+        output_dir = Path("data") / slug
+        output_dir.mkdir(parents=True, exist_ok=True)
         self._save_grounded_results(output_dir, grounded_beats, list(all_references))
         
         return {
@@ -213,14 +221,17 @@ Original Content:
 Enhanced Content:"""
 
         try:
-            grounded_content = self.llm_client.chat(
-                'research',
-                system_prompt,
-                "Please enhance this content with research-backed information while maintaining the original style.",
-                temperature=0.3
-            )
+            # Use model runner for deterministic load/unload
+            model_name = self.research_config.get('name', 'mistral:7b-instruct')
             
-            return grounded_content.strip()
+            with model_session(model_name) as session:
+                grounded_content = session.chat(
+                    system=system_prompt,
+                    user="Please enhance this content with research-backed information while maintaining the original style.",
+                    temperature=0.3
+                )
+                
+                return grounded_content.strip()
             
         except Exception as e:
             log.error(f"Failed to ground content with research: {e}")
@@ -276,11 +287,12 @@ Enhanced Content:"""
         
         log.info(f"Saved grounded results to {output_dir}")
 
-def main():
+def main(brief=None, models_config=None):
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Ground script content with research")
     parser.add_argument("script", help="Path to script file")
     parser.add_argument("--brief", help="Path to brief file")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
     args = parser.parse_args()
     
@@ -294,7 +306,15 @@ def main():
             return 1
         
         # Load brief
-        if args.brief:
+        brief = None
+        if args.brief_data:
+            try:
+                brief = json.loads(args.brief_data)
+                log.info(f"Loaded brief from --brief-data: {brief.get('title', 'Untitled')}")
+            except (json.JSONDecodeError, TypeError) as e:
+                log.error(f"Failed to parse brief data: {e}")
+                return 1
+        elif args.brief:
             brief_path = Path(args.brief)
             if brief_path.exists():
                 import yaml
@@ -329,4 +349,22 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description="Ground script content with research")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    parser.add_argument("script", help="Path to script file")
+    parser.add_argument("--brief", help="Path to brief file")
+    parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    
+    args = parser.parse_args()
+    
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning(f"Failed to parse brief data: {e}")
+    
+    with single_lock():
+        main(brief, models_config=None)  # models_config not passed via CLI

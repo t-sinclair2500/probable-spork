@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Kite-shaped clock body -->
+  <polygon points="100,40 140,80 100,120 60,80" fill="#F28C28"/>
+  <polygon points="100,45 135,80 100,115 65,80" fill="#FFFFFF"/>
+  
+  <!-- Clock face -->
+  <circle cx="100" cy="80" r="25" fill="#F8F1E5"/>
+  <circle cx="100" cy="80" r="20" fill="#FFFFFF"/>
+  
+  <!-- Clock hands -->
+  <line x1="100" y1="80" x2="100" y2="65" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="100" y1="80" x2="110" y2="80" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="100" cy="80" r="2" fill="#1A1A1A"/>
+  
+  <!-- Kite tail -->
+  <polygon points="100,120 95,140 105,140" fill="#1C4FA1"/>
+  
+  <!-- Hanging string -->
+  <line x1="100" y1="40" x2="100" y2="20" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+  
+  <desc>Nelson kite clock - iconic midcentury modern clock with kite-shaped design</desc>
+</svg>

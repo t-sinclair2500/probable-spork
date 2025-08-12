@@ -196,7 +196,7 @@ def fetch_reddit(env: dict, cfg) -> int:
         return 0
 
 
-def main(brief=None):
+def main(brief=None, models_config=None):
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
@@ -285,4 +285,4 @@ if __name__ == "__main__":
             log.warning(f"Failed to parse brief data: {e}")
     
     with single_lock():
-        main(brief)
+        main(brief, models_config=None)  # models_config not passed via CLI

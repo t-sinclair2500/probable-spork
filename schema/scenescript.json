@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SceneScript Schema",
+  "description": "Schema for validating SceneScript files in the Branded Animatics Pipeline",
+  "type": "object",
+  "required": ["slug", "fps", "scenes"],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "description": "Content slug identifier",
+      "minLength": 1
+    },
+    "fps": {
+      "type": "integer",
+      "description": "Target frame rate",
+      "minimum": 1,
+      "maximum": 120
+    },
+    "scenes": {
+      "type": "array",
+      "description": "Scene sequence",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/scene"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "additionalProperties": true
+    }
+  },
+  "definitions": {
+    "scene": {
+      "type": "object",
+      "required": ["id", "duration_ms", "elements"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique scene identifier",
+          "minLength": 1
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "Scene duration in milliseconds",
+          "minimum": 1
+        },
+        "bg": {
+          "type": ["string", "null"],
+          "description": "Background identifier"
+        },
+        "audio_cue": {
+          "type": ["string", "null"],
+          "description": "Audio cue identifier"
+        },
+        "elements": {
+          "type": "array",
+          "description": "Scene elements",
+          "items": {
+            "$ref": "#/definitions/element"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "element": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique element identifier",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "description": "Element type",
+          "enum": ["text", "prop", "character", "list_step", "shape", "lower_third", "counter"]
+        },
+        "content": {
+          "type": ["string", "null"],
+          "description": "Text or content"
+        },
+        "x": {
+          "type": ["number", "null"],
+          "description": "X position"
+        },
+        "y": {
+          "type": ["number", "null"],
+          "description": "Y position"
+        },
+        "width": {
+          "type": ["number", "null"],
+          "description": "Width",
+          "minimum": 0
+        },
+        "height": {
+          "type": ["number", "null"],
+          "description": "Height",
+          "minimum": 0
+        },
+        "keyframes": {
+          "type": "array",
+          "description": "Animation keyframes",
+          "items": {
+            "$ref": "#/definitions/keyframe"
+          }
+        },
+        "style": {
+          "type": ["object", "null"],
+          "description": "Element-specific style",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "keyframe": {
+      "type": "object",
+      "required": ["t"],
+      "properties": {
+        "t": {
+          "type": "integer",
+          "description": "Time in milliseconds",
+          "minimum": 0
+        },
+        "x": {
+          "type": ["number", "null"],
+          "description": "X position"
+        },
+        "y": {
+          "type": ["number", "null"],
+          "description": "Y position"
+        },
+        "scale": {
+          "type": ["number", "null"],
+          "description": "Scale factor",
+          "minimum": 0
+        },
+        "rotate": {
+          "type": ["number", "null"],
+          "description": "Rotation in degrees"
+        },
+        "opacity": {
+          "type": ["number", "null"],
+          "description": "Opacity value",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leaf shape -->
+  <path d="M100,40 Q150,60 160,100 Q150,140 100,160 Q50,140 40,100 Q50,60 100,40 Z" fill="#4E9F3D"/>
+  
+  <!-- Leaf vein -->
+  <path d="M100,40 Q100,80 100,120 Q100,160" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Leaf details -->
+  <path d="M80,80 Q100,70 120,80" stroke="#1A1A1A" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M80,100 Q100,90 120,100" stroke="#1A1A1A" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M80,120 Q100,110 120,120" stroke="#1A1A1A" stroke-width="1" fill="none" stroke-linecap="round"/>
+  
+  <desc>Matisse-inspired leaf cutout - organic, flowing leaf shape with detailed veins</desc>
+</svg>

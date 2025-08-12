@@ -1,0 +1,44 @@
+[
+  {
+    "id": "hook",
+    "text": "Transform your business with these 5 proven strategies",
+    "type": "hook",
+    "duration_target": 3
+  },
+  {
+    "id": "point1",
+    "text": "Start with customer research and feedback analysis",
+    "type": "point",
+    "duration_target": 4
+  },
+  {
+    "id": "point2",
+    "text": "Optimize your online presence and branding",
+    "type": "point",
+    "duration_target": 4
+  },
+  {
+    "id": "point3",
+    "text": "Implement data-driven decision making processes",
+    "type": "point",
+    "duration_target": 4
+  },
+  {
+    "id": "point4",
+    "text": "Build strong team communication and collaboration",
+    "type": "point",
+    "duration_target": 4
+  },
+  {
+    "id": "point5",
+    "text": "Measure results and continuously improve",
+    "type": "point",
+    "duration_target": 4
+  },
+  {
+    "id": "cta",
+    "text": "Ready to get started? Download our free guide now",
+    "type": "cta",
+    "duration_target": 3
+  }
+]

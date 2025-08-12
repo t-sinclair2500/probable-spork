@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Head -->
+  <circle cx="100" cy="80" r="25" fill="#F8F1E5"/>
+  
+  <!-- Body -->
+  <path d="M75,105 Q75,125 75,145 Q100,165 125,145 Q125,125 125,105 Z" fill="#FF6F91"/>
+  
+  <!-- Arms -->
+  <rect x="60" y="110" width="20" height="40" rx="10" fill="#FF6F91"/>
+  <rect x="120" y="110" width="20" height="40" rx="10" fill="#FF6F91"/>
+  
+  <!-- Legs -->
+  <rect x="80" y="165" width="15" height="30" rx="7" fill="#8B5E3C"/>
+  <rect x="105" y="165" width="15" height="30" rx="7" fill="#8B5E3C"/>
+  
+  <!-- Face details -->
+  <circle cx="92" cy="75" r="3" fill="#1A1A1A"/>
+  <circle cx="108" cy="75" r="3" fill="#1A1A1A"/>
+  <path d="M95,85 Q100,90 105,85" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Hair -->
+  <path d="M75,60 Q100,45 125,60 Q100,75 75,60" fill="#8B5E3C"/>
+  
+  <!-- Dress details -->
+  <line x1="85" y1="125" x2="115" y2="125" stroke="#1A1A1A" stroke-width="1" opacity="0.3"/>
+  <line x1="85" y1="135" x2="115" y2="135" stroke="#1A1A1A" stroke-width="1" opacity="0.3"/>
+  
+  <desc>Adult female character - neutral pose, standing figure with midcentury style dress</desc>
+</svg>

@@ -1,0 +1,143 @@
+{
+  "timestamp": "2025-08-12T15:20:04.135124Z",
+  "pipeline": "acceptance_harness",
+  "overall_status": "FAIL",
+  "lanes": {
+    "youtube": {
+      "status": "FAIL",
+      "artifacts": {
+        "outline": "2025-08-12_eames.outline.json",
+        "script": "2025-08-12_eames.txt",
+        "scenescript": "eames.json",
+        "animatics": [
+          "scene_000.mp4",
+          "scene_001.mp4",
+          "scene_002.mp4",
+          "scene_003.mp4",
+          "scene_004.mp4"
+        ],
+        "assets": [
+          "scene_000.mp4",
+          "scene_001.mp4",
+          "scene_002.mp4",
+          "scene_003.mp4",
+          "scene_004.mp4"
+        ],
+        "voiceover": "2025-08-12_eames.mp3",
+        "captions": null,
+        "video": "eames.mp4",
+        "video_metadata": "eames.metadata.json",
+        "thumbnail": null
+      },
+      "quality": {
+        "warning": "Missing captions SRT",
+        "animatics": {
+          "validation_pass": true,
+          "validation_errors": [],
+          "legibility_pass": false,
+          "legibility_issues": [
+            "Legibility check error: unsupported operand type(s) for +: 'int' and 'NoneType'"
+          ],
+          "scene_coverage": 1.0,
+          "coverage_pass": true,
+          "qa_gates_pass": false,
+          "qa_gates_fails": [
+            "No background color specified for contrast checking"
+          ],
+          "qa_gates_warnings": [],
+          "qa_gates_details": {
+            "contrast": {
+              "contrast_checks": []
+            },
+            "collisions": {
+              "collisions": [],
+              "distances": []
+            },
+            "palette": {
+              "palette_analysis": {
+                "total_colors": 0,
+                "unique_colors": 0,
+                "max_allowed": 3,
+                "colors_used": [],
+                "invalid_colors": []
+              }
+            },
+            "rhythm": {
+              "rhythm_analysis": {
+                "total_scenes": 5,
+                "total_duration_sec": 90.0,
+                "average_duration_sec": 18.0,
+                "min_duration_sec": 15.0,
+                "max_duration_sec": 20.0,
+                "transitions_count": 5,
+                "transition_density_per_sec": 0.056,
+                "max_transition_rate": 0.16666666666666666,
+                "timing_config": {
+                  "min_scene_sec": 2.5,
+                  "max_scene_sec": 30.0,
+                  "avg_warning_threshold": 18.0,
+                  "max_warning_threshold": 24.0
+                }
+              }
+            }
+          },
+          "duration_pass": true,
+          "duration_details": {
+            "total_duration_ms": 90000,
+            "target_duration_ms": 90000,
+            "deviation_pct": 0.0,
+            "tolerance_pct": 5,
+            "within_tolerance": true,
+            "scene_bounds_pass": true,
+            "min_scene_ms": 2500,
+            "max_scene_ms": 30000,
+            "vo_aligned": false,
+            "vo_details": {}
+          },
+          "duration_issues": [],
+          "metadata_path": "/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.metadata.json",
+          "layout_pass": true,
+          "layout_issues": [],
+          "layout_details": {
+            "total_elements": 5,
+            "positioned_elements": 5,
+            "scenes_without_positions": 0,
+            "scenes_with_positions": 5,
+            "animatics_only": true
+          },
+          "overall_pass": false
+        },
+        "error": "QA gates failed: No background color specified for contrast checking"
+      }
+    },
+    "blog": {
+      "status": "FAIL",
+      "artifacts": {
+        "post_html": null,
+        "post_meta": null,
+        "schema": null,
+        "credits": null,
+        "wp_payload": null,
+        "assets": []
+      },
+      "quality": {
+        "error": "Missing post.html"
+      }
+    }
+  },
+  "quality_thresholds": {
+    "script_score_min": 50,
+    "seo_lint_pass": true,
+    "visual_coverage_min": 85,
+    "min_assets": 10,
+    "min_script_words": 350
+  },
+  "summary": {
+    "youtube_lane": "FAIL",
+    "blog_lane": "FAIL",
+    "total_artifacts": {
+      "youtube": 8,
+      "blog": 0
+    }
+  }
+}

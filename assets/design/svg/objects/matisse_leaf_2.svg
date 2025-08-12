@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leaf shape -->
+  <path d="M60,100 Q100,40 140,100 Q100,160 60,100 Z" fill="#008080"/>
+  
+  <!-- Leaf vein -->
+  <path d="M60,100 Q100,80 140,100" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Leaf details -->
+  <path d="M80,80 Q100,70 120,80" stroke="#1A1A1A" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M80,100 Q100,90 120,100" stroke="#1A1A1A" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M80,120 Q100,110 120,120" stroke="#1A1A1A" stroke-width="1" fill="none" stroke-linecap="round"/>
+  
+  <desc>Matisse-inspired leaf cutout variation - teal leaf with horizontal orientation</desc>
+</svg>

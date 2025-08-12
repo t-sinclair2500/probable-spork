@@ -1,0 +1,120 @@
+{
+  "slug": "demo",
+  "generated_at": null,
+  "total_duration_ms": 26000,
+  "scene_cues": {
+    "scene_000": {
+      "scene_start_ms": 0,
+      "scene_end_ms": 3000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 3000,
+          "text": "Transform your business with these 5 proven strategies",
+          "absolute_start": 0,
+          "absolute_end": 3000
+        }
+      ]
+    },
+    "scene_001": {
+      "scene_start_ms": 3000,
+      "scene_end_ms": 6000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 3000,
+          "text": "Start with customer research and feedback analysis",
+          "absolute_start": 3000,
+          "absolute_end": 7000
+        }
+      ]
+    },
+    "scene_002": {
+      "scene_start_ms": 6000,
+      "scene_end_ms": 9000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 1000,
+          "text": "Start with customer research and feedback analysis",
+          "absolute_start": 3000,
+          "absolute_end": 7000
+        },
+        {
+          "start_ms": 1000,
+          "end_ms": 3000,
+          "text": "Optimize your online presence and branding",
+          "absolute_start": 7000,
+          "absolute_end": 11000
+        }
+      ]
+    },
+    "scene_003": {
+      "scene_start_ms": 9000,
+      "scene_end_ms": 12000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "text": "Optimize your online presence and branding",
+          "absolute_start": 7000,
+          "absolute_end": 11000
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 3000,
+          "text": "Implement data-driven decision making processes",
+          "absolute_start": 11000,
+          "absolute_end": 15000
+        }
+      ]
+    },
+    "scene_004": {
+      "scene_start_ms": 12000,
+      "scene_end_ms": 15000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 3000,
+          "text": "Implement data-driven decision making processes",
+          "absolute_start": 11000,
+          "absolute_end": 15000
+        }
+      ]
+    },
+    "scene_005": {
+      "scene_start_ms": 15000,
+      "scene_end_ms": 18000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 3000,
+          "text": "Build strong team communication and collaboration",
+          "absolute_start": 15000,
+          "absolute_end": 19000
+        }
+      ]
+    },
+    "scene_006": {
+      "scene_start_ms": 18000,
+      "scene_end_ms": 21000,
+      "cues": [
+        {
+          "start_ms": 0,
+          "end_ms": 1000,
+          "text": "Build strong team communication and collaboration",
+          "absolute_start": 15000,
+          "absolute_end": 19000
+        },
+        {
+          "start_ms": 1000,
+          "end_ms": 3000,
+          "text": "Measure results and continuously improve",
+          "absolute_start": 19000,
+          "absolute_end": 23000
+        }
+      ]
+    }
+  },
+  "warnings": []
+}

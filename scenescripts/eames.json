@@ -1,0 +1,295 @@
+{
+  "slug": "eames",
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "scene_000",
+      "duration_ms": 15000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_000_main",
+          "type": "text",
+          "content": "Welcome to our 90-second history of Ray and Charles Eames, two design...",
+          "x": 306,
+          "y": 180,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 14700,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 15000,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_001",
+      "duration_ms": 20000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_001_main",
+          "type": "text",
+          "content": "Tip #1: Think outside the box \u2013 or in this case, the...",
+          "x": 306,
+          "y": 180,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 19700,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 20000,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_002",
+      "duration_ms": 20000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_002_main",
+          "type": "text",
+          "content": "Tip #2: Collaborate with others to create something truly special. Charles and...",
+          "x": 306,
+          "y": 180,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 19700,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 20000,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_003",
+      "duration_ms": 20000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_003_main",
+          "type": "text",
+          "content": "Tip #3: The power of sketching and experimentation is still unparalleled today.",
+          "x": 306,
+          "y": 180,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 19700,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 20000,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_004",
+      "duration_ms": 15000,
+      "bg": "gradient1",
+      "audio_cue": null,
+      "elements": [
+        {
+          "id": "scene_004_main",
+          "type": "text",
+          "content": "So what can we learn from the Eameses? Here are five quick...",
+          "x": 306,
+          "y": 180,
+          "width": null,
+          "height": null,
+          "keyframes": [
+            {
+              "t": 0,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            },
+            {
+              "t": 200,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 14700,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 1.0
+            },
+            {
+              "t": 15000,
+              "x": null,
+              "y": null,
+              "scale": null,
+              "rotate": null,
+              "opacity": 0.0
+            }
+          ],
+          "style": {
+            "font_size": "body",
+            "text_align": "center",
+            "max_width": 1152
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "total_scenes": 5,
+    "total_duration_ms": 90000,
+    "target_duration_ms": 90000,
+    "deviation_pct": 0.0,
+    "timing_compliant": 1,
+    "timing_tolerance_pct": 5,
+    "truncation_count": 0
+  }
+}

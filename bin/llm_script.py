@@ -10,20 +10,40 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from bin.core import BASE, load_config, log_state, single_lock
+from bin.core import BASE, load_config, log_state, single_lock, get_logger
 
 
-def call_ollama(prompt, cfg):
-    url = cfg.llm.endpoint
-    model = cfg.llm.model
-    payload = {"model": model, "prompt": prompt, "stream": False}
-    r = requests.post(url, json=payload, timeout=1800)
-    r.raise_for_status()
-    return r.json().get("response", "")
+def call_ollama(prompt, cfg, models_config=None):
+    """Call Ollama with specified model configuration."""
+    try:
+        # Use new model_runner system
+        from bin.model_runner import model_session
+        
+        # Get model name from config
+        if models_config and 'scriptwriter' in models_config.get('models', {}):
+            model_name = models_config['models']['scriptwriter']['name']
+        else:
+            # Fallback to global config
+            model_name = cfg.llm.model
+        
+        # Use model session for deterministic load/unload
+        with model_session(model_name) as session:
+            system_prompt = "You are a helpful assistant for writing video scripts."
+            return session.chat(system=system_prompt, user=prompt)
+            
+    except Exception as e:
+        # Fallback to legacy system
+        url = cfg.llm.endpoint
+        model = cfg.llm.model
+        payload = {"model": model, "prompt": prompt, "stream": False}
+        r = requests.post(url, json=payload, timeout=1800)
+        r.raise_for_status()
+        return r.json().get("response", "")
 
 
-def main(brief=None):
+def main(brief=None, models_config=None):
     cfg = load_config()
+    log = get_logger("llm_script")
     os.makedirs(os.path.join(BASE, "scripts"), exist_ok=True)
     
     # Log brief context if available
@@ -35,12 +55,41 @@ def main(brief=None):
         log_state("llm_script", "START", "brief=none")
         print("Running without brief - using default behavior")
     
-    # Pick the newest outline
+    # Pick the outline that matches the brief, or newest if no match
     outlines = [p for p in os.listdir(os.path.join(BASE, "scripts")) if p.endswith(".outline.json")]
     if not outlines:
         log_state("llm_script", "SKIP", "no outlines")
         print("No outlines")
         return
+    
+    # If we have a brief, try to find a matching outline
+    if brief and brief.get('title'):
+        brief_title = brief['title'].lower()
+        # Try multiple matching strategies
+        matching_outlines = []
+        
+        # Strategy 1: Exact match with underscores
+        exact_match = brief_title.replace(' ', '_').replace('&', 'and')
+        matching_outlines = [p for p in outlines if exact_match in p.lower()]
+        
+        # Strategy 2: Partial match with key terms
+        if not matching_outlines:
+            key_terms = ['eames', 'ray', 'charles']
+            matching_outlines = [p for p in outlines if any(term in p.lower() for term in key_terms)]
+        
+        # Strategy 3: Date-based match (most recent)
+        if not matching_outlines:
+            # Find outlines from today
+            import datetime
+            today = datetime.datetime.now().strftime("%Y-%m-%d")
+            matching_outlines = [p for p in outlines if today in p]
+        
+        if matching_outlines:
+            log.info(f"Found {len(matching_outlines)} matching outlines for brief: {brief_title}")
+            outlines = matching_outlines
+        else:
+            log.warning(f"No matching outlines found for brief: {brief_title}, using newest")
+    
     outlines.sort(reverse=True)
     opath = os.path.join(BASE, "scripts", outlines[0])
     data = json.load(open(opath, "r", encoding="utf-8"))
@@ -79,7 +128,7 @@ def main(brief=None):
         prompt = brief_context + prompt
     
     try:
-        text = call_ollama(prompt, cfg)
+        text = call_ollama(prompt, cfg, models_config)
     except Exception:
         # Fallback: synthesize a simple script from outline beats
         lines = []
@@ -104,7 +153,7 @@ def main(brief=None):
             # Generate a replacement script without excluded terms
             replacement_prompt = prompt + f"\n\nIMPORTANT: Do not use these terms: {', '.join(brief['keywords_exclude'])}"
             try:
-                text = call_ollama(replacement_prompt, cfg)
+                text = call_ollama(replacement_prompt, cfg, models_config)
             except Exception:
                 log_state("llm_script", "FALLBACK", "Using fallback script after keyword rejection")
                 # Keep the original fallback text

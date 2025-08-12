@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Head -->
+  <circle cx="100" cy="80" r="25" fill="#F8F1E5"/>
+  
+  <!-- Body -->
+  <rect x="75" y="105" width="50" height="60" rx="25" fill="#1C4FA1"/>
+  
+  <!-- Arms -->
+  <rect x="60" y="110" width="20" height="40" rx="10" fill="#1C4FA1"/>
+  <rect x="120" y="110" width="20" height="40" rx="10" fill="#1C4FA1"/>
+  
+  <!-- Legs -->
+  <rect x="80" y="165" width="15" height="30" rx="7" fill="#8B5E3C"/>
+  <rect x="105" y="165" width="15" height="30" rx="7" fill="#8B5E3C"/>
+  
+  <!-- Face details -->
+  <circle cx="92" cy="75" r="3" fill="#1A1A1A"/>
+  <circle cx="108" cy="75" r="3" fill="#1A1A1A"/>
+  <path d="M95,85 Q100,90 105,85" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Hair -->
+  <path d="M75,60 Q100,50 125,60 Q100,70 75,60" fill="#8B5E3C"/>
+  
+  <desc>Adult male character - neutral pose, standing figure with midcentury style</desc>
+</svg>

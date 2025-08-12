@@ -31,3 +31,37 @@ SUCCESS CRITERIA
 TEST CRITERIA
 python bin/voice_cues.py --slug demo
 python bin/animatics_generate.py --slug demo
+
+## CHANGELOG - Prompt07 Implementation
+
+**Date: 2025-08-12 07:09 UTC**
+**Agent: Agent 4** 
+**Task: VO Cues & Alignment (Optional)**
+
+### ✅ COMPLETED
+- **Created `bin/voice_cues.py`** - Full SRT parser implementation with timing extraction
+- **SRT timestamp parsing** - Handles HH:MM:SS,mmm format with millisecond precision
+- **Scene-cue mapping** - Maps voiceover cues to scenes with ±300ms tolerance
+- **Audio cue integration** - `animatics_generate.py` now respects `scene.audio_cue` timing
+- **Timing adjustments** - Scenes can be adjusted by up to 1 second to align with audio cues
+- **Idempotent execution** - Re-running skips if outputs already exist
+- **Lock-aware execution** - Uses `single_lock()` context manager
+- **System guards** - Calls `guard_system(cfg)` before heavy operations
+- **State logging** - Comprehensive logging to `jobs/state.jsonl`
+- **Demo content testing** - Successfully tested with demo SceneScript and SRT
+
+### 🔧 TECHNICAL DETAILS
+- **SRT parsing**: Regex-based extraction of timing and text from caption files
+- **Tolerance handling**: ±300ms tolerance per scene as specified in requirements
+- **Duration adjustment**: Scenes can be stretched/compressed within reasonable bounds
+- **Output format**: `data/<slug>/vo_cues.json` with scene timing and cue mapping
+- **Integration**: Seamlessly integrates with existing `animatics_generate.py` pipeline
+
+### 📊 TEST RESULTS
+```
+✓ Voiceover cues generated: /Users/tylersinclair/Documents/GitHub/probable-spork/data/demo/vo_cues.json
+✓ Loaded voiceover cues for 7 scenes
+✓ Rendered 7/7 scenes for demo
+```
+
+**Status**: ✅ **COMPLETE** — All requirements implemented and tested successfully

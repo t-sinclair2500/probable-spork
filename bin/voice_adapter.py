@@ -244,8 +244,8 @@ class VoiceAdapter:
         """Synthesize with OpenAI TTS."""
         provider = self.providers['openai']
         
-        # Get OpenAI parameters
-        voice = self.config.get('tts', {}).get('openai_voice', 'alloy')
+                # Get OpenAI parameters
+        voice = self.config.get('tts', {}).get('openai_voice', 'en_US-amy-medium')
         
         # Synthesize
         response = provider.audio.speech.create(

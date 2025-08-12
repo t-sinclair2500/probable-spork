@@ -9,6 +9,7 @@
 # To create venv with correct version: python3.11 -m venv venv
 # =============================================================================
 
+# Core dependencies
 google-api-python-client==2.137.0
 google-auth-oauthlib==1.2.1
 praw==7.7.1
@@ -18,21 +19,37 @@ beautifulsoup4==4.12.3
 pydantic==2.8.2
 pydantic-core==2.20.1
 python-dotenv==1.0.1
+jsonschema==4.24.0
+
+# Image and video processing
 # Pillow 10+ removed ANTIALIAS; MoviePy 1.0.3 expects it. Use 9.5.0 for compatibility.
 pillow==9.5.0
 moviepy==1.0.3
+# SVG rasterization - cairosvg preferred, Pillow fallback
+cairosvg==2.7.1
+
+# TTS and audio processing
 # Optional TTS (Coqui). Install on Pi if using real TTS; otherwise placeholder is used.
 # Only install on Python < 3.12 where wheels are available; Pi runs 3.9–3.11 typically.
 TTS==0.22.0; python_version < "3.12"
 numpy==1.26.4; python_version < "3.12"
 scipy==1.13.1; python_version < "3.12"
 pydub==0.25.1
+
+# Web and API
 rich==13.7.1
 pyyaml==6.0.2
 markdown==3.6
 bleach==6.1.0
 flask==3.0.3
 flask-socketio==5.3.6
+
+# Utilities
 rapidfuzz==3.9.7
 psutil==6.0.0
+
+# Testing
 pytest==8.3.2
+
+# Optional OpenAI integration (only if explicitly enabled)
+openai==1.54.0; python_version < "3.12"

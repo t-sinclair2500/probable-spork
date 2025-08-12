@@ -35,25 +35,33 @@ except Exception:
 
 def call_ollama(prompt, cfg, models_config=None):
     """Call Ollama with specified model configuration."""
-    if models_config and 'cluster' in models_config.get('models', {}):
-        # Use new multi-model system
-        try:
-            from bin.llm_client import OllamaClient
-            client = OllamaClient(models_config)
-            return client.chat('cluster', 
-                              "You are a helpful assistant for clustering topics.", 
-                              prompt)
-        except Exception as e:
-            log.warning(f"Multi-model system failed, falling back to legacy: {e}")
-    
-    # Fallback to legacy system
-    url = cfg["llm"]["endpoint"]
-    model = cfg["llm"]["model"]
-    payload = {"model": model, "prompt": prompt, "stream": False}
-    r = requests.post(url, json=payload, timeout=600)
-    r.raise_for_status()
-    # Ollama returns {"response": "..."} with the text
-    return r.json().get("response", "")
+    try:
+        # Use new model_runner system
+        from bin.model_runner import model_session
+        
+        # Get model name from config
+        if models_config and 'cluster' in models_config.get('models', {}):
+            model_name = models_config['models']['cluster']['name']
+        else:
+            # Fallback to global config
+            model_name = cfg["llm"]["model"]
+        
+        # Use model session for deterministic load/unload
+        with model_session(model_name) as session:
+            system_prompt = "You are a helpful assistant for clustering topics."
+            return session.chat(system=system_prompt, user=prompt)
+            
+    except Exception as e:
+        log.warning(f"Model runner failed, falling back to legacy: {e}")
+        
+        # Fallback to legacy system
+        url = cfg["llm"]["endpoint"]
+        model = cfg["llm"]["model"]
+        payload = {"model": model, "prompt": prompt, "stream": False}
+        r = requests.post(url, json=payload, timeout=600)
+        r.raise_for_status()
+        # Ollama returns {"response": "..."} with the text
+        return r.json().get("response", "")
 
 
 def main(brief=None, models_config=None):

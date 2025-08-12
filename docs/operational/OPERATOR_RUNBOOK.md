@@ -93,6 +93,38 @@ cp conf/blog.example.yaml conf/blog.yaml
 # Edit conf/blog.yaml with your WordPress URL and credentials
 ```
 
+## Pipeline Mode Management
+
+The pipeline now supports two modes: **animatics-only** (default) and **legacy stock assets**.
+
+### Check Current Mode
+```bash
+make pipeline-status
+```
+
+### Switch Between Modes
+```bash
+# Switch to animatics-only mode (default)
+make animatics-only
+
+# Enable legacy stock asset pipeline
+make legacy-on
+```
+
+### Mode Differences
+
+**Animatics-Only Mode** (Default):
+- Generates SceneScript from script
+- Creates MP4 scenes from SceneScript  
+- Uses animatics as primary video source
+- No stock asset downloads
+- Enforces coverage thresholds
+
+**Legacy Mode**:
+- Downloads stock assets from Pixabay/Pexels
+- Uses traditional asset ranking and assembly
+- Optional animatics generation
+
 ## Manual one-shot
 ```bash
 source .venv/bin/activate

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Boomerang shape -->
+  <path d="M40,100 Q100,40 160,100 Q100,160 40,100 Z" fill="#1C4FA1"/>
+  
+  <!-- Inner cutout -->
+  <path d="M60,100 Q100,60 140,100 Q100,140 60,100 Z" fill="#FFFFFF"/>
+  
+  <!-- Outer edge detail -->
+  <path d="M40,100 Q100,40 160,100" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M160,100 Q100,160 40,100" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Center accent -->
+  <circle cx="100" cy="100" r="6" fill="#D62828"/>
+  
+  <desc>Boomerang shape - midcentury geometric boomerang form with inner cutout</desc>
+</svg>

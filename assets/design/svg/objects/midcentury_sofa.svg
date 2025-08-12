@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sofa base -->
+  <rect x="20" y="140" width="160" height="30" rx="15" fill="#8B5E3C"/>
+  
+  <!-- Sofa back -->
+  <rect x="30" y="60" width="140" height="30" rx="15" fill="#1C4FA1"/>
+  
+  <!-- Sofa seat -->
+  <rect x="25" y="110" width="150" height="35" rx="17" fill="#F8F1E5"/>
+  
+  <!-- Sofa arms -->
+  <rect x="20" y="80" width="20" height="70" rx="10" fill="#1C4FA1"/>
+  <rect x="160" y="80" width="20" height="70" rx="10" fill="#1C4FA1"/>
+  
+  <!-- Cushion lines -->
+  <line x1="40" y1="125" x2="160" y2="125" stroke="#8B5E3C" stroke-width="2"/>
+  <line x1="40" y1="135" x2="160" y2="135" stroke="#8B5E3C" stroke-width="2"/>
+  
+  <desc>Midcentury sofa silhouette - classic midcentury modern sofa design</desc>
+</svg>

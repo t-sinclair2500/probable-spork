@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clock face -->
+  <circle cx="100" cy="100" r="70" fill="#F8F1E5"/>
+  <circle cx="100" cy="100" r="65" fill="#FFFFFF"/>
+  
+  <!-- Ball numbers -->
+  <circle cx="100" cy="35" r="8" fill="#1C4FA1"/>
+  <circle cx="165" cy="100" r="8" fill="#D62828"/>
+  <circle cx="100" cy="165" r="8" fill="#F6BE00"/>
+  <circle cx="35" cy="100" r="8" fill="#4E9F3D"/>
+  
+  <!-- Diagonal ball numbers -->
+  <circle cx="140" cy="60" r="8" fill="#008080"/>
+  <circle cx="140" cy="140" r="8" fill="#FF6F91"/>
+  <circle cx="60" cy="140" r="8" fill="#F28C28"/>
+  <circle cx="60" cy="60" r="8" fill="#8B5E3C"/>
+  
+  <!-- Clock hands -->
+  <line x1="100" y1="100" x2="100" y2="45" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round"/>
+  <line x1="100" y1="100" x2="135" y2="100" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="100" cy="100" r="4" fill="#1A1A1A"/>
+  
+  <desc>Nelson ball clock - iconic midcentury modern clock with colored ball numbers</desc>
+</svg>

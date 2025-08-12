@@ -1,29 +1,33 @@
-title: Local SEO for Dentists
+title: "90-second history of Ray & Charles Eames"
 audience:
-- practice owners
-- office managers
-tone: confident, practical
+- design enthusiasts
+- students
+tone: curious, authoritative
 video:
-  target_length_min: 5
-  target_length_max: 7
+  target_length_min: 1.5
+  target_length_max: 1.5
 blog:
   words_min: 900
   words_max: 1300
 keywords_include:
-- Google Business Profile
-- reviews
-- NAP consistency
-- service pages
+- Eames
+- Ray Eames
+- Charles Eames
+- Herman Miller
+- molded plywood
+- Eames Lounge
+- Case Study House #8
 keywords_exclude:
 - AI tools
 - crypto
 - NFT
 sources_preferred:
-- Google Search Central
-- Sterling Sky blog
+- Design Museum
+- Herman Miller Archives
+- MoMA Design Collection
 monetization:
   primary:
   - lead_magnet
   - email_capture
-  cta_text: Download the Local SEO checklist
-notes: Focus on appointment intent keywords and GBP optimization.
+  cta_text: Download the Design History Timeline
+notes: Focus on the Eames' innovative approach to furniture design and their impact on modern design principles.

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#FFFFFF"/>
+  
+  <!-- Boomerang shapes -->
+  <g fill="#1C4FA1" opacity="0.1">
+    <path d="M200,200 L300,250 L250,300 L150,250 Z" />
+    <path d="M600,300 L700,350 L650,400 L550,350 Z" />
+    <path d="M1000,400 L1100,450 L1050,500 L950,450 Z" />
+  </g>
+  
+  <!-- Abstract geometric forms -->
+  <g fill="#D62828" opacity="0.08">
+    <polygon points="400,500 450,450 500,500 450,550" />
+    <polygon points="800,600 850,550 900,600 850,650" />
+  </g>
+  
+  <!-- Curved abstract shapes -->
+  <g fill="#F6BE00" opacity="0.06">
+    <path d="M300,700 Q400,650 500,700 Q400,750 300,700 Z" />
+    <path d="M700,800 Q800,750 900,800 Q800,850 700,800 Z" />
+  </g>
+  
+  <desc>Boomerang forms background with abstract geometric shapes - dynamic, midcentury aesthetic</desc>
+</svg>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Chair seat -->
+  <ellipse cx="100" cy="140" rx="60" ry="25" fill="#1C4FA1"/>
+  
+  <!-- Chair back -->
+  <ellipse cx="100" cy="80" rx="25" ry="60" fill="#1C4FA1"/>
+  
+  <!-- Chair base -->
+  <ellipse cx="100" cy="165" rx="40" ry="8" fill="#8B5E3C"/>
+  
+  <!-- Legs -->
+  <rect x="85" y="165" width="6" height="15" fill="#1A1A1A"/>
+  <rect x="109" y="165" width="6" height="15" fill="#1A1A1A"/>
+  
+  <desc>Eames molded chair silhouette - iconic midcentury modern molded plastic chair</desc>
+</svg>

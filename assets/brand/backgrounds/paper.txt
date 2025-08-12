@@ -1,0 +1,14 @@
+# Paper Background Description
+# This file describes a paper background asset that should be converted to PNG
+# Format: 1280x720 PNG with paper texture
+
+# Paper texture specifications:
+# - Base color: #fafafa (off-white)
+# - Texture: Subtle paper grain pattern
+# - Border: Light gray (#e5e7eb) with 2px stroke
+# - Opacity: 100%
+# - Size: 1280x720 pixels
+# - Format: PNG with transparency support
+
+# The actual PNG should be created from this description
+# using image generation tools or manual creation

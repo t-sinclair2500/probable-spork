@@ -32,9 +32,11 @@ asr:
   openai_enabled: false
 
 tts:
-  provider: "coqui"
-  voice: "tts_models/en/ljspeech/tacotron2-DDC"
+  provider: "piper"
+  voice: "en_US-amy-medium"
   rate_wpm: 165
+  ssml: true
+  lufs_target: -16.0
   openai_enabled: false
 
 assets:
@@ -44,19 +46,11 @@ assets:
     # - "unsplash"  # Uncomment and add UNSPLASH_ACCESS_KEY to .env for attribution-required assets
   max_per_section: 3
 
-# Video rendering and performance settings
-render:
-  resolution: "1920x1080"
-  fps: 30
-  music_db: -22
-  duck_db: -15
-  xfade_ms: 250
-  target_bitrate: "4000k"
-  codec: "h264_videotoolbox"  # Hardware acceleration
-  preset: "fast"  # Encoding speed vs quality trade-off
-  crf: 23  # Quality setting (18-28 range, lower = better quality)
-  threads: 0  # Auto-detect optimal thread count
-  use_hardware_acceleration: true  # Enable/disable hardware acceleration
+# Video pipeline settings
+video:
+  animatics_only: true            # NEW default - skip stock asset downloads
+  enable_legacy_stock: false      # Keep legacy stock path disabled by default
+  min_coverage: 0.85              # Minimum scene coverage threshold
 
 licenses:
   require_attribution: true
@@ -75,3 +69,27 @@ testing:
   live_budget_per_run: 5            # hard cap on new downloads in live mode
   live_rate_limit_per_min: 10       # API calls per minute limit in live mode
   fail_on_live_without_keys: true   # fail live tests if API keys missing
+
+# Video rendering settings
+render:
+  resolution: "1920x1080"
+  fps: 30
+  music_db: -22
+  duck_db: -15
+  xfade_ms: 250
+  target_bitrate: "4000k"
+  codec: "h264_videotoolbox"  # Hardware acceleration
+  preset: "fast"  # Encoding speed vs quality trade-off
+  crf: 23  # Quality setting (18-28 range, lower = better quality)
+  threads: 0  # Auto-detect optimal thread count
+  use_hardware_acceleration: true  # Enable/disable hardware acceleration
+
+# Procedural generation settings
+procedural:
+  seed: 42                          # Random seed for reproducible generation
+  max_colors_per_scene: 3           # Maximum distinct colors per scene
+  placement:
+    min_spacing_px: 64              # Minimum spacing between elements
+    safe_margin_px: 40              # Safe margin from scene edges
+  motion:
+    jitter_ms: 80                   # Motion jitter in milliseconds

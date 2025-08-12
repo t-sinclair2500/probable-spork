@@ -12,6 +12,12 @@ from flask_socketio import SocketIO, emit, disconnect
 import threading
 import queue
 
+import sys
+import os
+
+# Add the parent directory to the path so we can import from bin
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from bin.core import BASE, load_env
 from bin.analytics_collector import MetricsCollector
 
@@ -462,6 +468,160 @@ def api_analytics_alerts():
         return jsonify({"error": str(e)}), 500
 
 
+# ============================================================================
+# CUTOUT STYLE PREVIEW ENDPOINTS
+# ============================================================================
+
+@app.get("/api/cutout/style")
+@rate_limit(60)
+def api_cutout_style_get():
+    """Get current brand style configuration."""
+    try:
+        style_path = os.path.join(BASE, "assets", "brand", "style.yaml")
+        if not os.path.exists(style_path):
+            return jsonify({"error": "style.yaml not found"}), 404
+        
+        with open(style_path, 'r', encoding='utf-8') as f:
+            import yaml
+            style_data = yaml.safe_load(f)
+        
+        return jsonify(style_data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to load style: {str(e)}"}), 500
+
+
+@app.post("/api/cutout/style")
+@rate_limit(30)
+@requires_auth
+def api_cutout_style_update():
+    """Update brand style configuration."""
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+        
+        style_data = request.get_json()
+        if not style_data:
+            return jsonify({"error": "No style data provided"}), 400
+        
+        # Validate required fields
+        required_fields = ['colors', 'fonts', 'font_sizes']
+        for field in required_fields:
+            if field not in style_data:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+        # Validate font_sizes has required keys
+        required_font_sizes = ['hook', 'body', 'lower_third']
+        if not all(key in style_data.get('font_sizes', {}) for key in required_font_sizes):
+            return jsonify({"error": f"font_sizes must include: {required_font_sizes}"}), 400
+        
+        # Save to style.yaml
+        style_path = os.path.join(BASE, "assets", "brand", "style.yaml")
+        os.makedirs(os.path.dirname(style_path), exist_ok=True)
+        
+        with open(style_path, 'w', encoding='utf-8') as f:
+            import yaml
+            yaml.dump(style_data, f, default_flow_style=False, allow_unicode=True)
+        
+        return jsonify({"status": "success", "message": "Style updated successfully"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to update style: {str(e)}"}), 500
+
+
+@app.get("/api/cutout/preview")
+@rate_limit(20)
+def api_cutout_preview():
+    """Generate a short preview MP4 for style testing."""
+    try:
+        scene_type = request.args.get("scene", "hook")
+        
+        # Create previews directory
+        previews_dir = "/tmp/previews"
+        os.makedirs(previews_dir, exist_ok=True)
+        
+        # Generate unique filename
+        import time
+        timestamp = int(time.time())
+        preview_file = os.path.join(previews_dir, f"preview_{scene_type}_{timestamp}.mp4")
+        
+        # Check if we already have a recent preview
+        if os.path.exists(preview_file):
+            return jsonify({
+                "status": "success",
+                "preview_url": f"/tmp/previews/{os.path.basename(preview_file)}",
+                "message": "Using existing preview"
+            })
+        
+        # Import required modules for preview generation
+        try:
+            from bin.cutout.sdk import BrandStyle, load_style, VIDEO_W, VIDEO_H, FPS
+            from bin.cutout.anim_fx import make_text_clip, make_background_clip
+            from moviepy.editor import CompositeVideoClip, ColorClip
+        except ImportError as e:
+            return jsonify({"error": f"Preview generation not available: {str(e)}"}), 500
+        
+        # Load current style
+        style = load_style()
+        
+        # Create a simple preview based on scene type
+        if scene_type == "hook":
+            # Hook scene: large text with background
+            text_clip = make_text_clip("Sample Hook Text", style, "hook")
+            text_clip = text_clip.set_duration(3.0)
+            
+            # Create a simple background
+            bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(0, 0, 0), duration=3.0)
+            
+            # Composite the clips
+            preview = CompositeVideoClip([bg_clip, text_clip])
+            
+        elif scene_type == "body":
+            # Body scene: smaller text with background
+            text_clip = make_text_clip("Sample body text for demonstration", style, "body")
+            text_clip = text_clip.set_duration(3.0)
+            
+            bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(255, 255, 255), duration=3.0)
+            preview = CompositeVideoClip([bg_clip, text_clip])
+            
+        elif scene_type == "lower_third":
+            # Lower third scene: small text at bottom
+            text_clip = make_text_clip("Lower Third", style, "lower_third")
+            text_clip = text_clip.set_duration(3.0)
+            text_clip = text_clip.set_position(("center", "bottom"))
+            
+            bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(0, 0, 0), duration=3.0)
+            preview = CompositeVideoClip([bg_clip, text_clip])
+            
+        else:
+            # Default scene
+            text_clip = make_text_clip("Preview Scene", style, "body")
+            text_clip = text_clip.set_duration(3.0)
+            
+            bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(128, 128, 128), duration=3.0)
+            preview = CompositeVideoClip([bg_clip, text_clip])
+        
+        # Write preview to file
+        preview.write_videofile(
+            preview_file,
+            fps=FPS,
+            codec='libx264',
+            audio_codec='aac',
+            verbose=False,
+            logger=None
+        )
+        
+        return jsonify({
+            "status": "success",
+            "preview_url": f"/tmp/previews/{os.path.basename(preview_file)}",
+            "message": f"Preview generated for {scene_type} scene",
+            "duration": 3.0,
+            "resolution": f"{VIDEO_W}x{VIDEO_H}",
+            "fps": FPS
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate preview: {str(e)}"}), 500
+
+
 @app.get("/analytics")
 def analytics_dashboard():
     """Advanced analytics dashboard with charts and metrics."""
@@ -830,12 +990,331 @@ if (!initWebSocket()) {
     return html
 
 
-if __name__ == "__main__":
-    # Start background monitoring
-    start_background_monitor()
+# Cutout style editor page
+@app.get("/cutout")
+def cutout_editor():
+    """Cutout style editor interface."""
+    html = """
+<!doctype html>
+<html><head><meta charset='utf-8'><title>Cutout Style Editor</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;background:#f5f5f5;}
+.container{max-width:1200px;margin:0 auto;padding:20px;}
+.header{background:white;border-radius:8px;padding:20px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.card{background:white;border-radius:8px;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+.preview-section{background:white;border-radius:8px;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);margin-bottom:20px;}
+.form-group{margin-bottom:15px;}
+.form-group label{display:block;margin-bottom:5px;font-weight:bold;color:#333;}
+.form-group input, .form-group select{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;}
+.color-input{width:60px !important;height:40px;padding:2px;}
+.color-group{display:flex;align-items:center;gap:10px;}
+.color-group input[type="text"]{flex:1;}
+button{background:#007bff;color:white;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;margin:5px;}
+button:hover{background:#0056b3;}
+button.secondary{background:#6c757d;}
+button.secondary:hover{background:#545b62;}
+.preview-video{max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+.status{display:inline-block;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:bold;margin-left:10px;}
+.status.success{background:#d4edda;color:#155724;}
+.status.error{background:#f8d7da;color:#721c24;}
+.status.loading{background:#fff3cd;color:#856404;}
+.nav-tabs{margin-bottom:15px;}
+.nav-tab{display:inline-block;padding:8px 16px;background:#e9ecef;border:none;border-radius:4px 4px 0 0;margin-right:4px;cursor:pointer;}
+.nav-tab.active{background:#007bff;color:white;}
+</style>
+</head><body>
+<div class="container">
+  <div class="header">
+    <h1>Cutout Style Editor</h1>
+    <p>Customize your brand style and preview animations</p>
+    <p><a href="/" style="color:#007bff;">← Back to Dashboard</a></p>
+  </div>
+  
+  <div class="grid">
+    <div class="card">
+      <h3>Style Configuration</h3>
+      <form id="style-form">
+        <div class="form-group">
+          <label>Primary Color:</label>
+          <div class="color-group">
+            <input type="color" id="primary-color" class="color-input" />
+            <input type="text" id="primary-color-text" placeholder="#2563eb" />
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Secondary Color:</label>
+          <div class="color-group">
+            <input type="color" id="secondary-color" class="color-input" />
+            <input type="text" id="secondary-color-text" placeholder="#7c3aed" />
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Accent Color:</label>
+          <div class="color-group">
+            <input type="color" id="accent-color" class="color-input" />
+            <input type="text" id="secondary-color-text" placeholder="#f59e0b" />
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Hook Font Size:</label>
+          <input type="number" id="hook-size" min="24" max="96" value="48" />
+        </div>
+        
+        <div class="form-group">
+          <label>Body Font Size:</label>
+          <input type="number" id="body-size" min="16" max="48" value="24" />
+        </div>
+        
+        <div class="form-group">
+          <label>Lower Third Font Size:</label>
+          <input type="number" id="lower-third-size" min="16" max="64" value="32" />
+        </div>
+        
+        <div class="form-group">
+          <label>Corner Radius:</label>
+          <input type="number" id="corner-radius" min="0" max="20" value="8" />
+        </div>
+        
+        <button type="button" onclick="loadCurrentStyle()">Load Current</button>
+        <button type="button" onclick="saveStyle()">Save Style</button>
+        <button type="button" onclick="resetToDefaults()" class="secondary">Reset to Defaults</button>
+      </form>
+    </div>
     
-    # Run with SocketIO support
-    socketio.run(app, host="0.0.0.0", port=8099, debug=False)
+    <div class="card">
+      <h3>Preview Controls</h3>
+      <div class="form-group">
+        <label>Scene Type:</label>
+        <select id="scene-type">
+          <option value="hook">Hook Scene</option>
+          <option value="body">Body Scene</option>
+          <option value="lower_third">Lower Third</option>
+        </select>
+      </div>
+      
+      <button type="button" onclick="generatePreview()">Generate Preview</button>
+      <button type="button" onclick="clearPreview()" class="secondary">Clear Preview</button>
+      
+      <div id="preview-status"></div>
+    </div>
+  </div>
+  
+  <div class="preview-section">
+    <h3>Preview Output</h3>
+    <div id="preview-container">
+      <p>Click "Generate Preview" to create a sample animation</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentStyle = {};
+
+// Load current style from server
+async function loadCurrentStyle() {
+  try {
+    const response = await fetch('/api/cutout/style');
+    if (response.ok) {
+      currentStyle = await response.json();
+      populateForm(currentStyle);
+    } else {
+      alert('Failed to load current style');
+    }
+  } catch (error) {
+    console.error('Error loading style:', error);
+    alert('Error loading style: ' + error.message);
+  }
+}
+
+// Populate form with style data
+function populateForm(style) {
+  // Set colors
+  if (style.colors) {
+    if (style.colors.primary) {
+      document.getElementById('primary-color').value = style.colors.primary;
+      document.getElementById('primary-color-text').value = style.colors.primary;
+    }
+    if (style.colors.secondary) {
+      document.getElementById('secondary-color').value = style.colors.secondary;
+      document.getElementById('secondary-color-text').value = style.colors.secondary;
+    }
+    if (style.colors.accent) {
+      document.getElementById('accent-color').value = style.colors.accent;
+      document.getElementById('accent-color-text').value = style.colors.accent;
+    }
+  }
+  
+  // Set font sizes
+  if (style.font_sizes) {
+    if (style.font_sizes.hook) document.getElementById('hook-size').value = style.font_sizes.hook;
+    if (style.font_sizes.body) document.getElementById('body-size').value = style.font_sizes.body;
+    if (style.font_sizes.lower_third) document.getElementById('lower-third-size').value = style.font_sizes.lower_third;
+  }
+  
+  // Set other properties
+  if (style.corner_radius) document.getElementById('corner-radius').value = style.corner_radius;
+}
+
+// Save style to server
+async function saveStyle() {
+  try {
+    const styleData = {
+      colors: {
+        primary: document.getElementById('primary-color').value,
+        secondary: document.getElementById('secondary-color').value,
+        accent: document.getElementById('accent-color').value,
+        success: "#10b981",
+        warning: "#f59e0b",
+        error: "#ef4444",
+        neutral: "#6b7280",
+        white: "#ffffff",
+        black: "#111827",
+        background: "#f9fafb",
+        text_primary: "#111827",
+        text_secondary: "#6b7280"
+      },
+      fonts: {
+        primary: "Inter",
+        secondary: "Georgia",
+        monospace: "JetBrains Mono",
+        display: "Poppins",
+        fallback: "Arial, sans-serif"
+      },
+      font_sizes: {
+        hook: parseInt(document.getElementById('hook-size').value),
+        body: parseInt(document.getElementById('body-size').value),
+        lower_third: parseInt(document.getElementById('lower-third-size').value),
+        caption: 18,
+        tiny: 14
+      },
+      safe_margins_px: 64,
+      corner_radius: parseInt(document.getElementById('corner-radius').value),
+      stroke: {
+        width: 2,
+        color: "#e5e7eb",
+        style: "solid"
+      },
+      shadow: {
+        x_offset: 0,
+        y_offset: 4,
+        blur: 12,
+        color: "rgba(0, 0, 0, 0.1)",
+        spread: 0
+      },
+      backgrounds: ["gradient1", "paper", "solid_white", "solid_black"],
+      icon_palette: ["#2563eb", "#7c3aed", "#f59e0b", "#10b981", "#6b7280", "#ffffff", "#111827"]
+    };
+    
+    const response = await fetch('/api/cutout/style', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Auth-Token': prompt('Enter password (if required):') || ''
+      },
+      body: JSON.stringify(styleData)
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      alert('Style saved successfully!');
+      currentStyle = styleData;
+    } else {
+      const error = await response.json();
+      alert('Failed to save style: ' + (error.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Error saving style:', error);
+    alert('Error saving style: ' + error.message);
+  }
+}
+
+// Reset to default values
+function resetToDefaults() {
+  if (confirm('Reset to default values?')) {
+    populateForm({
+      colors: {
+        primary: "#2563eb",
+        secondary: "#7c3aed",
+        accent: "#f59e0b"
+      },
+      font_sizes: {
+        hook: 48,
+        body: 24,
+        lower_third: 32
+      },
+      corner_radius: 8
+    });
+  }
+}
+
+// Generate preview animation
+async function generatePreview() {
+  const sceneType = document.getElementById('scene-type').value;
+  const statusDiv = document.getElementById('preview-status');
+  const container = document.getElementById('preview-container');
+  
+  statusDiv.innerHTML = '<span class="status loading">Generating preview...</span>';
+  container.innerHTML = '<p>Generating preview...</p>';
+  
+  try {
+    const response = await fetch(`/api/cutout/preview?scene=${sceneType}`);
+    const result = await response.json();
+    
+    if (response.ok) {
+      statusDiv.innerHTML = '<span class="status success">Preview generated successfully</span>';
+      
+      // Create video element for preview
+      container.innerHTML = `
+        <video class="preview-video" controls>
+          <source src="/tmp/previews/${result.preview_url.split('/').pop()}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <p><strong>Details:</strong> ${result.message}</p>
+        <p><strong>Duration:</strong> ${result.duration}s | <strong>Resolution:</strong> ${result.resolution} | <strong>FPS:</strong> ${result.fps}</p>
+      `;
+    } else {
+      statusDiv.innerHTML = '<span class="status error">Failed to generate preview: ' + (result.error || 'Unknown error') + '</span>';
+      container.innerHTML = '<p>Preview generation failed</p>';
+    }
+  } catch (error) {
+    console.error('Error generating preview:', error);
+    statusDiv.innerHTML = '<span class="status error">Error: ' + error.message + '</span>';
+    container.innerHTML = '<p>Preview generation failed</p>';
+  }
+}
+
+// Clear preview
+function clearPreview() {
+  document.getElementById('preview-status').innerHTML = '';
+  document.getElementById('preview-container').innerHTML = '<p>Click "Generate Preview" to create a sample animation</p>';
+}
+
+// Initialize form
+document.addEventListener('DOMContentLoaded', function() {
+  loadCurrentStyle();
+  
+  // Sync color inputs
+  document.getElementById('primary-color').addEventListener('input', function(e) {
+    document.getElementById('primary-color-text').value = e.target.value;
+  });
+  
+  document.getElementById('secondary-color').addEventListener('input', function(e) {
+    document.getElementById('secondary-color-text').value = e.target.value;
+  });
+  
+  document.getElementById('accent-color').addEventListener('input', function(e) {
+    document.getElementById('accent-color-text').value = e.target.value;
+  });
+});
+</script>
+</body></html>
+"""
+    return html
+
 
 # Basic dashboard page (inline template) for convenience
 @app.get("/")
@@ -872,7 +1351,8 @@ input{padding:8px;border:1px solid #ddd;border-radius:4px;margin:4px;}
     <p>Auth required: <span style="color:{{pw == 'yes' and 'red' or 'green'}}">{{pw}}</span> | 
        Status: <span id="connection-status">Connected</span> | 
        Last update: <span id="last-update">-</span></p>
-    <p><a href="/analytics" style="color:#007bff;">View Advanced Analytics →</a></p>
+    <p><a href="/analytics" style="color:#007bff;">View Advanced Analytics →</a> | 
+       <a href="/cutout" style="color:#007bff;">Cutout Style Editor →</a></p>
   </div>
   
   <div class="grid">
@@ -1096,3 +1576,11 @@ window.addEventListener('beforeunload', () => {
 </body></html>
 """
     return render_template_string(html, pw="yes" if pw_required else "no")
+
+
+if __name__ == "__main__":
+    # Start background monitoring
+    start_background_monitor()
+    
+    # Run with SocketIO support
+    socketio.run(app, host="0.0.0.0", port=8099, debug=False)

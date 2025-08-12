@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#FFFFFF"/>
+  
+  <!-- Large concentric circles -->
+  <g fill="#1C4FA1" opacity="0.06">
+    <circle cx="400" cy="300" r="120" />
+    <circle cx="400" cy="300" r="90" />
+    <circle cx="400" cy="300" r="60" />
+    <circle cx="400" cy="300" r="30" />
+  </g>
+  
+  <!-- Medium concentric circles -->
+  <g fill="#D62828" opacity="0.05">
+    <circle cx="800" cy="500" r="80" />
+    <circle cx="800" cy="500" r="60" />
+    <circle cx="800" cy="500" r="40" />
+    <circle cx="800" cy="500" r="20" />
+  </g>
+  
+  <!-- Small concentric circles -->
+  <g fill="#F6BE00" opacity="0.08">
+    <circle cx="1200" cy="700" r="60" />
+    <circle cx="1200" cy="700" r="45" />
+    <circle cx="1200" cy="700" r="30" />
+    <circle cx="1200" cy="700" r="15" />
+  </g>
+  
+  <!-- Additional circle groups -->
+  <g fill="#4E9F3D" opacity="0.04">
+    <circle cx="600" cy="800" r="50" />
+    <circle cx="600" cy="800" r="35" />
+    <circle cx="600" cy="800" r="20" />
+  </g>
+  
+  <desc>Concentric circles background with layered circular forms - midcentury modern, organic aesthetic</desc>
+</svg>

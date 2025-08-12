@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#F8F1E5"/>
+  
+  <!-- Large rounded rectangles -->
+  <rect x="100" y="150" width="400" height="200" rx="20" fill="#1C4FA1" opacity="0.08"/>
+  <rect x="600" y="250" width="300" height="150" rx="15" fill="#D62828" opacity="0.08"/>
+  <rect x="1000" y="350" width="350" height="180" rx="25" fill="#F6BE00" opacity="0.08"/>
+  
+  <!-- Medium rounded rectangles -->
+  <rect x="200" y="400" width="200" height="120" rx="12" fill="#4E9F3D" opacity="0.06"/>
+  <rect x="700" y="450" width="150" height="100" rx="10" fill="#008080" opacity="0.06"/>
+  
+  <!-- Small rounded rectangles -->
+  <rect x="300" y="600" width="100" height="80" rx="8" fill="#FF6F91" opacity="0.08"/>
+  <rect x="800" y="650" width="120" height="90" rx="10" fill="#F28C28" opacity="0.08"/>
+  
+  <desc>Rounded rectangles background with midcentury geometric forms - clean, structured aesthetic</desc>
+</svg>

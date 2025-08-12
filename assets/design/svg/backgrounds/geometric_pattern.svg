@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#F8F1E5"/>
+  
+  <!-- Atomic starbursts -->
+  <g fill="#1C4FA1" opacity="0.1">
+    <polygon points="200,200 220,180 240,200 220,220" />
+    <polygon points="400,300 420,280 440,300 420,320" />
+    <polygon points="600,400 620,380 640,400 620,420" />
+  </g>
+  
+  <!-- Concentric circles -->
+  <g fill="#D62828" opacity="0.08">
+    <circle cx="300" cy="500" r="80" />
+    <circle cx="300" cy="500" r="60" />
+    <circle cx="300" cy="500" r="40" />
+  </g>
+  
+  <g fill="#F6BE00" opacity="0.08">
+    <circle cx="800" cy="300" r="60" />
+    <circle cx="800" cy="300" r="40" />
+    <circle cx="800" cy="300" r="20" />
+  </g>
+  
+  <desc>Geometric pattern background with atomic starbursts and concentric circles - midcentury modern aesthetic</desc>
+</svg>

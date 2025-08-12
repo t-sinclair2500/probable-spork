@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#F8F1E5"/>
+  
+  <!-- Paper grain texture overlay -->
+  <defs>
+    <pattern id="paperGrain" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.5" fill="#8B5E3C" opacity="0.03"/>
+      <circle cx="0" cy="0" r="0.3" fill="#1A1A1A" opacity="0.02"/>
+      <circle cx="4" cy="4" r="0.4" fill="#8B5E3C" opacity="0.025"/>
+    </pattern>
+  </defs>
+  
+  <rect width="1920" height="1080" fill="url(#paperGrain)"/>
+  
+  <!-- Subtle geometric accents -->
+  <g fill="#1C4FA1" opacity="0.04">
+    <rect x="100" y="100" width="200" height="150" rx="10"/>
+    <rect x="800" y="200" width="180" height="120" rx="8"/>
+  </g>
+  
+  <g fill="#D62828" opacity="0.03">
+    <circle cx="400" cy="400" r="60"/>
+    <circle cx="1200" cy="600" r="80"/>
+  </g>
+  
+  <desc>Paper grain overlay background with subtle texture - warm, tactile midcentury aesthetic</desc>
+</svg>

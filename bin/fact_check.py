@@ -56,32 +56,54 @@ def extract_text_lines(markdown_content: str) -> List[str]:
     return text_lines
 
 
-def call_fact_checker(content: str, cfg) -> Dict:
+def call_fact_checker(content: str, cfg, models_config=None) -> Dict:
     """Call the LLM fact-checker and return parsed results."""
-    import requests
-    
-    prompt_template = load_fact_check_prompt()
-    
-    # Prepare the full prompt
-    full_prompt = f"{prompt_template}\n\nCONTENT TO CHECK:\n{content}"
-    
-    payload = {
-        "model": cfg.llm.model,
-        "prompt": full_prompt,
-        "stream": False
-    }
-    
     try:
-        response = requests.post(cfg.llm.endpoint, json=payload, timeout=300)
-        if response.ok:
-            response_text = response.json().get("response", "").strip()
-            return parse_llm_json(response_text)
+        # Use new model_runner system
+        from bin.model_runner import model_session
+        
+        # Get model name from config
+        if models_config and 'research' in models_config.get('models', {}):
+            model_name = models_config['models']['research']['name']
         else:
-            log.error(f"LLM request failed: {response.status_code} - {response.text}")
-            return {"issues": []}
+            # Fallback to global config
+            model_name = cfg.llm.model
+        
+        prompt_template = load_fact_check_prompt()
+        full_prompt = f"{prompt_template}\n\nCONTENT TO CHECK:\n{content}"
+        
+        # Use model session for deterministic load/unload
+        with model_session(model_name) as session:
+            system_prompt = "You are a fact-checker. Review the given content for factual accuracy."
+            response = session.chat(system=system_prompt, user=full_prompt)
+            return parse_llm_json(response)
+            
     except Exception as e:
-        log.error(f"Fact-check LLM call failed: {e}")
-        return {"issues": []}
+        log.error(f"Model runner failed, falling back to legacy: {e}")
+        
+        # Fallback to legacy system
+        import requests
+        
+        prompt_template = load_fact_check_prompt()
+        full_prompt = f"{prompt_template}\n\nCONTENT TO CHECK:\n{content}"
+        
+        payload = {
+            "model": cfg.llm.model,
+            "prompt": full_prompt,
+            "stream": False
+        }
+        
+        try:
+            response = requests.post(cfg.llm.endpoint, json=payload, timeout=300)
+            if response.ok:
+                response_text = response.json().get("response", "").strip()
+                return parse_llm_json(response_text)
+            else:
+                log.error(f"LLM request failed: {response.status_code} - {response.text}")
+                return {"issues": []}
+        except Exception as e:
+            log.error(f"Fact-check LLM call failed: {e}")
+            return {"issues": []}
 
 
 def categorize_issue_severity(claim: str) -> str:

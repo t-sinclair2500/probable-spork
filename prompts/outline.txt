@@ -2,12 +2,15 @@
 
 You are a video content strategist. Create a detailed outline for a {topic} video.
 
+IMPORTANT: Use the brief context above to create content that matches the specific topic, tone, and target length. Do NOT create generic content.
+
 Use these seed keywords: {seed_keywords}
 
 Structure:
 - 6 sections (Hook, 3 main points, Recap, CTA)
 - Each section has 2-3 beats and 2-3 B-roll suggestions
-- Target length: 5-7 minutes
+- Target length: {target_length_min}-{target_length_max} minutes
 - Include engaging hooks and clear takeaways
+- Content must be specific to the topic, not generic tips
 
 Return valid JSON only.

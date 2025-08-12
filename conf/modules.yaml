@@ -1,0 +1,59 @@
+# Module-specific configurations for the procedural animatics pipeline
+
+# Video rendering and performance settings
+render:
+  resolution: "1920x1080"
+  fps: 30
+  music_db: -22
+  duck_db: -15
+  xfade_ms: 250
+  target_bitrate: "4000k"
+  codec: "h264_videotoolbox"  # Hardware acceleration
+  preset: "fast"  # Encoding speed vs quality trade-off
+  crf: 23  # Quality setting (18-28 range, lower = better quality)
+  threads: 0  # Auto-detect optimal thread count
+  use_hardware_acceleration: true  # Enable/disable hardware acceleration
+
+# Timing and duration policy settings
+timing:
+  target_tolerance_pct: 5         # acceptance +/- window vs brief target
+  default_scene_ms: 5000          # only if no beats durations & no VO cues
+  min_scene_ms: 2500              # minimum scene duration in milliseconds
+  max_scene_ms: 30000             # maximum scene duration in milliseconds (30s for longer content)
+  distribute_strategy: "weighted" # uniform|weighted (by words per beat)
+  align_to_vo: true               # if srt/word timings exist, use them
+
+# Animatics pipeline settings
+animatics:
+  enabled: true
+  max_words_per_card: 12  # Maximum words per text element for legibility
+  safe_margins_px: 80  # Safe margin from edges for text elements
+
+# Procedural generation settings
+procedural:
+  seed: 42  # Default seed for deterministic layouts (set to null for random)
+  enable_jitter: true  # Allow slight position variations for natural feel
+  jitter_range: 8  # Maximum pixel jitter when enabled
+  max_colors_per_scene: 3  # Maximum colors allowed per scene for brand consistency
+  placement:
+    min_spacing_px: 64
+    safe_margin_px: 40
+  motion:
+    jitter_ms: 80
+  layout:
+    strategy: "auto"        # auto|text_only|props_only|manual
+    prefer_thirds: true
+    max_attempts: 200
+
+# Layout engine settings
+layout:
+  poisson:
+    k_attempts: 30  # Maximum attempts for Poisson-disk sampling
+    min_spacing: 64  # Minimum distance between points (pixels)
+  packing:
+    algorithm: "skyline"  # skyline | rectpack | simulated_annealing
+    max_iterations: 1000  # Maximum iterations for overlap resolution
+    overlap_penalty: 1000  # Penalty weight for overlapping elements
+  constraints:
+    safe_margin_default: 64  # Default safe margin from edges
+    thirds_snap_tolerance: 16  # Pixels within which to snap to rule-of-thirds

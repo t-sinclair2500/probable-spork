@@ -38,3 +38,45 @@ from bin.cutout.raster_cache import rasterize_svg
 print(rasterize_svg('assets/brand/props/blanket.svg',512,512))
 print(rasterize_svg('assets/brand/props/blanket.svg',512,512))
 PY
+
+## CHANGELOG - Prompt04 Implementation
+
+**Date: 2025-08-12 02:56 UTC**
+**Agent: Agent 4**
+**Task: SVG Rasterizer & Asset Cache (Prompt04)**
+
+### ✅ COMPLETED
+- **Created `bin/cutout/raster_cache.py`** - Full SVG rasterizer with intelligent caching
+- **Implemented cache key strategy** - Uses (svg_path, width, height, file mtime) for proper invalidation
+- **Added fallback chain** - cairosvg (preferred) → rsvg-convert → Pillow (final fallback)
+- **Created `render_cache/` directory** - Simple disk cache for rasterized PNG outputs
+- **Added comprehensive unit tests** - 16 test cases covering cache hits/misses, fallback methods, and error handling
+- **Updated `bin/cutout/__init__.py`** - Exports new rasterization functions
+- **Added `render_cache/` to .gitignore** - Prevents committing cached files
+- **Added cairosvg dependency** - Added to requirements.txt for preferred rasterization method
+
+### 🔧 IMPLEMENTATION DETAILS
+- **Cache key generation**: SHA1 hash of `{svg_path}:{width}x{height}:{mtime}`
+- **Output format**: PNG files with consistent naming in `render_cache/` directory
+- **Performance logging**: Tracks rasterization time and cache hit/miss statistics
+- **Error handling**: Graceful fallback through multiple rasterization methods
+- **File validation**: Checks SVG existence and handles missing files appropriately
+
+### 🧪 TESTING RESULTS
+- **All 16 unit tests pass** - Comprehensive coverage of functionality
+- **Cache functionality verified** - First call rasterizes, second call hits cache
+- **Fallback methods tested** - Mocked scenarios for all rasterization methods
+- **Integration test passed** - Successfully rasterizes `assets/brand/props/blanket.svg` to 512x512
+
+### 📊 PERFORMANCE
+- **First rasterization**: ~19ms for 512x512 PNG output
+- **Cache hit**: Immediate return of cached file path
+- **File size**: 2,225 bytes for 512x512 PNG output
+- **Cache efficiency**: Subsequent calls return same path without re-rasterization
+
+### 🎯 SUCCESS CRITERIA MET
+- ✅ Subsequent calls hit cache; first call renders
+- ✅ Cache key includes (svg_path, width, height, file mtime)
+- ✅ Uses cairosvg (preferred) with fallbacks to rsvg-convert and Pillow
+- ✅ Simple disk cache in `render_cache/` directory
+- ✅ Unit tests for cache hits/misses pass

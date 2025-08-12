@@ -143,15 +143,15 @@ def main(brief=None, models_config=None):
         brief_tone = brief.get('tone', '').lower()
         if brief_tone:
             log.info(f"Brief tone: {brief_tone}")
-            # Adjust voice selection based on tone
+            # Adjust voice selection based on tone (using Piper Amy voice)
             if brief_tone in ['professional', 'corporate', 'formal']:
-                voice = "alloy"  # More formal voice
+                voice = "en_US-amy-medium"  # More formal voice
                 log.info("Applied professional tone: using formal voice")
             elif brief_tone in ['casual', 'friendly', 'conversational']:
-                voice = "echo"  # More conversational voice
+                voice = "en_US-amy-medium"  # More conversational voice
                 log.info("Applied casual tone: using conversational voice")
             elif brief_tone in ['energetic', 'enthusiastic', 'motivational']:
-                voice = "fable"  # More energetic voice
+                voice = "en_US-amy-medium"  # More energetic voice
                 log.info("Applied energetic tone: using energetic voice")
         
         # Use brief pacing preferences if available
@@ -223,7 +223,7 @@ def main(brief=None, models_config=None):
                 import requests
 
                 api_key = env.get("OPENAI_API_KEY")
-                voice = "alloy"
+                voice = "en_US-amy-medium"
                 out_mp3_tmp = out_mp3 + ".tmp.mp3"
                 r = requests.post(
                     "https://api.openai.com/v1/audio/speech",

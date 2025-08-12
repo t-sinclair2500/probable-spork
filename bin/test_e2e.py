@@ -128,13 +128,74 @@ def main():
         print("SKIP: LLM steps (Ollama not available)")
         return
     
-    # Assets - require at least one provider
-    if any([providers['pixabay'], providers['pexels'], providers['unsplash']]):
-        run_safe("python bin/fetch_assets.py", required=True)
+    # Procedural pipeline components (new)
+    print(f"\n=== Procedural Pipeline ===")
+    
+    # Check modules configuration
+    try:
+        from bin.core import load_modules_cfg
+        modules_cfg = load_modules_cfg()
+        if modules_cfg:
+            print("✓ Modules configuration loaded")
+            procedural = modules_cfg.get("procedural", {})
+            if procedural:
+                print(f"  - Procedural seed: {procedural.get('seed', 'not set')}")
+                print(f"  - Max colors per scene: {procedural.get('max_colors_per_scene', 'not set')}")
+                print(f"  - Placement settings: {procedural.get('placement', 'not set')}")
+                print(f"  - Motion settings: {procedural.get('motion', 'not set')}")
+            else:
+                print("  - Procedural settings missing")
+            
+            render = modules_cfg.get("render", {})
+            if render:
+                print(f"  - Render resolution: {render.get('resolution', 'not set')}")
+                print(f"  - Render FPS: {render.get('fps', 'not set')}")
+                print(f"  - Render codec: {render.get('codec', 'not set')}")
+            else:
+                print("  - Render settings missing")
+        else:
+            print("✗ Modules configuration not found")
+    except Exception as e:
+        print(f"WARNING: Could not load modules configuration: {e}")
+    
+    # Test storyboard planning with QA gates
+    if has_ollama:
+        print("Testing storyboard planning with QA gates...")
+        run_safe("python bin/storyboard_plan.py --slug test_e2e --dry-run", required=False, reason="QA gates test")
     else:
-        print("SKIP: Asset fetching (no API keys available)")
-        # Create empty assets folder so pipeline can continue
-        os.makedirs("assets", exist_ok=True)
+        print("SKIP: Storyboard planning (Ollama not available)")
+    
+    # Check pipeline mode configuration
+    try:
+        import yaml
+        with open("conf/global.yaml", 'r') as f:
+            cfg = yaml.safe_load(f)
+        animatics_only = cfg.get("video", {}).get("animatics_only", True)
+        enable_legacy = cfg.get("video", {}).get("enable_legacy_stock", False)
+        
+        if animatics_only and not enable_legacy:
+            print("Pipeline mode: ANIMATICS-ONLY")
+            # Skip asset fetching in animatics-only mode
+            print("SKIP: Asset fetching (animatics-only mode)")
+            # Create empty assets folder so pipeline can continue
+            os.makedirs("assets", exist_ok=True)
+        else:
+            print("Pipeline mode: LEGACY STOCK ASSETS")
+            # Assets - require at least one provider
+            if any([providers['pixabay'], providers['pexels'], providers['unsplash']]):
+                run_safe("python bin/fetch_assets.py", required=True)
+            else:
+                print("SKIP: Asset fetching (no API keys available)")
+                # Create empty assets folder so pipeline can continue
+                os.makedirs("assets", exist_ok=True)
+    except Exception as e:
+        print(f"WARNING: Could not read pipeline config: {e}")
+        # Fallback to legacy behavior
+        if any([providers['pixabay'], providers['pexels'], providers['unsplash']]):
+            run_safe("python bin/fetch_assets.py", required=True)
+        else:
+            print("SKIP: Asset fetching (no API keys available)")
+            os.makedirs("assets", exist_ok=True)
     
     # Audio generation
     run_safe("python bin/tts_generate.py", required=True)

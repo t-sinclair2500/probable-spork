@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Chair base -->
+  <rect x="40" y="140" width="120" height="20" rx="5" fill="#8B5E3C"/>
+  
+  <!-- Chair back -->
+  <rect x="30" y="60" width="20" height="80" rx="10" fill="#1C4FA1"/>
+  
+  <!-- Chair seat -->
+  <rect x="30" y="120" width="140" height="25" rx="12" fill="#8B5E3C"/>
+  
+  <!-- Chair arms -->
+  <rect x="25" y="80" width="150" height="15" rx="7" fill="#1C4FA1"/>
+  
+  <!-- Legs -->
+  <rect x="50" y="160" width="8" height="20" fill="#1A1A1A"/>
+  <rect x="142" y="160" width="8" height="20" fill="#1A1A1A"/>
+  
+  <desc>Eames lounge chair silhouette - iconic midcentury modern furniture design</desc>
+</svg>

@@ -1,0 +1,45 @@
+{
+  "colors": {
+    "primary_blue": "#1C4FA1",
+    "primary_red": "#D62828",
+    "primary_yellow": "#F6BE00",
+    "secondary_orange": "#F28C28",
+    "secondary_green": "#4E9F3D",
+    "accent_teal": "#008080",
+    "accent_brown": "#8B5E3C",
+    "accent_black": "#1A1A1A",
+    "accent_white": "#FFFFFF",
+    "accent_cream": "#F8F1E5",
+    "accent_pink": "#FF6F91"
+  },
+  "fonts": {
+    "headings": "Futura, Helvetica Neue, sans-serif",
+    "body": "Helvetica Neue, Arial, sans-serif",
+    "fallback": "sans-serif"
+  },
+  "shapes": {
+    "organic": "Matisse cutouts (leaf, coral, abstract forms)",
+    "geometric": "midcentury forms (rounded rectangles, atomic starbursts, circles)",
+    "furniture": "Simple furniture silhouettes (Eames lounge, Nelson desk, midcentury sofa)"
+  },
+  "textures": {
+    "paper_grain": "Paper grain subtle overlay",
+    "fills": "Flat fills only, no gradients"
+  },
+  "animation_principles": {
+    "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+    "duration_range": "0.8-1.5s per element intro",
+    "allowed_effects": ["fade", "slide", "float", "scale"],
+    "forbidden_effects": ["3D transforms", "complex rotations", "morphing"]
+  },
+  "composition_rules": {
+    "safe_margin": "40px all sides",
+    "background_limit": "Primary background color per scene",
+    "color_limit": "No more than 3 main colors per scene"
+  },
+  "iconography_rules": {
+    "style": "Flat icons",
+    "stroke_weight": "3px max",
+    "color_constraint": "Use colors from palette only"
+  }
+}

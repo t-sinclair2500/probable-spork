@@ -1,0 +1,60 @@
+{
+  "scene_id": "intro_fullscreen",
+  "name": "Intro Fullscreen Scene",
+  "description": "Fullscreen introduction scene with large title and background elements",
+  "background": {
+    "type": "svg",
+    "asset": "backgrounds/solid_primary_blue.svg",
+    "color": "#1C4FA1"
+  },
+  "safe_margin": 40,
+  "elements": [
+    {
+      "id": "title_text",
+      "type": "text",
+      "content": "Your Title Here",
+      "position": {"x": 960, "y": 400},
+      "font_family": "Futura, Helvetica Neue, sans-serif",
+      "font_size": 72,
+      "color": "#FFFFFF",
+      "animation": {
+        "type": "fade",
+        "duration": 1.2,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "decorative_element",
+      "type": "svg",
+      "asset": "objects/matisse_leaf_1.svg",
+      "position": {"x": 300, "y": 300},
+      "scale": 1.5,
+      "animation": {
+        "type": "float",
+        "duration": 1.5,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    },
+    {
+      "id": "geometric_accent",
+      "type": "svg",
+      "asset": "objects/nelson_sunburst_clock.svg",
+      "position": {"x": 1500, "y": 600},
+      "scale": 0.8,
+      "animation": {
+        "type": "scale",
+        "duration": 1.0,
+        "easing": "cubic-bezier(0.77, 0, 0.175, 1)"
+      }
+    }
+  ],
+  "composition_rules": {
+    "max_colors": 3,
+    "background_color": "#1C4FA1",
+    "safe_margin": 40
+  },
+  "animation_principles": {
+    "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+    "duration_range": "0.8-1.5s"
+  }
+}

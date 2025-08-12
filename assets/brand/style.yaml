@@ -1,0 +1,70 @@
+# Brand Style Configuration for Branded Animatics Pipeline
+# This file defines the visual identity and styling for all animatics renders
+
+# Brand color palette
+colors:
+  primary: "#2563eb"      # Blue
+  secondary: "#7c3aed"    # Purple
+  accent: "#f59e0b"       # Amber
+  success: "#10b981"      # Green
+  warning: "#f59e0b"      # Amber
+  error: "#ef4444"        # Red
+  neutral: "#6b7280"      # Gray
+  white: "#ffffff"        # White
+  black: "#111827"        # Black
+  background: "#f9fafb"   # Light gray background
+  text_primary: "#111827" # Primary text color
+  text_secondary: "#6b7280" # Secondary text color
+
+# Font family mappings
+fonts:
+  primary: "Inter"
+  secondary: "Georgia"
+  monospace: "JetBrains Mono"
+  display: "Poppins"
+  fallback: "Arial, sans-serif"
+
+# Font size mappings (required: hook, body, lower_third)
+font_sizes:
+  hook: 48        # Large headline text
+  body: 24        # Main body text
+  lower_third: 32 # Lower third graphics
+  caption: 18     # Small caption text
+  tiny: 14        # Very small text
+
+# Safe margins in pixels
+safe_margins_px: 64
+
+# Default corner radius
+corner_radius: 8
+
+# Stroke properties
+stroke:
+  width: 2
+  color: "#e5e7eb"
+  style: "solid"
+
+# Shadow properties
+shadow:
+  x_offset: 0
+  y_offset: 4
+  blur: 12
+  color: "rgba(0, 0, 0, 0.1)"
+  spread: 0
+
+# Background options
+backgrounds:
+  - "gradient1"
+  - "paper"
+  - "solid_white"
+  - "solid_black"
+
+# Icon color options
+icon_palette:
+  - "#2563eb"  # Primary blue
+  - "#7c3aed"  # Secondary purple
+  - "#f59e0b"  # Accent amber
+  - "#10b981"  # Success green
+  - "#6b7280"  # Neutral gray
+  - "#ffffff"  # White
+  - "#111827"  # Black

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#FFFFFF"/>
+  
+  <!-- Organic leaf shapes -->
+  <g fill="#4E9F3D" opacity="0.15">
+    <path d="M150,200 Q200,150 250,200 Q200,250 150,200 Z" />
+    <path d="M400,350 Q450,300 500,350 Q450,400 400,350 Z" />
+    <path d="M650,500 Q700,450 750,500 Q700,550 650,500 Z" />
+  </g>
+  
+  <!-- Coral-like abstract forms -->
+  <g fill="#FF6F91" opacity="0.12">
+    <path d="M200,400 Q250,350 300,400 Q250,450 200,400 Z" />
+    <path d="M450,550 Q500,500 550,550 Q500,600 450,550 Z" />
+  </g>
+  
+  <!-- Abstract organic forms -->
+  <g fill="#008080" opacity="0.1">
+    <path d="M300,300 Q350,250 400,300 Q350,350 300,300 Z" />
+    <path d="M550,450 Q600,400 650,450 Q600,500 550,450 Z" />
+  </g>
+  
+  <desc>Organic cutouts background with Matisse-inspired leaf and coral shapes - organic, flowing aesthetic</desc>
+</svg>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Eye-shaped clock body -->
+  <ellipse cx="100" cy="100" rx="60" ry="40" fill="#1C4FA1"/>
+  <ellipse cx="100" cy="100" rx="55" ry="35" fill="#FFFFFF"/>
+  
+  <!-- Clock face -->
+  <ellipse cx="100" cy="100" rx="40" ry="25" fill="#F8F1E5"/>
+  <ellipse cx="100" cy="100" rx="35" ry="20" fill="#FFFFFF"/>
+  
+  <!-- Clock hands -->
+  <line x1="100" y1="100" x2="100" y2="80" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="100" y1="100" x2="115" y2="100" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="100" cy="100" r="2" fill="#1A1A1A"/>
+  
+  <!-- Eye details -->
+  <ellipse cx="100" cy="95" rx="8" ry="3" fill="#D62828"/>
+  <ellipse cx="100" cy="105" rx="6" ry="2" fill="#D62828"/>
+  
+  <!-- Hanging string -->
+  <line x1="100" y1="60" x2="100" y2="40" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+  
+  <desc>Nelson eye clock - iconic midcentury modern clock with eye-shaped design</desc>
+</svg>

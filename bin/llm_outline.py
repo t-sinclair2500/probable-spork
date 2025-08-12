@@ -13,16 +13,35 @@ if ROOT not in sys.path:
 from bin.core import BASE, load_config, log_state, single_lock
 
 
-def call_ollama(prompt, cfg):
-    url = cfg.llm.endpoint
-    model = cfg.llm.model
-    payload = {"model": model, "prompt": prompt, "stream": False}
-    r = requests.post(url, json=payload, timeout=1200)
-    r.raise_for_status()
-    return r.json().get("response", "")
+def call_ollama(prompt, cfg, models_config=None):
+    """Call Ollama with specified model configuration."""
+    try:
+        # Use new model_runner system
+        from bin.model_runner import model_session
+        
+        # Get model name from config
+        if models_config and 'outline' in models_config.get('models', {}):
+            model_name = models_config['models']['outline']['name']
+        else:
+            # Fallback to global config
+            model_name = cfg.llm.model
+        
+        # Use model session for deterministic load/unload
+        with model_session(model_name) as session:
+            system_prompt = "You are a helpful assistant for creating video outlines."
+            return session.chat(system=system_prompt, user=prompt)
+            
+    except Exception as e:
+        # Fallback to legacy system
+        url = cfg.llm.endpoint
+        model = cfg.llm.model
+        payload = {"model": model, "prompt": prompt, "stream": False}
+        r = requests.post(url, json=payload, timeout=1200)
+        r.raise_for_status()
+        return r.json().get("response", "")
 
 
-def main(brief=None):
+def main(brief=None, models_config=None):
     cfg = load_config()
     os.makedirs(os.path.join(BASE, "scripts"), exist_ok=True)
     
@@ -45,16 +64,16 @@ def main(brief=None):
         tone = brief.get('tone', cfg.pipeline.tone)
         target_len_sec = brief.get('video', {}).get('target_length_max', cfg.pipeline.video_length_seconds)
         
-        # Override topic if brief has specific focus
-        if brief.get('title') and not topics:
+        # Use brief title as primary topic
+        if brief and brief.get('title'):
             topic = brief['title']
             seed_keywords = brief.get('keywords_include', ['productivity', 'tips'])
         elif topics:
             topic = topics[0]["topic"]
-            seed_keywords = topics[0].get("keywords", brief.get('keywords_include', ['productivity', 'tips']))
+            seed_keywords = topics[0].get("keywords", brief.get('keywords_include', ['productivity', 'tips']) if brief else ['productivity', 'tips'])
         else:
-            topic = brief.get('title', 'Productivity tips')
-            seed_keywords = brief.get('keywords_include', ['productivity', 'tips'])
+            topic = brief.get('title', 'Productivity tips') if brief else 'Productivity tips'
+            seed_keywords = brief.get('keywords_include', ['productivity', 'tips']) if brief else ['productivity', 'tips']
     else:
         tone = cfg.pipeline.tone
         target_len_sec = cfg.pipeline.video_length_seconds
@@ -65,7 +84,10 @@ def main(brief=None):
         template = f.read()
     
     prompt = (
-        template.replace("{topic}", topic).replace("{seed_keywords}", ", ".join(seed_keywords))
+        template.replace("{topic}", topic)
+        .replace("{seed_keywords}", ", ".join(seed_keywords))
+        .replace("{target_length_min}", str(target_len_sec))
+        .replace("{target_length_max}", str(target_len_sec))
         + f"\nTone: {tone}. Target length (sec): {target_len_sec}."
     )
     
@@ -76,7 +98,7 @@ def main(brief=None):
         prompt = brief_context + prompt
     
     try:
-        out = call_ollama(prompt, cfg)
+        out = call_ollama(prompt, cfg, models_config)
         data = json.loads(out)
     except Exception:
         # Fallback outline - use brief keywords if available

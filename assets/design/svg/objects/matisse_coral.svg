@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Coral base -->
+  <path d="M100,160 Q80,140 60,120 Q80,100 100,80 Q120,100 140,120 Q120,140 100,160 Z" fill="#FF6F91"/>
+  
+  <!-- Coral branches -->
+  <path d="M100,80 Q90,60 80,40 Q90,20 100,40 Q110,20 120,40 Q110,60 100,80" fill="#FF6F91"/>
+  <path d="M80,120 Q70,100 60,80 Q70,60 80,80 Q90,60 100,80 Q90,100 80,120" fill="#FF6F91"/>
+  <path d="M120,120 Q110,100 100,80 Q110,60 120,80 Q130,60 140,80 Q130,100 120,120" fill="#FF6F91"/>
+  
+  <!-- Coral details -->
+  <circle cx="100" cy="100" r="3" fill="#1A1A1A"/>
+  <circle cx="80" cy="60" r="2" fill="#1A1A1A"/>
+  <circle cx="120" cy="60" r="2" fill="#1A1A1A"/>
+  
+  <desc>Matisse-inspired coral cutout - organic, branching coral form with playful pink color</desc>
+</svg>

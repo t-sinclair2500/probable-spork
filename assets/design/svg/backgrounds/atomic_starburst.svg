@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#F8F1E5"/>
+  
+  <!-- Large central starburst -->
+  <g fill="#1C4FA1" opacity="0.08">
+    <polygon points="960,540 1000,500 1040,540 1000,580" />
+    <polygon points="960,540 920,500 880,540 920,580" />
+    <polygon points="960,540 1000,580 1040,620 1000,660" />
+    <polygon points="960,540 920,580 880,620 920,660" />
+  </g>
+  
+  <!-- Smaller starbursts -->
+  <g fill="#D62828" opacity="0.06">
+    <polygon points="300,300 320,280 340,300 320,320" />
+    <polygon points="1600,400 1620,380 1640,400 1620,420" />
+    <polygon points="400,800 420,780 440,800 420,820" />
+  </g>
+  
+  <!-- Radiating lines -->
+  <g stroke="#F6BE00" stroke-width="2" opacity="0.05">
+    <line x1="960" y1="540" x2="200" y2="200" />
+    <line x1="960" y1="540" x2="1720" y2="200" />
+    <line x1="960" y1="540" x2="200" y2="880" />
+    <line x1="960" y1="540" x2="1720" y2="880" />
+  </g>
+  
+  <desc>Atomic starburst background with radiating geometric forms - atomic age, midcentury aesthetic</desc>
+</svg>

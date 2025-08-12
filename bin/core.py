@@ -122,9 +122,12 @@ class ASRCfg(BaseModel):
 
 
 class TTSCfg(BaseModel):
-    provider: str = "coqui"
-    voice: str = "tts_models/en/ljspeech/tacotron2-DDC"
+    provider: str = "piper"
+    voice: str = "en_US-amy-medium"
+    voice_id: str = "en_US-amy-medium"
     rate_wpm: int = 165
+    ssml: bool = True
+    lufs_target: float = -16.0
     openai_enabled: bool = False
 
 
@@ -161,6 +164,26 @@ class LimitsCfg(BaseModel):
     max_retries: int = 2
 
 
+class VideoCfg(BaseModel):
+    animatics_only: bool = True
+    enable_legacy_stock: bool = False
+    min_coverage: float = 0.85
+
+
+class ProceduralCfg(BaseModel):
+    max_colors_per_scene: int = 3
+    seed: Optional[int] = 42
+    placement: Optional[Dict[str, Any]] = Field(default_factory=lambda: {
+        "min_spacing_px": 64,
+        "safe_margin_px": 40
+    })
+    layout: Optional[Dict[str, Any]] = Field(default_factory=lambda: {
+        "strategy": "auto",
+        "prefer_thirds": True,
+        "max_attempts": 200
+    })
+
+
 class GlobalCfg(BaseModel):
     storage: StorageCfg
     pipeline: PipelineCfg
@@ -168,10 +191,12 @@ class GlobalCfg(BaseModel):
     asr: ASRCfg
     tts: TTSCfg
     assets: AssetsCfg
+    video: VideoCfg
     render: RenderCfg
     upload: UploadCfg
     licenses: LicensesCfg
     limits: LimitsCfg = Field(default_factory=LimitsCfg)
+    procedural: ProceduralCfg = Field(default_factory=ProceduralCfg)
 
 
 def load_yaml(path: str) -> dict:
@@ -220,6 +245,16 @@ def load_blog_cfg():
     p = os.path.join(BASE, "conf", "blog.yaml")
     if not os.path.exists(p):
         p = os.path.join(BASE, "conf", "blog.example.yaml")
+    import yaml
+    return yaml.safe_load(open(p, "r", encoding="utf-8"))
+
+
+def load_modules_cfg():
+    """Load modules configuration from modules.yaml"""
+    p = os.path.join(BASE, "conf", "modules.yaml")
+    if not os.path.exists(p):
+        log.warning("modules.yaml not found, using empty configuration")
+        return {}
     import yaml
     return yaml.safe_load(open(p, "r", encoding="utf-8"))
 

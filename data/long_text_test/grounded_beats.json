@@ -1,0 +1,14 @@
+[
+  {
+    "id": "long_hook",
+    "text": "This is an extremely long text that contains many more words than the maximum allowed limit of twelve words per card element in the SceneScript system",
+    "type": "hook",
+    "duration_target": 4
+  },
+  {
+    "id": "short_point",
+    "text": "Short text here",
+    "type": "point",
+    "duration_target": 3
+  }
+]
