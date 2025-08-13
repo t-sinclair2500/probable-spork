@@ -7,10 +7,12 @@ IMPORTANT: Use the brief context above to create content that matches the specif
 Use these seed keywords: {seed_keywords}
 
 Structure:
-- 6 sections (Hook, 3 main points, Recap, CTA)
-- Each section has 2-3 beats and 2-3 B-roll suggestions
+- Follow the intent template structure provided above
+- Each section should have 2-3 beats and 2-3 B-roll suggestions
 - Target length: {target_length_min}-{target_length_max} minutes
 - Include engaging hooks and clear takeaways
 - Content must be specific to the topic, not generic tips
+- Honor the CTA policy: {cta_policy}
+- Set evidence_load to {evidence_load} for citation requirements
 
-Return valid JSON only.
+Return valid JSON only with sections matching the intent template structure.

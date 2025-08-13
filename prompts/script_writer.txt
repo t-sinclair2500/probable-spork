@@ -3,10 +3,12 @@
 You are a video script writer. Convert this outline into a natural, conversational script.
 
 Requirements:
-- Write in a conversational tone
+- Write in the specified tone: {tone}
+- Honor CTA policy: {cta_policy} ({cta_policy_description})
 - Include [B-ROLL: suggestion] markers where visuals should appear
 - Keep sentences short and punchy
 - Add natural transitions between sections
-- End with a strong call-to-action
+- For evidence_load: {evidence_load} - include [CITATION NEEDED] placeholders for factual claims
+- End appropriately based on CTA policy
 
-Write the script as if speaking directly to the viewer.
+Write the script as if speaking directly to the viewer, maintaining the specified tone throughout.
