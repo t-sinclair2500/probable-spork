@@ -23,6 +23,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from .models import Job, JobStatus, Stage, Event, Gate, Artifact
 from .db import db
 from .storage import storage_manager
+from .events import event_logger
 
 logger = logging.getLogger(__name__)
 
@@ -685,14 +686,8 @@ class Orchestrator:
             future = self.executor.submit(self._run_job, job.id)
             self.job_futures[job.id] = future
             
-            # Record event
-            event = Event(
-                event_type="job_started",
-                stage=job.stage,
-                message=f"Job {job.slug} started execution",
-                metadata={"stage": job.stage.value}
-            )
-            db.add_event(job.id, event)
+            # Record event using event logger
+            event_logger.job_started(job.id, job.slug, job.stage)
             
             logger.info(f"[orchestrator] Started job {job.id} ({job.slug})")
     
@@ -768,19 +763,9 @@ class Orchestrator:
                     future.cancel()
                 del self.job_futures[job_id]
             
-            # Record event
-            event = Event(
-                event_type="gate_pause",
-                stage=stage,
-                message=f"Job {job.slug} paused at {stage.value} gate",
-                metadata={
-                    "stage": stage.value, 
-                    "gate_type": "required",
-                    "gate_id": f"{job_id}_{stage.value}",
-                    "timeout_seconds": self._get_gate_timeout_seconds(stage)
-                }
-            )
-            db.add_event(job.id, event)
+            # Record event using event logger
+            timeout_seconds = self._get_gate_timeout_seconds(stage)
+            event_logger.gate_pause(job.id, stage, timeout_seconds)
             
             logger.info(f"[orchestrator] Job {job_id} paused at {stage.value} gate")
     
@@ -835,14 +820,8 @@ class Orchestrator:
                 job.updated_at = datetime.now(timezone.utc)
                 db.update_job_status(job.id, job.status, job.stage)
                 
-                # Record stage start
-                event = Event(
-                    event_type="stage_started",
-                    stage=stage,
-                    message=f"Started {stage.value} stage",
-                    metadata={"stage": stage.value}
-                )
-                db.add_event(job.id, event)
+                # Record stage start using event logger
+                event_logger.stage_started(job.id, stage)
                 
                 logger.info(f"[orchestrator] Executing {stage.value} stage for job {job_id}")
                 
@@ -854,25 +833,13 @@ class Orchestrator:
                     job.status = JobStatus.FAILED
                     db.update_job_status(job.id, job.status)
                     
-                    event = Event(
-                        event_type="stage_failed",
-                        stage=stage,
-                        message=f"Stage {stage.value} failed: {stage_result.get('error')}",
-                        metadata={"stage": stage.value, "error": stage_result.get("error")}
-                    )
-                    db.add_event(job.id, event)
+                    event_logger.stage_failed(job.id, stage, stage_result.get("error", "Unknown error"))
                     
                     logger.error(f"[orchestrator] Stage {stage.value} failed for job {job_id}")
                     return
                 
                 # Stage completed successfully
-                event = Event(
-                    event_type="stage_completed",
-                    stage=stage,
-                    message=f"Completed {stage.value} stage",
-                    metadata={"stage": stage.value, "result": stage_result}
-                )
-                db.add_event(job.id, event)
+                event_logger.stage_completed(job.id, stage, stage_result)
                 
                 # Add artifacts
                 self._add_stage_artifacts(job, stage, stage_result, run_dir)
@@ -898,12 +865,7 @@ class Orchestrator:
             job.updated_at = datetime.now(timezone.utc)
             db.update_job_status(job.id, job.status)
             
-            event = Event(
-                event_type="job_completed",
-                message=f"Job {job.slug} completed successfully",
-                metadata={"final_stage": job.stage.value}
-            )
-            db.add_event(job.id, event)
+            event_logger.job_completed(job.id, job.slug)
             
             logger.info(f"[orchestrator] Job {job_id} completed successfully")
             
@@ -917,12 +879,7 @@ class Orchestrator:
                 job.updated_at = datetime.now(timezone.utc)
                 db.update_job_status(job.id, job.status)
                 
-                event = Event(
-                    event_type="job_failed",
-                    message=f"Job execution failed: {str(e)}",
-                    metadata={"error": str(e)}
-                )
-                db.add_event(job.id, event)
+                event_logger.job_failed(job.id, str(e))
         
         finally:
             # Clean up
@@ -1144,14 +1101,8 @@ class Orchestrator:
             # Update database
             db.update_gate_decision(job.id, stage, True, operator, notes)
             
-            # Record event
-            event = Event(
-                event_type="gate_approved",
-                stage=stage,
-                message=f"Gate {stage.value} approved by {operator}",
-                metadata={"stage": stage.value, "operator": operator, "notes": notes}
-            )
-            db.add_event(job.id, event)
+            # Record event using event logger
+            event_logger.gate_approved(job.id, stage, operator, notes)
             
             logger.info(f"[orchestrator] Gate {stage.value} approved for job {job_id}")
             
@@ -1196,14 +1147,8 @@ class Orchestrator:
             job.updated_at = datetime.now(timezone.utc)
             db.update_job_status(job.id, job.status)
             
-            # Record event
-            event = Event(
-                event_type="gate_rejected",
-                stage=stage,
-                message=f"Gate {stage.value} rejected by {operator}",
-                metadata={"stage": stage.value, "operator": operator, "notes": notes}
-            )
-            db.add_event(job.id, event)
+            # Record event using event logger
+            event_logger.gate_rejected(job.id, stage, operator, notes)
             
             logger.info(f"[orchestrator] Gate {stage.value} rejected for job {job_id}")
             return True
@@ -1229,13 +1174,8 @@ class Orchestrator:
                     future.cancel()
                 del self.job_futures[job_id]
             
-            # Record event
-            event = Event(
-                event_type="job_canceled",
-                message=f"Job {job.slug} cancelled by operator",
-                metadata={"canceled_at": job.updated_at.isoformat()}
-            )
-            db.add_event(job.id, event)
+            # Record event using event logger
+            event_logger.job_canceled(job.id, "operator")
             
             logger.info(f"[orchestrator] Job {job_id} cancelled")
             return True
@@ -1339,28 +1279,16 @@ class Orchestrator:
                     job.updated_at = datetime.now(timezone.utc)
                     db.update_job_status(job.id, job.status)
                     
-                    # Record event
-                    event = Event(
-                        event_type="gate_auto_approved",
-                        stage=stage,
-                        message=f"Gate {stage.value} auto-approved by timer: {reason}",
-                        metadata={"stage": stage.value, "reason": reason, "auto_approved": True}
-                    )
-                    db.add_event(job.id, event)
+                    # Record event using event logger
+                    event_logger.gate_auto_approved(job.id, stage, reason)
                     
                     logger.info(f"[orchestrator] Gate {stage.value} auto-approved for job {job_id}, resuming execution")
                     
                     # Resume job execution
                     await self.resume_job_execution(job_id)
                 else:
-                    # Record event
-                    event = Event(
-                        event_type="gate_auto_approved",
-                        stage=stage,
-                        message=f"Gate {stage.value} auto-approved by timer: {reason}",
-                        metadata={"stage": stage.value, "reason": reason, "auto_approved": True}
-                    )
-                    db.add_event(job.id, event)
+                    # Record event using event logger
+                    event_logger.gate_auto_approved(job.id, stage, reason)
                     
                     logger.info(f"[orchestrator] Gate {stage.value} auto-approved for job {job_id}")
                 
@@ -1416,14 +1344,8 @@ class Orchestrator:
                 job.updated_at = datetime.now(timezone.utc)
                 db.update_job_status(job.id, job.status)
                 
-                # Record event
-                event = Event(
-                    event_type="gate_resume",
-                    stage=stage,
-                    message=f"Job {job.slug} resumed after {stage.value} gate approval",
-                    metadata={"stage": stage.value, "approved_by": gate.by}
-                )
-                db.add_event(job.id, event)
+                # Record event using event logger
+                event_logger.job_resumed(job.id, stage)
                 
                 # Resume execution
                 await self.resume_job_execution(job_id)

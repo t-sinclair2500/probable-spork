@@ -11,6 +11,7 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from fastapi_app.config import operator_config
+from fastapi_app.security import validate_binding_config, get_security_summary
 
 def main():
     """Run the FastAPI server"""
@@ -21,8 +22,26 @@ def main():
     print(f"Starting Probable Spork Orchestrator")
     print(f"Server: {host}:{port}")
     print(f"Log level: {log_level}")
-    print(f"Admin token: {operator_config.get('security.default_token', 'Not set')}")
-    print(f"CORS: {'Enabled' if operator_config.get('security.cors.enabled') else 'Disabled'}")
+    
+    # Validate security configuration
+    if not validate_binding_config():
+        print("❌ Security configuration validation failed!")
+        print("   External binding not allowed but host is configured for external access")
+        print("   Set 'allow_external_bind: true' in conf/operator.yaml to enable external binding")
+        sys.exit(1)
+    
+    # Show security information
+    security_summary = get_security_summary()
+    print(f"Security:")
+    print(f"  CORS: {'Enabled' if security_summary['cors_enabled'] else 'Disabled'}")
+    print(f"  Rate Limiting: {'Enabled' if security_summary['rate_limiting_enabled'] else 'Disabled'}")
+    print(f"  Security Headers: {'Enabled' if security_summary['security_headers_enabled'] else 'Disabled'}")
+    print(f"  Binding: {host} ({'External' if security_summary['allow_external_bind'] else 'Local-only'})")
+    print(f"  Admin Token: {'Environment' if security_summary['admin_token_set'] else 'Default (change me!)'}")
+    
+    if not security_summary['admin_token_set']:
+        print("⚠️  WARNING: Using default admin token. Set ADMIN_TOKEN environment variable for production!")
+    
     print("-" * 50)
     
     # Run the server

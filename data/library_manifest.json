@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "generated_at": "2025-08-12T19:04:09.955146Z",
-  "total_assets": 44,
+  "generated_at": "2025-08-14T16:28:46.468487Z",
+  "total_assets": 46,
   "assets": {
     "121219f6c9e42e60a3999efa85f5dde1294aa3ba": {
       "path": "assets/design/svg/objects/nelson_bench.svg",
@@ -10,9 +10,9 @@
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
         "#1A1A1A",
-        "#8B5E3C",
-        "#1C4FA1"
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -33,9 +33,9 @@
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
         "#1A1A1A",
-        "#8B5E3C",
-        "#1C4FA1"
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -56,9 +56,9 @@
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
         "#F8F1E5",
-        "#8B5E3C",
-        "#1C4FA1"
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -79,9 +79,9 @@
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
         "#1A1A1A",
-        "#8B5E3C",
-        "#1C4FA1"
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -125,11 +125,11 @@
         "brand"
       ],
       "palette": [
-        "#1A1A1A",
-        "#1C4FA1",
-        "#FFFFFF",
         "#F8F1E5",
-        "#D62828"
+        "#1A1A1A",
+        "#FFFFFF",
+        "#D62828",
+        "#1C4FA1"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -150,11 +150,11 @@
         "brand"
       ],
       "palette": [
+        "#F8F1E5",
         "#1A1A1A",
-        "#8B5E3C",
-        "#1C4FA1",
         "#FFFFFF",
-        "#F8F1E5"
+        "#1C4FA1",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -175,8 +175,8 @@
         "brand"
       ],
       "palette": [
-        "#1A1A1A",
         "#1C4FA1",
+        "#1A1A1A",
         "#FFFFFF",
         "#D62828"
       ],
@@ -199,10 +199,10 @@
         "brand"
       ],
       "palette": [
-        "#F8F1E5",
-        "#8B5E3C",
         "#1C4FA1",
-        "#1A1A1A"
+        "#F8F1E5",
+        "#1A1A1A",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -223,8 +223,8 @@
         "brand"
       ],
       "palette": [
-        "#1A1A1A",
-        "#4E9F3D"
+        "#4E9F3D",
+        "#1A1A1A"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -246,9 +246,9 @@
       ],
       "palette": [
         "#F8F1E5",
-        "#8B5E3C",
+        "#1A1A1A",
         "#FFFFFF",
-        "#1A1A1A"
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -269,17 +269,17 @@
         "brand"
       ],
       "palette": [
-        "#F28C28",
-        "#8B5E3C",
-        "#F6BE00",
-        "#1A1A1A",
-        "#1C4FA1",
-        "#FFFFFF",
-        "#FF6F91",
         "#F8F1E5",
-        "#D62828",
+        "#F28C28",
         "#4E9F3D",
-        "#008080"
+        "#FF6F91",
+        "#1A1A1A",
+        "#FFFFFF",
+        "#008080",
+        "#D62828",
+        "#1C4FA1",
+        "#F6BE00",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -322,8 +322,8 @@
         "brand"
       ],
       "palette": [
-        "#1A1A1A",
-        "#FF6F91"
+        "#FF6F91",
+        "#1A1A1A"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -344,11 +344,11 @@
         "brand"
       ],
       "palette": [
+        "#F8F1E5",
         "#F28C28",
         "#1A1A1A",
-        "#1C4FA1",
         "#FFFFFF",
-        "#F8F1E5"
+        "#1C4FA1"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -369,11 +369,11 @@
         "brand"
       ],
       "palette": [
+        "#F8F1E5",
         "#1A1A1A",
-        "#8B5E3C",
-        "#1C4FA1",
         "#FFFFFF",
-        "#F8F1E5"
+        "#1C4FA1",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -394,10 +394,10 @@
         "brand"
       ],
       "palette": [
-        "#F8F1E5",
         "#1A1A1A",
-        "#FFFFFF",
-        "#F28C28"
+        "#F8F1E5",
+        "#F28C28",
+        "#FFFFFF"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -420,8 +420,8 @@
       "palette": [
         "#F8F1E5",
         "#1A1A1A",
-        "#8B5E3C",
-        "#FFFFFF"
+        "#FFFFFF",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -442,8 +442,8 @@
         "brand"
       ],
       "palette": [
-        "#F6BE00",
         "#1C4FA1",
+        "#F6BE00",
         "#FFFFFF",
         "#D62828"
       ],
@@ -466,11 +466,11 @@
         "brand"
       ],
       "palette": [
-        "#F6BE00",
-        "#1C4FA1",
+        "#4E9F3D",
         "#FFFFFF",
         "#D62828",
-        "#4E9F3D"
+        "#1C4FA1",
+        "#F6BE00"
       ],
       "w": 1920.0,
       "h": 1080.0,
@@ -512,14 +512,14 @@
         "brand"
       ],
       "palette": [
-        "#F28C28",
-        "#F6BE00",
-        "#1C4FA1",
-        "#FF6F91",
         "#F8F1E5",
-        "#D62828",
+        "#F28C28",
         "#4E9F3D",
-        "#008080"
+        "#FF6F91",
+        "#008080",
+        "#D62828",
+        "#1C4FA1",
+        "#F6BE00"
       ],
       "w": 1920.0,
       "h": 1080.0,
@@ -540,9 +540,9 @@
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
         "#F8F1E5",
         "#F6BE00",
-        "#1C4FA1",
         "#D62828"
       ],
       "w": 1920.0,
@@ -564,12 +564,12 @@
         "brand"
       ],
       "palette": [
-        "#1A1A1A",
-        "#8B5E3C",
-        "#1C4FA1",
         "#F8F1E5",
+        "#1C4FA1",
+        "#1A1A1A",
         "#D62828",
-        "url(#paperGrain)"
+        "url(#paperGrain)",
+        "#8B5E3C"
       ],
       "w": 1920.0,
       "h": 1080.0,
@@ -590,9 +590,9 @@
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
         "#F8F1E5",
         "#F6BE00",
-        "#1C4FA1",
         "#D62828"
       ],
       "w": 1920.0,
@@ -635,8 +635,8 @@
         "brand"
       ],
       "palette": [
-        "#FF6F91",
         "#4E9F3D",
+        "#FF6F91",
         "#FFFFFF",
         "#008080"
       ],
@@ -660,9 +660,9 @@
       ],
       "palette": [
         "#F8F1E5",
-        "#8B5E3C",
         "#FF6F91",
-        "#1A1A1A"
+        "#1A1A1A",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -683,10 +683,10 @@
         "brand"
       ],
       "palette": [
-        "#F8F1E5",
-        "#8B5E3C",
         "#1C4FA1",
-        "#1A1A1A"
+        "#F8F1E5",
+        "#1A1A1A",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -707,10 +707,10 @@
         "brand"
       ],
       "palette": [
-        "#10b981",
         "#f59e0b",
-        "#ef4444",
-        "#7c3aed"
+        "#10b981",
+        "#7c3aed",
+        "#ef4444"
       ],
       "w": 120.0,
       "h": 200.0,
@@ -752,8 +752,8 @@
         "brand"
       ],
       "palette": [
-        "#ffffff",
-        "url(#gradient1)"
+        "url(#gradient1)",
+        "#ffffff"
       ],
       "w": 1280.0,
       "h": 720.0,
@@ -774,9 +774,9 @@
         "brand"
       ],
       "palette": [
-        "#374151",
         "#f59e0b",
         "#ef4444",
+        "#374151",
         "#000000"
       ],
       "w": 200.0,
@@ -798,8 +798,8 @@
         "brand"
       ],
       "palette": [
-        "#ffffff",
         "#f59e0b",
+        "#ffffff",
         "#ef4444",
         "#000000"
       ],
@@ -823,8 +823,8 @@
         "prop"
       ],
       "palette": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -867,8 +867,8 @@
         "prop"
       ],
       "palette": [
-        "#4E9F3D",
-        "#D62828"
+        "#D62828",
+        "#4E9F3D"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -956,8 +956,8 @@
         "background"
       ],
       "palette": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "w": 2048.0,
       "h": 1208.0,
@@ -979,8 +979,8 @@
         "background"
       ],
       "palette": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "w": 2048.0,
       "h": 1208.0,
@@ -1001,8 +1001,8 @@
         "background"
       ],
       "palette": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "w": 2048.0,
       "h": 1208.0,
@@ -1022,13 +1022,58 @@
         "procedural"
       ],
       "palette": [
-        "#F6BE00",
-        "#1C4FA1"
+        "#1C4FA1",
+        "#F6BE00"
       ],
       "w": 2048.0,
       "h": 1208.0,
       "viewBox": "0 0 2048 1208",
       "hash": "a51077a2b0bf4bac79ad7ed036a4cd8c7402ffc4",
+      "provenance": {
+        "source": "generated",
+        "seed": null,
+        "generator_params": {}
+      },
+      "usage_count": 0,
+      "last_used": null
+    },
+    "dd8ab687d69b5b32330882fee9ef336016eddef5": {
+      "path": "assets/generated/svg/morph_test.svg",
+      "tags": [
+        "procedural"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#4E9F3D",
+        "#000",
+        "#D62828"
+      ],
+      "w": 200.0,
+      "h": 150.0,
+      "viewBox": "0 0 200 150",
+      "hash": "dd8ab687d69b5b32330882fee9ef336016eddef5",
+      "provenance": {
+        "source": "generated",
+        "seed": null,
+        "generator_params": {}
+      },
+      "usage_count": 0,
+      "last_used": null
+    },
+    "9a4fd7675232765a9309851e15640b2598a8610c": {
+      "path": "assets/generated/svg/test_icon.svg",
+      "tags": [
+        "procedural"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#F6BE00",
+        "#D62828"
+      ],
+      "w": 100.0,
+      "h": 100.0,
+      "viewBox": "0 0 100 100",
+      "hash": "9a4fd7675232765a9309851e15640b2598a8610c",
       "provenance": {
         "source": "generated",
         "seed": null,
@@ -1049,10 +1094,10 @@
     {
       "asset": "assets/brand/props/phone.svg",
       "violations": [
-        "#10b981",
         "#f59e0b",
-        "#ef4444",
-        "#7c3aed"
+        "#10b981",
+        "#7c3aed",
+        "#ef4444"
       ],
       "type": "palette_violation"
     },
@@ -1066,25 +1111,25 @@
     {
       "asset": "assets/brand/backgrounds/gradient1.svg",
       "violations": [
-        "#ffffff",
-        "url(#gradient1)"
+        "url(#gradient1)",
+        "#ffffff"
       ],
       "type": "palette_violation"
     },
     {
       "asset": "assets/brand/characters/narrator.svg",
       "violations": [
-        "#374151",
         "#f59e0b",
-        "#ef4444"
+        "#ef4444",
+        "#374151"
       ],
       "type": "palette_violation"
     },
     {
       "asset": "assets/brand/characters/parent.svg",
       "violations": [
-        "#ffffff",
         "#f59e0b",
+        "#ffffff",
         "#ef4444"
       ],
       "type": "palette_violation"
@@ -1092,8 +1137,8 @@
     {
       "asset": "assets/generated/prop_missing_prop_1755012590_1542.svg",
       "violations": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "type": "palette_violation"
     },
@@ -1107,31 +1152,31 @@
     {
       "asset": "assets/generated/bg_missing_background_1755012590_1542.svg",
       "violations": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "type": "palette_violation"
     },
     {
       "asset": "assets/generated/bg_missing_bg_1755012480_6327.svg",
       "violations": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "type": "palette_violation"
     },
     {
       "asset": "assets/generated/bg_paper_1755012480_3609.svg",
       "violations": [
-        "#2563eb",
-        "#7c3aed"
+        "#7c3aed",
+        "#2563eb"
       ],
       "type": "palette_violation"
     }
   ],
   "palette_stats": {
-    "total_colors": 151,
-    "compliant_colors": 121,
+    "total_colors": 158,
+    "compliant_colors": 128,
     "violation_count": 23
   }
 }

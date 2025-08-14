@@ -1,0 +1,39 @@
+# Example CORS configuration for enabling Gradio UI access
+# Copy this to operator.yaml and modify as needed
+
+server:
+  host: "127.0.0.1"
+  port: 8008
+  workers: 1
+  log_level: "info"
+  allow_external_bind: false
+
+security:
+  admin_token_env: "ADMIN_TOKEN"
+  default_token: "default-admin-token-change-me"
+  
+  rate_limiting:
+    enabled: true
+    job_creation_per_minute: 5
+    api_requests_per_minute: 60
+    burst_size: 10
+  
+  # CORS enabled for Gradio UI
+  cors:
+    enabled: true
+    allow_origins: ["http://localhost:7860", "http://127.0.0.1:7860"]
+    allow_credentials: true
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers: ["*"]
+    expose_headers: ["Content-Length", "Content-Type"]
+    max_age: 86400
+  
+  security_headers:
+    enabled: true
+    hsts_seconds: 31536000
+    content_security_policy: "default-src 'self'; script-src 'self' 'unsafe-inline'"
+    x_content_type_options: "nosniff"
+    x_frame_options: "SAMEORIGIN"  # Allow same-origin framing for UI
+    x_xss_protection: "1; mode=block"
+
+# ... rest of configuration remains the same ...

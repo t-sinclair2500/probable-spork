@@ -222,40 +222,95 @@ class Database:
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (
                     job_id,
-                    event.timestamp.isoformat(),
-                    event.event_type,
+                    event.ts.isoformat(),
+                    event.type,
                     event.stage.value if event.stage else None,
                     event.message,
-                    json.dumps(event.metadata)
+                    json.dumps(event.payload)
                 ))
                 
                 conn.commit()
+                
+                # Also append to events.jsonl file
+                self._append_event_to_jsonl(job_id, event)
+                
                 return True
         except Exception as e:
             logger.error(f"Failed to add event for job {job_id}: {e}")
             return False
     
-    def get_job_events(self, job_id: str, limit: int = 100) -> List[Event]:
-        """Get events for a specific job"""
+    def _append_event_to_jsonl(self, job_id: str, event: Event):
+        """Append event to runs/<job_id>/events.jsonl file"""
+        try:
+            from pathlib import Path
+            
+            # Create runs directory if it doesn't exist
+            runs_dir = Path("runs") / job_id
+            runs_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Append event to events.jsonl
+            events_file = runs_dir / "events.jsonl"
+            
+            # Create event data in the required format
+            event_data = {
+                "ts": event.ts.isoformat(),
+                "type": event.type,
+                "stage": event.stage.value if event.stage else None,
+                "status": event.status,
+                "message": event.message,
+                "payload": event.payload
+            }
+            
+            with open(events_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(event_data) + '\n')
+                
+            logger.debug(f"Event appended to {events_file}")
+            
+        except Exception as e:
+            logger.error(f"Failed to append event to JSONL file for job {job_id}: {e}")
+    
+    def get_job_events(self, job_id: str, limit: int = 100, since: Optional[str] = None) -> List[Event]:
+        """Get events for a specific job with optional since timestamp"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                cursor = conn.execute("""
-                    SELECT * FROM events WHERE job_id = ? ORDER BY timestamp DESC LIMIT ?
-                """, (job_id, limit))
+                
+                if since:
+                    # Get events since the specified timestamp
+                    cursor = conn.execute("""
+                        SELECT * FROM events 
+                        WHERE job_id = ? AND timestamp > ? 
+                        ORDER BY timestamp ASC 
+                        LIMIT ?
+                    """, (job_id, since, limit))
+                else:
+                    # Get recent events
+                    cursor = conn.execute("""
+                        SELECT * FROM events 
+                        WHERE job_id = ? 
+                        ORDER BY timestamp DESC 
+                        LIMIT ?
+                    """, (job_id, limit))
                 
                 events = []
                 for row in cursor.fetchall():
                     event = Event(
-                        timestamp=datetime.fromisoformat(row['timestamp']),
-                        event_type=row['event_type'],
+                        ts=datetime.fromisoformat(row['timestamp']),
+                        type=row['event_type'],
                         stage=Stage(row['stage']) if row['stage'] else None,
+                        status=None,  # Not stored in DB, will be derived
                         message=row['message'],
-                        metadata=json.loads(row['metadata_json'])
+                        payload=json.loads(row['metadata_json'])
                     )
                     events.append(event)
                 
-                return events
+                # If since parameter was used, return in chronological order
+                if since:
+                    return events
+                else:
+                    # Return in reverse chronological order for recent events
+                    return list(reversed(events))
+                    
         except Exception as e:
             logger.error(f"Failed to get events for job {job_id}: {e}")
             return []

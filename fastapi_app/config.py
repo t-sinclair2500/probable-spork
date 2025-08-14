@@ -35,17 +35,34 @@ class OperatorConfig:
                 "host": "127.0.0.1",
                 "port": 8008,
                 "workers": 1,
-                "log_level": "info"
+                "log_level": "info",
+                "allow_external_bind": False
             },
             "security": {
                 "admin_token_env": "ADMIN_TOKEN",
                 "default_token": "default-admin-token-change-me",
+                "rate_limiting": {
+                    "enabled": True,
+                    "job_creation_per_minute": 5,
+                    "api_requests_per_minute": 60,
+                    "burst_size": 10
+                },
                 "cors": {
                     "enabled": False,
                     "allow_origins": [],
                     "allow_credentials": False,
                     "allow_methods": [],
-                    "allow_headers": []
+                    "allow_headers": [],
+                    "expose_headers": [],
+                    "max_age": 86400
+                },
+                "security_headers": {
+                    "enabled": True,
+                    "hsts_seconds": 31536000,
+                    "content_security_policy": "default-src 'self'",
+                    "x_content_type_options": "nosniff",
+                    "x_frame_options": "DENY",
+                    "x_xss_protection": "1; mode=block"
                 }
             },
             "gates": {
@@ -93,6 +110,20 @@ class OperatorConfig:
         """Reload configuration from file"""
         self.config = self._load_config()
         logger.info("Operator config reloaded")
+    
+    def get_sanitized_config(self) -> Dict[str, Any]:
+        """Get configuration without sensitive information"""
+        config_copy = self.config.copy()
+        
+        # Redact sensitive information
+        if "security" in config_copy:
+            security = config_copy["security"]
+            if "default_token" in security:
+                security["default_token"] = "[REDACTED]"
+            if "admin_token_env" in security:
+                security["admin_token_env"] = "[REDACTED]"
+        
+        return config_copy
 
 # Global config instance
 operator_config = OperatorConfig()

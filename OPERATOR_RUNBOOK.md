@@ -1,7 +1,91 @@
-# Asset Loop Management
+# Probable Spork Operator Console
 
-## Overview
-The asset loop provides convenient operator commands to run the asset supply chain end-to-end or stepwise, with clear logs and artifacts. It follows a reuse-first policy, preferring existing on-brand assets before generating anything new.
+## Start Here - Quick Launch
+
+**🚀 One Command to Start Everything:**
+```bash
+make op-console
+```
+
+This starts both the FastAPI backend and Gradio UI. You'll see:
+- FastAPI API: http://127.0.0.1:8008
+- Gradio UI: http://127.0.0.1:7860
+- API docs: http://127.0.0.1:8008/docs
+
+**🔑 Authentication:**
+- Default admin token: `default-admin-token-change-me`
+- Set `ADMIN_TOKEN` environment variable to override
+- All API calls require `Authorization: Bearer <token>` header
+
+## Individual Services
+
+**Start just the API:**
+```bash
+make op-console-api
+```
+
+**Start just the UI:**
+```bash
+make op-console-ui
+```
+
+## First-Time Setup
+
+1. **Install dependencies:**
+   ```bash
+   make install
+   ```
+
+2. **Set admin token (optional but recommended):**
+   ```bash
+   export ADMIN_TOKEN="your-secure-token-here"
+   ```
+
+3. **Launch console:**
+   ```bash
+   make op-console
+   ```
+
+## Smoke Test
+
+**Validate your setup:**
+```bash
+./scripts/smoke_op_console.sh
+```
+
+This creates a test job, waits for approval, approves it, and verifies completion.
+
+## Troubleshooting
+
+**Port conflicts:**
+- FastAPI default: 8008 (change in `conf/operator.yaml`)
+- Gradio default: 7860 (change with `UI_PORT` env var)
+
+**Token errors:**
+- Check `ADMIN_TOKEN` environment variable
+- Verify token in request headers: `Authorization: Bearer <token>`
+
+**SSE blocked:**
+- Use polling fallback: GET `/jobs/{id}/events?poll=true`
+- Check browser console for connection errors
+
+**Service won't start:**
+- Check Python version (3.9-3.11 required)
+- Verify virtual environment is activated
+- Check logs for dependency errors
+
+## Cleanup
+
+**Remove operator console artifacts:**
+```bash
+make clean-op-console
+```
+
+This removes build artifacts without touching core pipeline files.
+
+---
+
+# Asset Loop Management
 
 ## Quick Start
 ```bash

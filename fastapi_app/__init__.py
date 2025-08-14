@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from .routes import router
 from .db import db
 from .config import operator_config
-from .security import get_cors_config
+from .security import get_cors_config, validate_binding_config, get_security_summary
 from .orchestrator import orchestrator
 
 # Configure logging
@@ -35,6 +35,16 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     logger.info("Starting Probable Spork Orchestrator")
+    
+    # Validate security configuration
+    if not validate_binding_config():
+        logger.error("Security configuration validation failed")
+        raise RuntimeError("Security configuration validation failed")
+    
+    # Log security summary
+    security_summary = get_security_summary()
+    logger.info(f"Security configuration: {security_summary}")
+    
     logger.info(f"Server configured for {operator_config.get('server.host')}:{operator_config.get('server.port')}")
     
     # Start background task
@@ -67,6 +77,8 @@ if cors_config["allow_origins"] or cors_config["allow_methods"] or cors_config["
         allow_credentials=cors_config["allow_credentials"],
         allow_methods=cors_config["allow_methods"],
         allow_headers=cors_config["allow_headers"],
+        expose_headers=cors_config["expose_headers"],
+        max_age=cors_config["max_age"]
     )
     logger.info("CORS enabled with configuration")
 else:
@@ -74,3 +86,9 @@ else:
 
 # Include routes
 app.include_router(router, prefix="/api/v1")
+
+# Add health endpoint at root level
+@app.get("/healthz")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": asyncio.get_event_loop().time()}

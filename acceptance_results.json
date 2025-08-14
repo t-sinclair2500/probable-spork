@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-14T05:09:32.016614Z",
+  "timestamp": "2025-08-14T16:28:20.139695Z",
   "pipeline": "acceptance_harness",
   "overall_status": "FAIL",
   "lanes": {
@@ -163,10 +163,10 @@
           },
           "mixed_audio": {
             "valid": false,
-            "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_ysx16u0f/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
+            "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_vg0lps52/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
           },
           "valid": false,
-          "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_ysx16u0f/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254.",
+          "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_vg0lps52/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254.",
           "targets": {
             "vo_lufs": -16.0,
             "music_lufs": -23.0,
@@ -183,7 +183,7 @@
           },
           "reuse_ratio": {
             "value": 1.0,
-            "total_library_assets": 44,
+            "total_library_assets": 46,
             "status": "exempt"
           },
           "palette_compliance": {
@@ -217,10 +217,10 @@
           "provenance": [],
           "errors": [],
           "warnings": [
-            "Library has only 44 assets, reuse ratio not enforced"
+            "Library has only 46 assets, reuse ratio not enforced"
           ]
         },
-        "error": "Audio validation failed: Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_ysx16u0f/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
+        "error": "Audio validation failed: Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_vg0lps52/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
       }
     },
     "blog": {
@@ -254,7 +254,7 @@
     },
     "reuse_ratio": {
       "value": 1.0,
-      "total_library_assets": 44,
+      "total_library_assets": 46,
       "status": "exempt"
     },
     "palette_compliance": {
@@ -288,7 +288,7 @@
     "provenance": [],
     "errors": [],
     "warnings": [
-      "Library has only 44 assets, reuse ratio not enforced"
+      "Library has only 46 assets, reuse ratio not enforced"
     ]
   },
   "visual_polish": {
@@ -333,111 +333,21 @@
     ]
   },
   "pacing": {
-    "status": "WARN",
+    "status": "PASS",
     "enabled": true,
-    "kpi_metrics": {
-      "words_per_sec": 6.47,
-      "cuts_per_min": 3.3,
-      "avg_scene_s": 18.0,
-      "speech_music_ratio": 5.67,
-      "scenes": [
-        {
-          "id": "scene_000",
-          "duration_ms": 15000
-        },
-        {
-          "id": "scene_001",
-          "duration_ms": 20000
-        },
-        {
-          "id": "scene_002",
-          "duration_ms": 20000
-        },
-        {
-          "id": "scene_003",
-          "duration_ms": 20000
-        },
-        {
-          "id": "scene_004",
-          "duration_ms": 15000
-        }
-      ],
-      "source": "brief",
-      "metadata": {
-        "script_words": 495,
-        "video_duration_ms": 90000,
-        "speech_duration_ms": 76500.0,
-        "scene_count": 5,
-        "computed_at": "2025-08-14T04:22:24.256154Z"
-      }
-    },
-    "comparison": {
-      "flags": {
-        "words_per_sec": "fast",
-        "cuts_per_min": "slow",
-        "avg_scene_s": "fast",
-        "speech_music_ratio": "ok"
-      },
-      "overall_status": "fast",
-      "profile_used": {
-        "words_per_sec": [
-          2.5,
-          3.5
-        ],
-        "cuts_per_min": [
-          10,
-          20
-        ],
-        "avg_scene_s": [
-          4.5,
-          7.5
-        ],
-        "speech_ratio_default": 0.8
-      },
-      "tolerance_applied": true,
-      "compared_at": "2025-08-14T04:49:56.104548Z"
-    },
-    "verdict": "WARN",
+    "kpi_metrics": {},
+    "comparison": {},
+    "verdict": "PASS",
     "adjusted": false,
     "errors": [],
-    "warnings": [
-      "Metrics out of band (non-strict mode): words_per_sec, cuts_per_min, avg_scene_s"
-    ],
-    "metrics_table": {
-      "words_per_sec": {
-        "current": 6.47,
-        "bands": [
-          2.5,
-          3.5
-        ],
-        "flag": "fast",
-        "in_band": false
-      },
-      "cuts_per_min": {
-        "current": 3.3,
-        "bands": [
-          10,
-          20
-        ],
-        "flag": "slow",
-        "in_band": false
-      },
-      "avg_scene_s": {
-        "current": 18.0,
-        "bands": [
-          4.5,
-          7.5
-        ],
-        "flag": "fast",
-        "in_band": false
-      }
-    }
+    "warnings": [],
+    "metrics_table": {}
   },
   "summary": {
     "youtube_lane": "FAIL",
     "blog_lane": "FAIL",
     "evidence_lane": "PASS",
-    "pacing_lane": "FAIL",
+    "pacing_lane": "PASS",
     "total_artifacts": {
       "youtube": 9,
       "blog": 0

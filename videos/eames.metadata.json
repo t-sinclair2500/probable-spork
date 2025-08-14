@@ -11,16 +11,14 @@
     "scene_bounds_pass": true,
     "vo_aligned": false
   },
-  "generated_at": "2025-08-14T05:09:32.893132Z",
+  "generated_at": "2025-08-14T16:28:21.127368Z",
   "assets": {
-    "coverage_pct": 100.0,
     "reuse_ratio": 1.0,
-    "total_generated": 0,
+    "total_placeholders": 5,
+    "resolved_count": 5,
+    "gaps_count": 0,
     "manifest_version": "1.0",
-    "palette_names_used": [],
-    "validation_status": "PASS",
-    "last_validated": "2025-08-14T05:09:33.313084Z",
-    "provenance": []
+    "last_updated": "2025-08-14T16:29:06.437184Z"
   },
   "citations": {
     "total_count": 0,
@@ -37,14 +35,14 @@
       "whitelist_compliance": "PENDING"
     },
     "validation_status": "PASS",
-    "last_validated": "2025-08-14T05:09:33.314013Z"
+    "last_validated": "2025-08-14T16:28:21.914184Z"
   },
   "pacing": {
-    "words_per_sec": 25.8,
-    "cuts_per_min": 3.3,
-    "avg_scene_s": 18.0,
-    "speech_music_ratio": 0.27,
-    "source": "vo",
-    "computed_at": "2025-08-14T07:38:54.056513Z"
+    "acceptance_status": "PASS",
+    "acceptance_verdict": "PASS",
+    "acceptance_enabled": true,
+    "acceptance_errors": [],
+    "acceptance_warnings": [],
+    "acceptance_validated_at": "2025-08-14T16:28:21.914359Z"
   }
 }

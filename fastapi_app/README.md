@@ -1,126 +1,107 @@
 # FastAPI Operator Console
 
-This is the FastAPI-based operator console for the Probable Spork video pipeline orchestrator.
+FastAPI orchestrator for the Probable Spork video pipeline with HITL gates.
 
 ## Features
 
-- **Job Management**: Create, view, and manage pipeline jobs
-- **HITL Gates**: Human-in-the-loop approval/rejection for key stages
-- **Real-time Events**: Server-Sent Events (SSE) and polling endpoints
-- **Secure API**: Bearer token authentication with configurable CORS
-- **Configuration**: Loads settings from `conf/operator.yaml`
+- **Job Management**: Create, monitor, and control pipeline jobs
+- **HITL Gates**: Human-in-the-loop approval for critical stages
+- **Real-time Events**: SSE streaming and polling endpoints
+- **Security**: Bearer token authentication, rate limiting, and CORS controls
+- **Asset Management**: Track and manage pipeline artifacts
+
+## Security Features
+
+### Authentication
+- Bearer token required for all non-`/healthz` routes
+- Token read from `ADMIN_TOKEN` environment variable or `conf/operator.yaml`
+- Default token: `default-admin-token-change-me` (change in production!)
+
+### Server Binding
+- **Default**: Binds to `127.0.0.1` (local-only) for security
+- **External**: Set `allow_external_bind: true` in config to enable `0.0.0.0` binding
+- Explicit opt-in required for external access
+
+### CORS (Cross-Origin Resource Sharing)
+- **Disabled by default** for security
+- Enable by setting `security.cors.enabled: true` in `conf/operator.yaml`
+- Configure allowed origins, methods, and headers explicitly
+- See `conf/operator.cors.example.yaml` for UI integration
+
+### Rate Limiting
+- **Job Creation**: Configurable limit per minute (default: 5)
+- **API Requests**: Configurable limit per minute per client (default: 60)
+- **Burst Protection**: Configurable burst size allowance
+- **Health Endpoint**: Exempt from rate limiting
+
+### Security Headers
+- HSTS (HTTP Strict Transport Security)
+- Content Security Policy (CSP)
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY (configurable)
+- X-XSS-Protection: 1; mode=block
 
 ## Quick Start
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Start the server**:
+1. **Start the server**:
    ```bash
    make op-console
-   # or directly:
-   python3 run_server.py
    ```
 
-3. **Access the API**:
-   - API: http://127.0.0.1:8008/api/v1
-   - Interactive docs: http://127.0.0.1:8008/docs
-   - Health check: http://127.0.0.1:8008/api/v1/healthz
+2. **Test security**:
+   ```bash
+   make test-security
+   ```
+
+3. **Enable CORS for UI** (optional):
+   ```bash
+   # Copy and modify the example config
+   cp conf/operator.cors.example.yaml conf/operator.yaml
+   # Edit to customize CORS settings
+   ```
 
 ## Configuration
 
-The server configuration is loaded from `conf/operator.yaml`:
+Edit `conf/operator.yaml` to customize:
 
-```yaml
-server:
-  host: "127.0.0.1"
-  port: 8008
-  log_level: "info"
-
-security:
-  admin_token_env: "ADMIN_TOKEN"
-  cors:
-    enabled: false
-    allow_origins: []
-
-gates:
-  script:
-    required: true
-    auto_approve: false
-    timeout_minutes: 60
-```
+- Server binding and port
+- Security settings and rate limits
+- CORS configuration
+- Gate requirements and timeouts
+- Storage paths and retention
 
 ## API Endpoints
 
-### Core Endpoints
 - `GET /healthz` - Health check (no auth required)
-- `GET /config/operator` - Get sanitized configuration
-- `POST /config/validate` - Validate configuration
+- `GET /api/v1/config/operator` - Get sanitized configuration
+- `POST /api/v1/jobs` - Create new job
+- `GET /api/v1/jobs` - List all jobs
+- `GET /api/v1/jobs/{job_id}` - Get job details
+- `POST /api/v1/jobs/{job_id}/approve` - Approve gate
+- `POST /api/v1/jobs/{job_id}/reject` - Reject gate
+- `GET /api/v1/jobs/{job_id}/events/stream` - SSE event stream
 
-### Job Management
-- `POST /jobs` - Create a new job
-- `GET /jobs` - List all jobs
-- `GET /jobs/{id}` - Get job details
-- `POST /jobs/{id}/approve` - Approve a gate
-- `POST /jobs/{id}/reject` - Reject a gate
-- `POST /jobs/{id}/resume` - Resume a paused job
-- `POST /jobs/{id}/cancel` - Cancel a job
+## Security Best Practices
 
-### Events and Artifacts
-- `GET /jobs/{id}/events` - Get job events (polling)
-- `GET /jobs/{id}/events/stream` - Stream events via SSE
-- `GET /jobs/{id}/artifacts` - Get job artifacts
+1. **Change Default Token**: Set `ADMIN_TOKEN` environment variable
+2. **Local Binding**: Use `127.0.0.1` unless external access is required
+3. **CORS Restriction**: Only enable CORS for trusted origins
+4. **Rate Limiting**: Adjust limits based on expected usage
+5. **Monitor Logs**: Watch for authentication failures and rate limit hits
 
-## Authentication
+## Troubleshooting
 
-All endpoints (except `/healthz`) require Bearer token authentication:
+### CORS Issues
+- Ensure CORS is enabled in `conf/operator.yaml`
+- Check that your origin is in `allow_origins`
+- Verify `allow_credentials` matches your needs
 
-```bash
-curl -H "Authorization: Bearer $ADMIN_TOKEN" \
-     http://127.0.0.1:8008/api/v1/jobs
-```
+### Rate Limiting
+- Check rate limit configuration in `conf/operator.yaml`
+- Monitor logs for rate limit warnings
+- Adjust limits if legitimate requests are blocked
 
-Set the `ADMIN_TOKEN` environment variable or use the default from config.
-
-## Testing
-
-Run the test suite:
-
-```bash
-make test-api
-# or directly:
-python3 test_api.py
-```
-
-## Development
-
-The console is built with:
-- **FastAPI**: Modern, fast web framework
-- **SQLite**: Lightweight database for job metadata
-- **Pydantic**: Data validation and serialization
-- **Uvicorn**: ASGI server
-
-## Architecture
-
-- **Models** (`models.py`): Pydantic models for data validation
-- **Database** (`db.py`): SQLite operations and job persistence
-- **Routes** (`routes.py`): API endpoint definitions
-- **Security** (`security.py`): Authentication and CORS handling
-- **Config** (`config.py`): Configuration management
-
-## Integration
-
-The console integrates with the existing pipeline:
-- Loads configuration from `bin/core.py` functions
-- Respects existing pipeline structure and artifacts
-- Provides HITL gates for operator oversight
-- Maintains job state in SQLite + filesystem
-
-## Security Notes
-
-- **Default**: Local-only binding (127.0.0.1)
-- **CORS**: Disabled by default for security
-- **Authentication**: Required for all operations
-- **Tokens**: Store securely in environment variables
+### Binding Issues
+- Verify `server.host` is set correctly
+- Set `allow_external_bind: true` for `0.0.0.0` binding
+- Check firewall settings for external access

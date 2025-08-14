@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Request
 from fastapi.responses import StreamingResponse
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 import logging
 import uuid
+import time
+import asyncio
 from datetime import datetime, timezone
+from collections import defaultdict, deque
 
 from .models import (
     Job, JobCreate, JobUpdate, GateAction, 
@@ -18,11 +21,37 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Simple in-memory rate limiter for job creation
+job_creation_requests = defaultdict(lambda: deque(maxlen=100))
 
-@router.get("/healthz", response_model=HealthResponse)
-async def health_check():
-    """Health check endpoint"""
-    return HealthResponse()
+def check_job_creation_rate_limit(request: Request):
+    """Check rate limit for job creation"""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    # Get rate limit configuration
+    rate_limiting_enabled = operator_config.get("security.rate_limiting.enabled", True)
+    if not rate_limiting_enabled:
+        return
+    
+    job_limit = operator_config.get("security.rate_limiting.job_creation_per_minute", 5)
+    requests = job_creation_requests[client_ip]
+    
+    # Remove old requests outside the 1-minute window
+    while requests and requests[0] < now - 60:
+        requests.popleft()
+    
+    # Check if we're under the limit
+    if len(requests) >= job_limit:
+        logger.warning(f"Job creation rate limit exceeded for {client_ip}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Job creation rate limit exceeded. Please wait before creating another job.",
+            headers={"Retry-After": "60"}
+        )
+    
+    # Add current request
+    requests.append(now)
 
 
 @router.get("/config/operator")
@@ -36,7 +65,30 @@ async def get_operator_config(
             "host": operator_config.get("server.host"),
             "port": operator_config.get("server.port"),
             "workers": operator_config.get("server.workers"),
-            "log_level": operator_config.get("server.log_level")
+            "log_level": operator_config.get("server.log_level"),
+            "allow_external_bind": operator_config.get("server.allow_external_bind")
+        },
+        "security": {
+            "rate_limiting": {
+                "enabled": operator_config.get("security.rate_limiting.enabled"),
+                "job_creation_per_minute": operator_config.get("security.rate_limiting.job_creation_per_minute"),
+                "api_requests_per_minute": operator_config.get("security.rate_limiting.api_requests_per_minute")
+            },
+            "cors": {
+                "enabled": operator_config.get("security.cors.enabled"),
+                "allow_origins": operator_config.get("security.cors.allow_origins"),
+                "allow_credentials": operator_config.get("security.cors.allow_credentials"),
+                "allow_methods": operator_config.get("security.cors.allow_methods"),
+                "allow_headers": operator_config.get("security.cors.allow_headers")
+            },
+            "security_headers": {
+                "enabled": operator_config.get("security.security_headers.enabled"),
+                "hsts_seconds": operator_config.get("security.security_headers.hsts_seconds"),
+                "content_security_policy": operator_config.get("security.security_headers.content_security_policy"),
+                "x_content_type_options": operator_config.get("security.security_headers.x_content_type_options"),
+                "x_frame_options": operator_config.get("security.security_headers.x_frame_options"),
+                "x_xss_protection": operator_config.get("security.security_headers.x_xss_protection")
+            }
         },
         "gates": operator_config.get("gates"),
         "storage": {
@@ -49,6 +101,8 @@ async def get_operator_config(
             "job_timeout_hours": operator_config.get("pipeline.job_timeout_hours")
         }
     }
+    
+    logger.info(f"Configuration requested by {current_operator} (sanitized)")
     return config
 
 
@@ -80,10 +134,14 @@ async def validate_config(
 @router.post("/jobs", response_model=Job, status_code=status.HTTP_201_CREATED)
 async def create_job(
     job_create: JobCreate,
+    request: Request,
     current_operator: str = Depends(get_current_operator)
 ):
     """Create a new job"""
     try:
+        # Check rate limiting
+        check_job_creation_rate_limit(request)
+        
         # Generate unique job ID
         job_id = str(uuid.uuid4())
         
@@ -93,7 +151,12 @@ async def create_job(
         try:
             global_cfg = load_config()
             modules_cfg = load_modules_cfg()
-            brief_cfg = load_brief()
+            
+            # Use brief_config from request, fallback to core if not provided
+            if job_create.brief_config:
+                brief_cfg = job_create.brief_config
+            else:
+                brief_cfg = load_brief()
             
             # Create config snapshot
             cfg_snapshot = {
@@ -141,13 +204,9 @@ async def create_job(
         
         # Save to database
         if db.create_job(job):
-            # Add initial event
-            initial_event = Event(
-                event_type="job_created",
-                message=f"Job created by {current_operator}",
-                metadata={"operator": current_operator, "slug": job_create.slug}
-            )
-            db.add_event(job_id, initial_event)
+            # Add initial event using event logger
+            from .events import event_logger
+            event_logger.job_created(job_id, job_create.slug, current_operator)
             
             logger.info(f"Job {job_id} created successfully by {current_operator}")
             return job
@@ -157,6 +216,8 @@ async def create_job(
                 detail="Failed to create job in database"
             )
             
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to create job: {e}")
         raise HTTPException(
@@ -240,19 +301,9 @@ async def approve_gate(
                     }
                     db.store_gate_decision_file(job_id, stage, decision_data)
                     
-                    # Add event
-                    event = Event(
-                        event_type="gate_approved",
-                        stage=stage,
-                        message=f"Gate approved by {current_operator}",
-                        metadata={
-                            "operator": current_operator,
-                            "notes": gate_action.notes,
-                            "patch": gate_action.patch,
-                            "stage": stage.value
-                        }
-                    )
-                    db.add_event(job_id, event)
+                    # Add event using event logger
+                    from .events import event_logger
+                    event_logger.gate_approved(job_id, stage, current_operator, gate_action.notes)
                     
                     # Update job status if needed
                     if job.status == JobStatus.NEEDS_APPROVAL:
@@ -324,19 +375,9 @@ async def reject_gate(
                     }
                     db.store_gate_decision_file(job_id, stage, decision_data)
                     
-                    # Add event
-                    event = Event(
-                        event_type="gate_rejected",
-                        stage=stage,
-                        message=f"Gate rejected by {current_operator}",
-                        metadata={
-                            "operator": current_operator,
-                            "notes": gate_action.notes,
-                            "patch": gate_action.patch,
-                            "stage": stage.value
-                        }
-                    )
-                    db.add_event(job_id, event)
+                    # Add event using event logger
+                    from .events import event_logger
+                    event_logger.gate_rejected(job_id, stage, current_operator, gate_action.notes)
                     
                     # Update job status to paused
                     db.update_job_status(job_id, JobStatus.PAUSED)
@@ -613,13 +654,9 @@ async def cancel_job(
         
         # Cancel job
         if db.update_job_status(job_id, JobStatus.CANCELED):
-            # Add event
-            event = Event(
-                event_type="job_canceled",
-                message=f"Job canceled by {current_operator}",
-                metadata={"operator": current_operator}
-            )
-            db.add_event(job_id, event)
+            # Add event using event logger
+            from .events import event_logger
+            event_logger.job_canceled(job_id, current_operator)
             
             logger.info(f"Job {job_id} canceled by {current_operator}")
             return {"message": "Job canceled successfully"}
@@ -658,12 +695,20 @@ async def get_job_artifacts(
 @router.get("/jobs/{job_id}/events")
 async def get_job_events(
     job_id: str,
+    since: Optional[str] = None,
+    limit: int = 100,
     current_operator: str = Depends(get_current_operator)
 ):
     """Get events for a specific job (polling endpoint)"""
     try:
-        events = db.get_job_events(job_id, limit=100)
-        return events
+        events = db.get_job_events(job_id, limit=limit, since=since)
+        return {
+            "job_id": job_id,
+            "events": events,
+            "count": len(events),
+            "since": since,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
     except Exception as e:
         logger.error(f"Failed to get events for job {job_id}: {e}")
         raise HTTPException(
@@ -677,7 +722,7 @@ async def stream_job_events(
     job_id: str,
     current_operator: str = Depends(get_current_operator)
 ):
-    """Stream job events via Server-Sent Events"""
+    """Stream job events via Server-Sent Events (SSE)"""
     try:
         # Verify job exists
         job = db.get_job(job_id)
@@ -690,22 +735,71 @@ async def stream_job_events(
         async def event_stream():
             """Stream events for the job"""
             try:
-                # Send initial connection event
-                yield f"data: {json.dumps({'event': 'connected', 'job_id': job_id, 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
+                # Create a queue for this client
+                from .events import event_logger
+                queue = asyncio.Queue()
                 
-                # Send heartbeat every 30 seconds
-                import asyncio
+                # Subscribe to events
+                await event_logger.stream_manager.subscribe(job_id, queue)
+                
+                # Send initial connection event
+                initial_event = {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "type": "connected",
+                    "stage": None,
+                    "status": None,
+                    "message": f"Connected to job {job_id} event stream",
+                    "payload": {"job_id": job_id, "operator": current_operator}
+                }
+                yield f"data: {json.dumps(initial_event)}\n\n"
+                
+                # Send heartbeat every 5 seconds as required
+                last_heartbeat = time.time()
+                
                 while True:
-                    await asyncio.sleep(30)
-                    yield f"data: {json.dumps({'event': 'heartbeat', 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
+                    current_time = time.time()
+                    
+                    # Send heartbeat every 5 seconds
+                    if current_time - last_heartbeat >= 5:
+                        heartbeat_event = {
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "type": "heartbeat",
+                            "stage": None,
+                            "status": None,
+                            "message": "",
+                            "payload": {}
+                        }
+                        yield f"data: {json.dumps(heartbeat_event)}\n\n"
+                        last_heartbeat = current_time
+                    
+                    # Check for new events (non-blocking)
+                    try:
+                        # Wait for events with timeout
+                        event_data = await asyncio.wait_for(queue.get(), timeout=1.0)
+                        yield f"data: {json.dumps(event_data)}\n\n"
+                    except asyncio.TimeoutError:
+                        # No events, continue to next heartbeat check
+                        continue
                     
             except asyncio.CancelledError:
                 # Client disconnected
                 logger.info(f"SSE stream ended for job {job_id}")
+                # Unsubscribe from events
+                await event_logger.stream_manager.unsubscribe(job_id, queue)
                 return
             except Exception as e:
                 logger.error(f"Error in SSE stream for job {job_id}: {e}")
-                yield f"data: {json.dumps({'event': 'error', 'message': str(e), 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
+                error_event = {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "type": "error",
+                    "stage": None,
+                    "status": None,
+                    "message": str(e),
+                    "payload": {"error": str(e)}
+                }
+                yield f"data: {json.dumps(error_event)}\n\n"
+                # Unsubscribe from events
+                await event_logger.stream_manager.unsubscribe(job_id, queue)
                 return
         
         return StreamingResponse(
@@ -823,18 +917,19 @@ async def apply_patch_direct(
         # Apply the patch
         await apply_patch_to_artifact(job_id, stage, patch)
         
-        # Record the patch application
-        event = Event(
+        # Record the patch application using event logger
+        from .events import event_logger
+        event_logger.emit_event(
+            job_id=job_id,
             event_type="patch_applied_direct",
             stage=stage,
             message=f"Patch applied directly by {current_operator}",
-            metadata={
+            payload={
                 "operator": current_operator,
                 "patch": patch,
                 "stage": stage.value
             }
         )
-        db.add_event(job_id, event)
         
         logger.info(f"Patch applied directly to {stage.value} for job {job_id} by {current_operator}")
         return {"message": f"Patch applied successfully to {stage.value}"}

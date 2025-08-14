@@ -112,11 +112,20 @@ class GateAction(BaseModel):
 
 class Event(BaseModel):
     """Job event for logging and SSE"""
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    event_type: str
+    ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="timestamp")
+    type: str = Field(alias="event_type")
     stage: Optional[Stage] = None
-    message: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    status: Optional[str] = None
+    message: str = ""
+    payload: Optional[Dict[str, Any]] = Field(default_factory=dict, alias="metadata")
+    
+    class Config:
+        allow_population_by_field_name = True
+        fields = {
+            "ts": "timestamp",
+            "type": "event_type",
+            "payload": "metadata"
+        }
 
 
 class HealthResponse(BaseModel):

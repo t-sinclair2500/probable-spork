@@ -18,7 +18,7 @@ def test_health():
     """Test health endpoint"""
     print("Testing health endpoint...")
     try:
-        response = requests.get(f"{BASE_URL}/healthz")
+        response = requests.get("http://127.0.0.1:8008/healthz")
         print(f"Health check: {response.status_code} - {response.json()}")
         return response.status_code == 200
     except Exception as e:
@@ -57,9 +57,10 @@ def test_job_creation():
             "slug": "test-job-001",
             "intent": "Test video creation",
             "brief_config": {
+                "slug": "test-job-001",
+                "intent": "Test video creation",
                 "tone": "informative",
-                "target_length_min": 3,
-                "target_length_max": 5
+                "target_len_sec": 30
             }
         }
         

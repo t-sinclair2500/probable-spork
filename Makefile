@@ -338,18 +338,59 @@ pi-health:
 # =============================================================================
 
 op-console:
-	@echo "Starting FastAPI Operator Console..."
+	@echo "Starting FastAPI + Gradio UI..."
+	@echo "FastAPI: http://127.0.0.1:8008"
+	@echo "Gradio UI: http://127.0.0.1:7860"
+	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
+	@echo ""
+	@echo "Starting FastAPI server in background..."
+	@./scripts/serve_api.sh &
+	@echo "Waiting for FastAPI to start..."
+	@sleep 3
+	@echo "Starting Gradio UI..."
+	@./scripts/serve_ui.sh
+
+op-console-api:
+	@echo "Starting FastAPI Operator Console API..."
 	@echo "Server will be available at: http://127.0.0.1:8008"
 	@echo "API docs: http://127.0.0.1:8008/docs"
 	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
 	@echo ""
-	$(PY) run_server.py
+	./scripts/serve_api.sh
+
+op-console-ui:
+	@echo "Starting Gradio UI..."
+	@echo "UI will be available at: http://127.0.0.1:7860"
+	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
+	@echo ""
+	./scripts/serve_ui.sh
+
+gradio-ui:
+	@echo "Starting Gradio UI..."
+	@echo "UI will be available at: http://127.0.0.1:7860"
+	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
+	@echo ""
+	$(PY) ui/gradio_app.py
+
+op-console-full:
+	@echo "Starting FastAPI + Gradio UI..."
+	@echo "FastAPI: http://127.0.0.1:8008"
+	@echo "Gradio UI: http://127.0.0.1:7860"
+	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
+	@echo ""
+	@echo "Starting FastAPI server in background..."
+	@$(PY) run_server.py &
+	@echo "Waiting for FastAPI to start..."
+	@sleep 3
+	@echo "Starting Gradio UI..."
+	@$(PY) ui/gradio_app.py
 
 clean-op-console:
 	@echo "Cleaning operator console artifacts..."
 	@rm -f jobs.db
 	@rm -rf __pycache__
 	@rm -rf fastapi_app/__pycache__
+	@rm -rf ui/__pycache__
 	@echo "✅ Operator console cleaned"
 
 test-api:
@@ -367,3 +408,11 @@ test-orchestrator-simple:
 test-orchestrator-basic:
 	@echo "Testing basic orchestrator functionality..."
 	$(PY) test_orchestrator_basic.py
+
+test-gradio-ui:
+	@echo "Testing Gradio UI components..."
+	$(PY) test_gradio_ui.py
+
+test-security:
+	@echo "Testing security implementation..."
+	$(PY) test_security.py
