@@ -21,6 +21,10 @@ pydantic-core==2.20.1
 python-dotenv==1.0.1
 jsonschema==4.24.0
 
+# FastAPI and web dependencies
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+
 # Image and video processing
 # Pillow 10+ removed ANTIALIAS; MoviePy 1.0.3 expects it. Use 9.5.0 for compatibility.
 pillow==9.5.0

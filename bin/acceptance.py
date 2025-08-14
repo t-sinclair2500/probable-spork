@@ -95,6 +95,16 @@ class AcceptanceValidator:
                 },
                 "errors": [],
                 "warnings": []
+            },
+            "pacing": {
+                "status": "PENDING",
+                "enabled": False,
+                "kpi_metrics": {},
+                "comparison": {},
+                "verdict": "PENDING",
+                "adjusted": False,
+                "errors": [],
+                "warnings": []
             }
         }
     
@@ -512,6 +522,43 @@ class AcceptanceValidator:
         except Exception as e:
             log.error(f"[acceptance-evidence] Failed to update video metadata with evidence: {e}")
     
+    def _update_video_metadata_with_pacing(self, slug: str, pacing_results: Dict[str, Any]):
+        """Update video metadata with pacing validation information"""
+        log.info(f"[acceptance-pacing] Updating video metadata with pacing information for {slug}")
+        
+        video_metadata_path = os.path.join(BASE, "videos", f"{slug}.metadata.json")
+        if not os.path.exists(video_metadata_path):
+            log.warning(f"[acceptance-pacing] Video metadata not found: {video_metadata_path}")
+            return
+        
+        try:
+            with open(video_metadata_path, 'r') as f:
+                metadata = json.load(f)
+            
+            # Preserve existing metadata sections
+            if "pacing" not in metadata:
+                metadata["pacing"] = {}
+            
+            # Update pacing section with acceptance validation results
+            # but preserve existing pacing data
+            metadata["pacing"].update({
+                "acceptance_status": pacing_results["status"],
+                "acceptance_verdict": pacing_results["verdict"],
+                "acceptance_enabled": pacing_results["enabled"],
+                "acceptance_errors": pacing_results["errors"],
+                "acceptance_warnings": pacing_results["warnings"],
+                "acceptance_validated_at": datetime.utcnow().isoformat() + "Z"
+            })
+            
+            # Write updated metadata
+            with open(video_metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
+            
+            log.info(f"[acceptance-pacing] Updated video metadata with pacing validation information")
+            
+        except Exception as e:
+            log.error(f"[acceptance-pacing] Failed to update video metadata with pacing: {e}")
+    
     def validate_youtube_lane(self) -> bool:
         """Validate YouTube lane artifacts and quality"""
         log.info("=== VALIDATING YOUTUBE LANE ===")
@@ -745,6 +792,18 @@ class AcceptanceValidator:
             if len(visual_polish_errors) > 3:
                 error_msg += f" (+{len(visual_polish_errors) - 3} more)"
             youtube_results["quality"]["warning"] = f"Visual polish issues: {error_msg}"
+        
+        # Pacing validation
+        pacing_quality = self._validate_pacing(artifacts)
+        youtube_results["quality"]["pacing"] = pacing_quality
+        
+        # Check pacing results (non-blocking for overall status, but can affect final verdict)
+        if pacing_quality.get("status") == "FAIL":
+            pacing_errors = pacing_quality.get("errors", [])
+            error_msg = f"Pacing validation failed: {'; '.join(pacing_errors[:3])}"
+            if len(pacing_errors) > 3:
+                error_msg += f" (+{len(pacing_errors) - 3} more)"
+            youtube_results["quality"]["warning"] = f"Pacing issues: {error_msg}"
         
         youtube_results["status"] = "PASS"
         return True
@@ -2086,6 +2145,123 @@ class AcceptanceValidator:
             evidence_results["errors"].append(f"Evidence validation error: {str(e)}")
             return evidence_results
     
+    def _validate_pacing(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate pacing KPIs against intent bands and determine verdict"""
+        log.info("[acceptance-pacing] Starting pacing validation")
+        
+        pacing_results = {
+            "status": "PENDING",
+            "enabled": False,
+            "kpi_metrics": {},
+            "comparison": {},
+            "verdict": "PENDING",
+            "adjusted": False,
+            "errors": [],
+            "warnings": []
+        }
+        
+        # Check if pacing is enabled in modules config
+        if not self.modules_cfg or not self.modules_cfg.get('pacing', {}).get('enable', False):
+            pacing_results["status"] = "SKIP"
+            pacing_results["warnings"].append("Pacing validation disabled in modules.yaml")
+            return pacing_results
+        
+        pacing_results["enabled"] = True
+        
+        # Find slug and pacing artifacts
+        slug = self._extract_slug_from_artifacts(artifacts)
+        if not slug:
+            pacing_results["status"] = "FAIL"
+            pacing_results["errors"].append("Could not determine slug for pacing validation")
+            return pacing_results
+        
+        try:
+            # Load pacing report
+            pacing_report_path = os.path.join(BASE, "runs", slug, "pacing_report.json")
+            if not os.path.exists(pacing_report_path):
+                pacing_results["status"] = "FAIL"
+                pacing_results["errors"].append(f"Missing pacing report: {pacing_report_path}")
+                return pacing_results
+            
+            with open(pacing_report_path, 'r') as f:
+                pacing_report = json.load(f)
+            
+            # Load video metadata to check if adjustments were applied
+            video_metadata_path = os.path.join(BASE, "videos", f"{slug}.metadata.json")
+            video_metadata = {}
+            if os.path.exists(video_metadata_path):
+                with open(video_metadata_path, 'r') as f:
+                    video_metadata = json.load(f)
+            
+            # Extract KPI metrics and comparison data
+            kpi_metrics = pacing_report.get("kpi_metrics", {})
+            comparison = pacing_report.get("comparison", {})
+            
+            pacing_results["kpi_metrics"] = kpi_metrics
+            pacing_results["comparison"] = comparison
+            
+            # Check if adjustments were applied
+            pacing_metadata = video_metadata.get("pacing", {})
+            pacing_results["adjusted"] = pacing_metadata.get("adjusted", False)
+            
+            # Get flags and determine if metrics are within bands
+            flags = comparison.get("flags", {})
+            overall_status = comparison.get("overall_status", "unknown")
+            
+            # Check if any metric is significantly out of band (>10% tolerance)
+            tolerance_pct = self.modules_cfg.get('pacing', {}).get('tolerance_pct', 10)
+            out_of_band_metrics = []
+            
+            for metric, flag in flags.items():
+                if flag not in ["ok", "within_tolerance"]:
+                    out_of_band_metrics.append(metric)
+            
+            # Determine verdict based on config and out-of-band status
+            strict_mode = self.modules_cfg.get('pacing', {}).get('strict', False)
+            
+            if not out_of_band_metrics:
+                # All metrics within bands
+                pacing_results["verdict"] = "PASS"
+                pacing_results["status"] = "PASS"
+            else:
+                # Some metrics out of band
+                if strict_mode:
+                    pacing_results["verdict"] = "FAIL"
+                    pacing_results["status"] = "FAIL"
+                    pacing_results["errors"].append(f"Metrics out of band in strict mode: {', '.join(out_of_band_metrics)}")
+                else:
+                    pacing_results["verdict"] = "WARN"
+                    pacing_results["status"] = "WARN"
+                    pacing_results["warnings"].append(f"Metrics out of band (non-strict mode): {', '.join(out_of_band_metrics)}")
+            
+            # Add compact table of metrics and bands for operator readability
+            profile_used = comparison.get("profile_used", {})
+            metrics_table = {}
+            
+            for metric in ["words_per_sec", "cuts_per_min", "avg_scene_s", "speech_music_ratio"]:
+                if metric in kpi_metrics and metric in profile_used:
+                    current_value = kpi_metrics[metric]
+                    bands = profile_used.get(metric, [])
+                    flag = flags.get(metric, "unknown")
+                    
+                    metrics_table[metric] = {
+                        "current": current_value,
+                        "bands": bands,
+                        "flag": flag,
+                        "in_band": flag in ["ok", "within_tolerance"]
+                    }
+            
+            pacing_results["metrics_table"] = metrics_table
+            
+            log.info(f"[acceptance-pacing] Pacing validation completed: {pacing_results['status']} - {pacing_results['verdict']}")
+            return pacing_results
+            
+        except Exception as e:
+            log.error(f"[acceptance-pacing] Pacing validation error: {e}")
+            pacing_results["status"] = "FAIL"
+            pacing_results["errors"].append(f"Pacing validation error: {str(e)}")
+            return pacing_results
+    
     def run_validation(self) -> Dict[str, Any]:
         """Run complete validation and return results"""
         log.info("Starting acceptance validation...")
@@ -2100,13 +2276,18 @@ class AcceptanceValidator:
         evidence_ok = self._validate_evidence_quality(self.results["lanes"]["youtube"]["artifacts"])
         self.results["evidence"] = evidence_ok
         
-        # Update video metadata with evidence information
+        # Validate pacing
+        pacing_ok = self._validate_pacing(self.results["lanes"]["youtube"]["artifacts"])
+        self.results["pacing"] = pacing_ok
+        
+        # Update video metadata with evidence and pacing information
         slug = self._extract_slug_from_artifacts(self.results["lanes"]["youtube"]["artifacts"])
         if slug:
             self._update_video_metadata_with_evidence(slug, evidence_ok)
+            self._update_video_metadata_with_pacing(slug, pacing_ok)
         
         # Determine overall status (all lanes must pass)
-        if youtube_ok and blog_ok and evidence_ok["status"] == "PASS":
+        if youtube_ok and blog_ok and evidence_ok["status"] == "PASS" and pacing_ok["status"] == "PASS":
             self.results["overall_status"] = "PASS"
         else:
             self.results["overall_status"] = "FAIL"
@@ -2129,6 +2310,7 @@ class AcceptanceValidator:
             "youtube_lane": "PASS" if youtube_ok else "FAIL",
             "blog_lane": "PASS" if blog_ok else "FAIL",
             "evidence_lane": "PASS" if evidence_ok["status"] == "PASS" else "FAIL",
+            "pacing_lane": "PASS" if pacing_ok["status"] == "PASS" else "FAIL",
             "total_artifacts": {
                 "youtube": len([v for v in self.results["lanes"]["youtube"]["artifacts"].values() if v]),
                 "blog": len([v for v in self.results["lanes"]["blog"]["artifacts"].values() if v])

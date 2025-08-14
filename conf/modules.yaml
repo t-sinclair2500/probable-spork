@@ -104,6 +104,14 @@ assets:
   enable_provenance_tracking: true  # Track generation parameters and seeds
   max_generated_assets_per_run: 20  # Maximum new assets generated per pipeline run
 
+# Pacing analysis and feedback settings
+pacing:
+  enable: true                    # Enable/disable pacing analysis and feedback
+  strict: false                   # Strict mode: FAIL on out-of-band metrics
+  max_adjust_ms_per_scene: 1000  # Maximum adjustment per scene in milliseconds
+  max_total_adjust_ms: 5000      # Maximum total adjustment across all scenes
+  tolerance_pct: 10              # Percentage tolerance for "ok" vs "fast/slow"
+
 # Geometry engine settings
 geometry:
   enable: false                   # Enable/disable SVG geometry operations

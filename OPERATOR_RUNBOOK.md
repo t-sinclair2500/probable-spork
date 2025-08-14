@@ -133,6 +133,67 @@ Presets are defined in `conf/style_presets.yaml` and can be customized:
 - Presets override base configuration from `conf/global.yaml`
 - Changes are logged with preset name and resolved parameters
 
+## Pacing KPI & Feedback Management
+
+### Quick Pacing Analysis
+The pacing system provides operator commands to analyze and tune video pacing metrics:
+
+```bash
+# Compute pacing KPIs and generate report
+make pacing-report SLUG=<slug>
+
+# Apply feedback adjustments and update metadata
+make pacing-tune SLUG=<slug>
+
+# Run smoke test (KPI → feedback dry-run → summary)
+make pacing-smoke SLUG=<slug>
+```
+
+### Individual CLI Commands
+```bash
+# Compute pacing KPIs
+python bin/pacing_kpi.py --slug <slug>
+
+# Show proposed adjustments without applying
+python bin/pacing_feedback.py --slug <slug> --dry-run
+
+# Apply adjustments and update metadata
+python bin/pacing_feedback.py --slug <slug> --apply
+```
+
+### Pacing Metrics
+The system computes four key pacing metrics:
+- **Words/sec**: Total words / total speech duration (from SRT if available, else brief-based)
+- **Cuts/min**: Scene transitions per minute
+- **Avg scene**: Mean scene duration in seconds
+- **Speech/music ratio**: Speech duration / (total - speech duration)
+
+### Feedback Adjustment
+The feedback system provides one-pass deterministic adjustments:
+- **Safety bounds**: ±0.5–1.0s max per scene, respects timing clamps
+- **VO alignment**: If `timing.align_to_vo=true`, visual timing conforms to VO windows
+- **Deterministic**: Same inputs produce identical adjustments
+- **Idempotent**: Only one feedback iteration per run
+
+### Pacing Bands
+Metrics are compared against intent-specific bands from `conf/intent_profiles.yaml`:
+- **Within band**: No adjustments needed
+- **>10% out of band**: Single feedback pass attempted
+- **Still out after feedback**: WARN (non-strict) or FAIL (strict) per config
+
+### Pacing Artifacts
+Each pacing run creates artifacts under `runs/<slug>/`:
+- `pacing_report.json` — raw metrics + per-scene durations + flags before/after feedback
+- `pacing_adjustments.json` — exact adjustments proposed/applied
+- Updated `videos/<slug>.metadata.json` with pacing block
+
+### Pacing Acceptance Gates
+The pacing system enforces quality gates:
+- **KPI computation**: All metrics computed and stored in metadata
+- **Band compliance**: Metrics within ±10% of target bands after feedback
+- **No regressions**: No layout collisions or contrast issues introduced
+- **Audit trail**: All adjustments logged with before/after values
+
 ## Artifacts Generated
 Each run creates artifacts under `runs/<slug>/`:
 - `asset_plan.json` — resolved assets & gaps list
@@ -154,6 +215,10 @@ All commands use structured logging with stage tags:
 - `[fact-guard]` — Fact-checking and validation
 - `[citations]` — Citation processing and metadata
 - `[research_report]` — Research coverage reporting
+- `[pacing-kpi]` — Pacing KPI computation and analysis
+- `[pacing-compare]` — Pacing comparison against intent bands
+- `[pacing-feedback]` — Pacing feedback adjustment operations
+- `[pacing-accept]` — Pacing acceptance gate validation
 
 ## Success Criteria
 - **Coverage:** 100% of storyboard placeholders resolved to concrete assets

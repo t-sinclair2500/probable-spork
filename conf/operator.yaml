@@ -1,0 +1,114 @@
+# Operator Console Configuration
+# Default settings for FastAPI orchestrator and Gradio UI
+
+server:
+  host: "127.0.0.1"
+  port: 8008
+  workers: 1
+  log_level: "info"
+
+security:
+  # Bearer token authentication
+  admin_token_env: "ADMIN_TOKEN"
+  # Default token (change in production)
+  default_token: "default-admin-token-change-me"
+  
+  # CORS settings (disabled by default for security)
+  cors:
+    enabled: false
+    allow_origins: []
+    allow_credentials: false
+    allow_methods: []
+    allow_headers: []
+
+gates:
+  # HITL gate configuration
+  script:
+    required: true
+    auto_approve: false
+    auto_approve_after_s: null  # null = no auto-approval, int = seconds to wait
+  
+  storyboard:
+    required: true
+    auto_approve: false
+    auto_approve_after_s: null
+  
+  assets:
+    required: true
+    auto_approve: false
+    auto_approve_after_s: null
+  
+  audio:
+    required: true
+    auto_approve: false
+    auto_approve_after_s: null
+  
+  # Optional gates
+  outline:
+    required: false
+    auto_approve: true
+    auto_approve_after_s: 1800  # 30 minutes
+  
+  research:
+    required: false
+    auto_approve: true
+    auto_approve_after_s: 2700  # 45 minutes
+  
+  animatics:
+    required: false
+    auto_approve: true
+    auto_approve_after_s: 5400  # 90 minutes
+  
+  assemble:
+    required: false
+    auto_approve: true
+    auto_approve_after_s: 7200  # 120 minutes
+  
+  acceptance:
+    required: false
+    auto_approve: true
+    auto_approve_after_s: 1800  # 30 minutes
+
+storage:
+  # Database settings
+  db_path: "jobs.db"
+  
+  # Artifact storage
+  runs_dir: "runs"
+  artifacts_dir: "artifacts"
+  
+  # Logging
+  events_retention_days: 30
+  max_events_per_job: 1000
+
+pipeline:
+  # Pipeline execution settings
+  max_concurrent_jobs: 1
+  job_timeout_hours: 24
+  
+  # Stage timeouts
+  stage_timeouts:
+    outline: 30
+    research: 45
+    script: 60
+    storyboard: 120
+    assets: 180
+    animatics: 90
+    audio: 60
+    assemble: 120
+    acceptance: 30
+
+ui:
+  # Gradio UI settings
+  enabled: true
+  port: 7860
+  share: false
+  debug: false
+  
+  # UI features
+  features:
+    real_time_updates: true
+    sse_enabled: true
+    polling_fallback: true
+    download_artifacts: true
+    job_cancellation: true

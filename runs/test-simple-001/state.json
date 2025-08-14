@@ -1,0 +1,9 @@
+{
+  "id": "test-simple-001",
+  "slug": "test-simple",
+  "status": "running",
+  "stage": "outline",
+  "updated_at": "2025-08-14T13:55:49.363122+00:00",
+  "gates": [],
+  "artifacts": []
+}

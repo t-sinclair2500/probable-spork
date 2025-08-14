@@ -3,7 +3,7 @@ VENV := venv
 PY := $(VENV)/bin/python
 export PYTHONPATH := $(CURDIR)
 
-.PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health music-setup music-import music-stats music-validate
+.PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health music-setup music-import music-stats music-validate op-console clean-op-console test-orchestrator
 
 install:
 	@echo "Checking Python version..."
@@ -274,6 +274,30 @@ asset-loop:
 	$(MAKE) asset-reflow SLUG=$(SLUG)
 	@echo "Asset loop completed for $(SLUG)"
 
+# -------- Pacing KPI & Feedback Management --------
+pacing-report:
+	@echo "Usage: make pacing-report SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Computing pacing KPIs for $(SLUG)..."
+	$(PY) bin/pacing_kpi.py --slug $(SLUG)
+	@echo "Pacing report completed for $(SLUG)"
+
+pacing-tune:
+	@echo "Usage: make pacing-tune SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Running KPI computation and feedback adjustment for $(SLUG)..."
+	$(MAKE) pacing-report SLUG=$(SLUG)
+	$(PY) bin/pacing_feedback.py --slug $(SLUG) --apply
+	@echo "Pacing tuning completed for $(SLUG)"
+
+pacing-smoke:
+	@echo "Usage: make pacing-smoke SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Running pacing smoke test for $(SLUG)..."
+	$(MAKE) pacing-report SLUG=$(SLUG)
+	$(PY) bin/pacing_feedback.py --slug $(SLUG) --dry-run
+	@echo "Pacing smoke test completed for $(SLUG)"
+
 # -------- Raspberry Pi Helpers --------
 PI_HOST ?= onepi
 PI_DIR ?= ~/youtube_onepi_pipeline
@@ -308,3 +332,38 @@ pull-artifacts:
 
 pi-health:
 	@curl -s http://$(PI_HOST):8088/health | python -m json.tool || true
+
+# =============================================================================
+# OPERATOR CONSOLE TARGETS
+# =============================================================================
+
+op-console:
+	@echo "Starting FastAPI Operator Console..."
+	@echo "Server will be available at: http://127.0.0.1:8008"
+	@echo "API docs: http://127.0.0.1:8008/docs"
+	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
+	@echo ""
+	$(PY) run_server.py
+
+clean-op-console:
+	@echo "Cleaning operator console artifacts..."
+	@rm -f jobs.db
+	@rm -rf __pycache__
+	@rm -rf fastapi_app/__pycache__
+	@echo "✅ Operator console cleaned"
+
+test-api:
+	@echo "Testing FastAPI endpoints..."
+	$(PY) test_api.py
+
+test-orchestrator:
+	@echo "Testing orchestrator state machine..."
+	$(PY) test_orchestrator.py
+
+test-orchestrator-simple:
+	@echo "Testing orchestrator state machine (simple mode)..."
+	$(PY) test_orchestrator_simple.py
+
+test-orchestrator-basic:
+	@echo "Testing basic orchestrator functionality..."
+	$(PY) test_orchestrator_basic.py

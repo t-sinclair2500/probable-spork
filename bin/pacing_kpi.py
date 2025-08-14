@@ -11,6 +11,7 @@ Computes pacing metrics for video content:
 Deterministic metrics using script text, SRT timings, and scene durations.
 """
 
+import argparse
 import json
 import logging
 import os
@@ -280,21 +281,90 @@ def update_video_metadata(slug: str, kpi_data: Dict, metadata_dir: str = None) -
     return metadata_path
 
 
+def run_complete_pacing_analysis(slug: str, script_text: str, scenes: List[Dict], 
+                                video_ms: int, srt_path: Optional[str] = None) -> Dict:
+    """
+    Run complete pacing analysis including KPI computation and comparison.
+    
+    Args:
+        slug: Content slug identifier
+        script_text: Final script text content
+        scenes: List of scene dictionaries with duration_ms
+        video_ms: Total video duration in milliseconds
+        srt_path: Optional path to SRT caption file
+        
+    Returns:
+        Complete analysis results with KPIs and comparison
+    """
+    log.info(f"Running complete pacing analysis for {slug}")
+    
+    # Compute KPIs first
+    kpi_data = compute_pacing(script_text, scenes, video_ms, srt_path)
+    
+    # Save KPI report
+    save_pacing_report(slug, kpi_data)
+    
+    # Run comparison analysis
+    try:
+        # Try absolute import first
+        from bin.pacing_compare import run_pacing_analysis
+        comparison_result = run_pacing_analysis(slug, kpi_data)
+        log.info(f"Comparison analysis completed for {slug}")
+        return comparison_result
+    except ImportError:
+        try:
+            # Try relative import
+            from .pacing_compare import run_pacing_analysis
+            comparison_result = run_pacing_analysis(slug, kpi_data)
+            log.info(f"Comparison analysis completed for {slug}")
+            return comparison_result
+        except ImportError:
+            log.warning("Pacing comparison module not available, skipping comparison")
+            # Update metadata with just KPIs
+            update_video_metadata(slug, kpi_data)
+            return {
+                "slug": slug,
+                "kpi_data": kpi_data,
+                "comparison": None,
+                "status": "kpi_only"
+            }
+
+
 if __name__ == "__main__":
-    # Example usage and testing
-    import sys
+    parser = argparse.ArgumentParser(description="Compute pacing KPIs for video content")
+    parser.add_argument("--slug", required=True, help="Content slug identifier")
+    parser.add_argument("--script-file", help="Path to script file (auto-detected if not provided)")
+    parser.add_argument("--srt-file", help="Path to SRT caption file (auto-detected if not provided)")
     
-    if len(sys.argv) < 3:
-        print("Usage: python pacing_kpi.py <slug> <script_file> [srt_file]")
-        sys.exit(1)
+    args = parser.parse_args()
+    slug = args.slug
     
-    slug = sys.argv[1]
-    script_file = sys.argv[2]
-    srt_file = sys.argv[3] if len(sys.argv) > 3 else None
+    # Auto-detect script file if not provided
+    if not args.script_file:
+        script_file = os.path.join(os.path.dirname(__file__), '..', 'scripts', f'{slug}.txt')
+        if not os.path.exists(script_file):
+            print(f"Error: Script file not found at {script_file}")
+            print("Please provide --script-file or ensure script exists at scripts/{slug}.txt")
+            sys.exit(1)
+    else:
+        script_file = args.script_file
+    
+    # Auto-detect SRT file if not provided
+    if not args.srt_file:
+        srt_file = os.path.join(os.path.dirname(__file__), '..', 'voiceovers', f'{slug}.srt')
+        if not os.path.exists(srt_file):
+            srt_file = None
+            log.info(f"SRT file not found, will use brief-based timing")
+    else:
+        srt_file = args.srt_file
     
     # Load script
-    with open(script_file, 'r') as f:
-        script_text = f.read()
+    try:
+        with open(script_file, 'r') as f:
+            script_text = f.read()
+    except Exception as e:
+        print(f"Error loading script file {script_file}: {e}")
+        sys.exit(1)
     
     # Load actual scenescript data
     scenescript_path = os.path.join(os.path.dirname(__file__), '..', 'scenescripts', f'{slug}.json')
@@ -305,14 +375,9 @@ if __name__ == "__main__":
         video_ms = sum(scene.get('duration_ms', 0) for scene in scenes)
         log.info(f"Loaded scenescript: {len(scenes)} scenes, {video_ms}ms total")
     else:
-        # Fallback to mock data
-        scenes = [
-            {"id": "scene_000", "duration_ms": 15000},
-            {"id": "scene_001", "duration_ms": 20000},
-            {"id": "scene_002", "duration_ms": 25000}
-        ]
-        video_ms = 60000  # 60 seconds
-        log.warning(f"Scenescript not found, using mock data")
+        print(f"Error: Scenescript not found at {scenescript_path}")
+        print("Please ensure scenescript exists at scenescripts/{slug}.json")
+        sys.exit(1)
     
     # Compute KPIs
     kpi_result = compute_pacing(script_text, scenes, video_ms, srt_file)
@@ -321,8 +386,18 @@ if __name__ == "__main__":
     save_pacing_report(slug, kpi_result)
     update_video_metadata(slug, kpi_result)
     
-    print("Pacing KPIs computed and saved successfully!")
-    print(f"Words/sec: {kpi_result['words_per_sec']}")
-    print(f"Cuts/min: {kpi_result['cuts_per_min']}")
-    print(f"Avg scene: {kpi_result['avg_scene_s']}s")
-    print(f"Speech/music ratio: {kpi_result['speech_music_ratio']}")
+    # Print concise summary as required by P5-5
+    flags = []
+    if kpi_result.get('source') == 'vo':
+        flags.append('vo-timed')
+    if kpi_result.get('source') == 'brief':
+        flags.append('brief-timed')
+    
+    print(f"{kpi_result['words_per_sec']:.1f}wps {kpi_result['cuts_per_min']:.1f}cuts/min {kpi_result['avg_scene_s']:.1f}s avg {' '.join(flags)} adjusted=false")
+    
+    print(f"\nPacing KPIs computed and saved successfully for {slug}!")
+    print(f"Words/sec: {kpi_result['words_per_sec']:.2f}")
+    print(f"Cuts/min: {kpi_result['cuts_per_min']:.2f}")
+    print(f"Avg scene: {kpi_result['avg_scene_s']:.2f}s")
+    print(f"Speech/music ratio: {kpi_result['speech_music_ratio']:.2f}")
+    print(f"Source: {kpi_result.get('source', 'unknown')}")

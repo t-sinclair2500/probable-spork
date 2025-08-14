@@ -1,0 +1,98 @@
+import os
+import yaml
+from pathlib import Path
+from typing import Dict, Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+class OperatorConfig:
+    """Configuration manager for operator console"""
+    
+    def __init__(self, config_path: str = "conf/operator.yaml"):
+        self.config_path = config_path
+        self.config = self._load_config()
+    
+    def _load_config(self) -> Dict[str, Any]:
+        """Load configuration from operator.yaml"""
+        try:
+            if os.path.exists(self.config_path):
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    config = yaml.safe_load(f)
+                    logger.info(f"Loaded operator config from {self.config_path}")
+                    return config
+            else:
+                logger.warning(f"Operator config not found at {self.config_path}, using defaults")
+                return self._get_default_config()
+        except Exception as e:
+            logger.error(f"Failed to load operator config: {e}, using defaults")
+            return self._get_default_config()
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Return default configuration"""
+        return {
+            "server": {
+                "host": "127.0.0.1",
+                "port": 8008,
+                "workers": 1,
+                "log_level": "info"
+            },
+            "security": {
+                "admin_token_env": "ADMIN_TOKEN",
+                "default_token": "default-admin-token-change-me",
+                "cors": {
+                    "enabled": False,
+                    "allow_origins": [],
+                    "allow_credentials": False,
+                    "allow_methods": [],
+                    "allow_headers": []
+                }
+            },
+            "gates": {
+                "script": {"required": True, "auto_approve": False, "timeout_minutes": 60},
+                "storyboard": {"required": True, "auto_approve": False, "timeout_minutes": 120},
+                "assets": {"required": True, "auto_approve": False, "timeout_minutes": 180},
+                "audio": {"required": True, "auto_approve": False, "timeout_minutes": 60},
+                "outline": {"required": False, "auto_approve": True, "timeout_minutes": 30},
+                "research": {"required": False, "auto_approve": True, "timeout_minutes": 45},
+                "animatics": {"required": False, "auto_approve": True, "timeout_minutes": 90},
+                "assemble": {"required": False, "auto_approve": True, "timeout_minutes": 120},
+                "acceptance": {"required": False, "auto_approve": True, "timeout_minutes": 30}
+            },
+            "storage": {
+                "db_path": "jobs.db",
+                "runs_dir": "runs",
+                "artifacts_dir": "artifacts",
+                "events_retention_days": 30,
+                "max_events_per_job": 1000
+            },
+            "pipeline": {
+                "max_concurrent_jobs": 1,
+                "job_timeout_hours": 24,
+                "stage_timeouts": {
+                    "outline": 30, "research": 45, "script": 60, "storyboard": 120,
+                    "assets": 180, "animatics": 90, "audio": 60, "assemble": 120, "acceptance": 30
+                }
+            }
+        }
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value by key path (e.g., 'server.port')"""
+        keys = key.split('.')
+        value = self.config
+        
+        for k in keys:
+            if isinstance(value, dict) and k in value:
+                value = value[k]
+            else:
+                return default
+        
+        return value
+    
+    def reload(self):
+        """Reload configuration from file"""
+        self.config = self._load_config()
+        logger.info("Operator config reloaded")
+
+# Global config instance
+operator_config = OperatorConfig()
