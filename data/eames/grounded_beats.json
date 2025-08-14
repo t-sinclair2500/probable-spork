@@ -1,37 +1,11 @@
 [
   {
-    "id": 1,
-    "title": "Introduction to Ray & Charles Eames",
-    "content": "Welcome to our 90-second history of Ray and Charles Eames, two design legends who revolutionized modern furniture design. Let's start with their innovative approach to furniture design. The Eameses were all about pushing boundaries – literally. They experimented with molded plywood, which became the foundation for many of their iconic pieces.",
-    "duration_ms": 15000,
-    "citations": []
-  },
-  {
-    "id": 2,
-    "title": "Tip #1: Think Outside the Box",
-    "content": "Tip #1: Think outside the box – or in this case, the mold. The Eameses used this technique to create lightweight, yet incredibly durable furniture that redefined modern living spaces. Take the famous Eames Lounge Chair, for example. Designed in collaboration with Herman Miller, it's a masterclass in simplicity and comfort.",
-    "duration_ms": 20000,
-    "citations": []
-  },
-  {
-    "id": 3,
-    "title": "Tip #2: Collaborate and Innovate",
-    "content": "Tip #2: Collaborate with others to create something truly special. Charles and Ray worked together on many projects, including their renowned Case Study House designs, which showcased innovative furniture solutions for everyday life. The Eameses also believed in simplicity and functionality – no unnecessary ornamentation.",
-    "duration_ms": 20000,
-    "citations": []
-  },
-  {
-    "id": 4,
-    "title": "Tip #3: Sketch and Experiment",
-    "content": "Tip #3: The power of sketching and experimentation is still unparalleled today. The Eameses' notebooks are full of innovative ideas, many of which made it into production. Their legacy extends far beyond their own designs – they also helped shape modern design principles as a whole.",
-    "duration_ms": 20000,
-    "citations": []
-  },
-  {
-    "id": 5,
-    "title": "Five Quick Tips Summary",
-    "content": "So what can we learn from the Eameses? Here are five quick tips: 1. Think outside the box – or mold. 2. Collaborate with others to create something special. 3. Sketch and experiment to innovate. 4. Simplicity is key – less is often more. 5. Push boundaries to create truly memorable designs.",
-    "duration_ms": 15000,
-    "citations": []
+    "id": 21,
+    "title": "1. Think outside the box – or mold.",
+    "content": "2. Collaborate with others to create something special.\n3. Sketch and experiment to innovate.\n4. Simplicity is key – less is often more.\n5. Push boundaries to create truly memorable designs.\"",
+    "word_count": 31,
+    "grounded_content": "2. Collaborate with others to create something special.\n3. Sketch and experiment to innovate.\n4. Simplicity is key – less is often more.\n5. Push boundaries to create truly memorable designs.\"",
+    "citations": [],
+    "research_chunks": []
   }
 ]

@@ -98,6 +98,13 @@ quick-run:
 	$(PY) bin/tts_generate.py; \
 	$(PY) bin/generate_captions.py; \
 	$(PY) bin/assemble_video.py; \
+
+# Trending topics intake
+trending-intake:
+	$(PY) bin/trending_intake.py --mode reuse --limit 10
+
+trending-intake-live:
+	$(PY) bin/trending_intake.py --mode live --providers reddit,youtube,google_trends --limit 20
 	$(PY) bin/upload_stage.py
 
 blog-once:
@@ -203,6 +210,36 @@ procedural-pipeline-live:
 pipeline-status:
 	@echo "Current pipeline configuration:"
 	@yq '.video' conf/global.yaml
+
+# -------- Research Pipeline Management --------
+research-reuse:
+	@echo "Usage: make research-reuse SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Running research pipeline in REUSE mode for $(SLUG)..."
+	$(PY) bin/trending_intake.py --mode reuse --slug $(SLUG)
+	$(PY) bin/research_collect.py --slug $(SLUG) --mode reuse --max 50
+	$(PY) bin/research_ground.py scripts/$(SLUG).txt --slug $(SLUG) --mode reuse
+	$(PY) bin/fact_guard.py --slug $(SLUG) --mode reuse
+	@echo "Research pipeline completed in REUSE mode for $(SLUG)"
+
+research-live:
+	@echo "Usage: make research-live SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "WARNING: This will make live API calls and consume quota!"
+	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	@echo "Running research pipeline in LIVE mode for $(SLUG)..."
+	$(PY) bin/trending_intake.py --mode live --slug $(SLUG)
+	$(PY) bin/research_collect.py --slug $(SLUG) --mode live --max 50
+	$(PY) bin/research_ground.py scripts/$(SLUG).txt --slug $(SLUG) --mode live
+	$(PY) bin/fact_guard.py --slug $(SLUG) --mode live
+	@echo "Research pipeline completed in LIVE mode for $(SLUG)"
+
+research-report:
+	@echo "Usage: make research-report SLUG=<slug>"
+	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
+	@echo "Generating research report for $(SLUG)..."
+	$(PY) bin/research_report.py --slug $(SLUG) --compact
+	@echo "Research report completed for $(SLUG)"
 
 # -------- Asset Loop Management --------
 asset-rebuild:

@@ -313,6 +313,10 @@ def main(brief=None, models_config=None):
     parser.add_argument("--brief", help="Path to brief file")
     parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
+                       help='Mode: reuse (cache only) or live (with API calls)')
+    parser.add_argument("--slug", required=True, help="Topic slug for research collection")
+    parser.add_argument("--max", type=int, default=50, help="Maximum sources to collect")
     args = parser.parse_args()
     
     if args.dry_run:
@@ -351,6 +355,9 @@ def main(brief=None, models_config=None):
         # Initialize collector
         collector = ResearchCollector()
         
+        # Log mode and slug
+        log.info(f"Research collection: mode={args.mode}, slug={args.slug}, max={args.max}")
+        
         # Collect research
         sources = collector.collect_from_brief(brief)
         
@@ -369,6 +376,10 @@ if __name__ == "__main__":
     parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("--brief", help="Path to brief file")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
+                       help='Mode: reuse (cache only) or live (with API calls)')
+    parser.add_argument("--slug", required=True, help="Topic slug for research collection")
+    parser.add_argument("--max", type=int, default=50, help="Maximum sources to collect")
     
     args = parser.parse_args()
     

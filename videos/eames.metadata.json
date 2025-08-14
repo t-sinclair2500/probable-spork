@@ -11,7 +11,7 @@
     "scene_bounds_pass": true,
     "vo_aligned": false
   },
-  "generated_at": "2025-08-12T20:22:02.902067Z",
+  "generated_at": "2025-08-14T02:38:49.493108Z",
   "assets": {
     "coverage_pct": 100.0,
     "reuse_ratio": 1.0,
@@ -19,7 +19,24 @@
     "manifest_version": "1.0",
     "palette_names_used": [],
     "validation_status": "PASS",
-    "last_validated": "2025-08-12T20:22:03.362181Z",
+    "last_validated": "2025-08-14T02:38:49.921659Z",
     "provenance": []
+  },
+  "citations": {
+    "total_count": 0,
+    "unique_domains": 0,
+    "beats_coverage_pct": 0.0,
+    "fact_guard_summary": {
+      "removed": 1,
+      "rewritten": 1,
+      "flagged": 1,
+      "strict_mode_fail": false
+    },
+    "policy_compliance": {
+      "min_citations_per_intent": "PENDING",
+      "whitelist_compliance": "PENDING"
+    },
+    "validation_status": "PASS",
+    "last_validated": "2025-08-14T02:38:49.922880Z"
   }
 }

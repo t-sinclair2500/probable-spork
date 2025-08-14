@@ -1,0 +1,133 @@
+# Research and trending topics configuration
+# This file controls API access, rate limits, and provider settings
+
+# API toggles - enable/disable live data sources
+apis:
+  reddit: false          # Reddit API access
+  youtube: false         # YouTube Data API v3
+  google_trends: false   # Google Trends API (unofficial)
+  twitter: false         # Twitter/X API (if available)
+
+# Rate limits and backoff settings
+rate_limits:
+  reddit:
+    requests_per_minute: 60
+    requests_per_hour: 1000
+    backoff_seconds: 60
+    jitter: 0.1
+  
+  youtube:
+    requests_per_minute: 10
+    requests_per_day: 10000
+    backoff_seconds: 300
+    jitter: 0.2
+  
+  google_trends:
+    requests_per_minute: 5
+    requests_per_hour: 100
+    backoff_seconds: 120
+    jitter: 0.15
+
+# Provider-specific settings
+providers:
+  reddit:
+    subreddits: ["technology", "science", "programming", "raspberry_pi"]
+    time_filter: "week"  # hour, day, week, month, year, all
+    limit: 25
+  
+  youtube:
+    categories: ["27", "28", "22"]  # Science, People & Blogs, People & Society
+    region_code: "US"
+    video_duration: "medium"  # short, medium, long
+    max_results: 50
+  
+  google_trends:
+    geo: "US"
+    time_range: "7d"  # 1h, 4h, 1d, 7d, 1m, 3m, 12m, 5y, 2004-present
+    category: "0"  # All categories
+
+# Caching settings
+cache:
+  ttl_hours: 24          # Time to live for cached data
+  max_entries: 1000      # Maximum cached entries per provider
+  storage: "database"    # database or json
+
+# Scoring weights for topic prioritization
+scoring:
+  recency_weight: 0.4    # How much to favor recent topics
+  source_weight: 0.3     # How much to weight different sources
+  engagement_weight: 0.3 # How much to weight engagement metrics
+
+# Output settings
+output:
+  max_topics: 20         # Maximum topics to return
+  min_score: 0.1         # Minimum score threshold
+  include_metadata: true # Include source and timestamp info
+
+# Fact-guard configuration
+fact_guard:
+  # Strictness levels for claim processing
+  strictness_levels:
+    strict:
+      description: "Remove all unsupported claims, no exceptions"
+      remove_unsupported: true
+      rewrite_to_cautious: false
+      flag_for_review: false
+      require_citation_threshold: 0.1  # Very low threshold
+    
+    balanced:
+      description: "Rewrite unsupported claims to cautious form, flag borderline cases"
+      remove_unsupported: false
+      rewrite_to_cautious: true
+      flag_for_review: true
+      require_citation_threshold: 0.3  # Medium threshold
+    
+    lenient:
+      description: "Flag most claims for review, minimal automatic changes"
+      remove_unsupported: false
+      rewrite_to_cautious: false
+      flag_for_review: true
+      require_citation_threshold: 0.6  # Higher threshold
+  
+  # Default strictness level
+  default_strictness: "balanced"
+  
+  # Claim type policies
+  claim_policies:
+    proper_nouns:
+      requires_citation: true
+      action: "rewrite"
+      rationale: "Proper nouns often represent specific facts requiring verification"
+    
+    dates:
+      requires_citation: true
+      action: "rewrite"
+      rationale: "Specific dates are factual claims needing source verification"
+    
+    superlatives:
+      requires_citation: true
+      action: "rewrite"
+      rationale: "Superlatives (first, most, best) are factual claims needing evidence"
+    
+    statistics:
+      requires_citation: true
+      action: "remove"
+      rationale: "Statistics without sources are unreliable and should be removed"
+    
+    expert_opinions:
+      requires_citation: true
+      action: "rewrite"
+      rationale: "Expert opinions need attribution to maintain credibility"
+    
+    general_statements:
+      requires_citation: false
+      action: "keep"
+      rationale: "General observations don't require specific citations"
+  
+  # Output settings
+  output:
+    save_cleaned_script: true
+    save_detailed_report: true
+    include_rationale: true
+    include_suggestions: true
+    max_examples_per_category: 5

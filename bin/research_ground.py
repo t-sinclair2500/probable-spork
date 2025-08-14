@@ -294,6 +294,9 @@ def main(brief=None, models_config=None):
     parser.add_argument("--brief", help="Path to brief file")
     parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
+                       help='Mode: reuse (cache only) or live (with API calls)')
+    parser.add_argument("--slug", required=True, help="Topic slug for research grounding")
     args = parser.parse_args()
     
     if args.dry_run:
@@ -337,6 +340,9 @@ def main(brief=None, models_config=None):
         # Initialize grounder
         grounder = ResearchGrounder()
         
+        # Log mode and slug
+        log.info(f"Research grounding: mode={args.mode}, slug={args.slug}")
+        
         # Ground script
         results = grounder.ground_script(script_path, brief)
         
@@ -354,6 +360,9 @@ if __name__ == "__main__":
     parser.add_argument("script", help="Path to script file")
     parser.add_argument("--brief", help="Path to brief file")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
+                       help='Mode: reuse (cache only) or live (with API calls)')
+    parser.add_argument("--slug", required=True, help="Topic slug for research grounding")
     
     args = parser.parse_args()
     

@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "script_path": "/Users/tylersinclair/Documents/GitHub/probable-spork/scripts/eames.txt",
+    "run_dir": "eames",
+    "timestamp": "",
+    "strictness": "balanced"
+  },
+  "summary": {
+    "total_claims": 0,
+    "kept": 0,
+    "removed": 0,
+    "rewritten": 0,
+    "flagged": 0,
+    "citations_needed": 0
+  },
+  "changes": {
+    "kept": [],
+    "removed": [],
+    "rewritten": [],
+    "flagged": []
+  },
+  "claims_analysis": [],
+  "recommendations": []
+}

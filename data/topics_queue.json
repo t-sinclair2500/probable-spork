@@ -1,22 +1,47 @@
 [
   {
-    "topic": "productivity tips",
-    "score": 0.6,
-    "hook": "5 productivity tips to save hours",
+    "topic": "How comes some fruits are toxic? Atropa belladonna comes to mind.",
+    "score": 0.86,
+    "hook": "How comes some fruits are toxic? Atropa belladonna comes to mind. - trending on reddit",
     "keywords": [
-      "productivity",
-      "tips"
+      "AskScience"
     ],
-    "created_at": "2025-08-12T16:38:11Z"
+    "created_at": "2025-08-12"
   },
   {
-    "topic": "space trivia",
-    "score": 0.5,
-    "hook": "10 wild space facts",
+    "topic": "Are there any species of plants that would typically be considered weeds/invasive, that naturally adapted to become more appealing to humans, to avoid being removed?",
+    "score": 0.86,
+    "hook": "Are there any species of plants that would typically be considered weeds/invasive, that naturally adapted to become more appealing to humans, to avoid being removed? - trending on reddit",
     "keywords": [
-      "space",
-      "trivia"
+      "AskScience"
     ],
-    "created_at": "2025-08-12T16:38:11Z"
+    "created_at": "2025-08-12"
+  },
+  {
+    "topic": "Mapping the surface of Venus?",
+    "score": 0.86,
+    "hook": "Mapping the surface of Venus? - trending on reddit",
+    "keywords": [
+      "AskScience"
+    ],
+    "created_at": "2025-08-12"
+  },
+  {
+    "topic": "How did the larger major moons of the Solar System form around Gas Giants, and why are they so different from the smaller irregular moons?",
+    "score": 0.86,
+    "hook": "How did the larger major moons of the Solar System form around Gas Giants, and why are they so different from the smaller irregular moons? - trending on reddit",
+    "keywords": [
+      "AskScience"
+    ],
+    "created_at": "2025-08-12"
+  },
+  {
+    "topic": "At what point do “invasive species” become just part of the ecosystem?  Has it already happened somewhere?",
+    "score": 0.86,
+    "hook": "At what point do “invasive species” become just part of the ecosystem?  Has it already happened somewhere? - trending on reddit",
+    "keywords": [
+      "AskScience"
+    ],
+    "created_at": "2025-08-12"
   }
 ]

@@ -314,3 +314,18 @@
 {"ts": "2025-08-12T21:30:58Z", "step": "llm_outline", "status": "START", "notes": "brief=90-second history of Ray & Charles Eames;intent=narrative_history"}
 {"ts": "2025-08-12T21:32:21Z", "step": "llm_outline", "status": "OK", "notes": "2025-08-12_90-second-history-of-ray-charles-eames.outline.json;intent=narrative_history;beats=6;citations=0"}
 {"ts": "2025-08-12T21:38:02Z", "step": "llm_outline", "status": "START", "notes": "brief=90-second history of Ray & Charles Eames;intent=narrative_history"}
+{"ts": "2025-08-14T01:49:43Z", "step": "trending_intake", "status": "OK", "notes": "mode=reuse, topics=10"}
+{"ts": "2025-08-14T01:49:49Z", "step": "trending_intake", "status": "OK", "notes": "mode=live, topics=5"}
+{"ts": "2025-08-14T01:49:52Z", "step": "trending_intake", "status": "OK", "notes": "mode=reuse, topics=3"}
+{"ts": "2025-08-14T01:50:08Z", "step": "trending_intake", "status": "OK", "notes": "mode=reuse, topics=10"}
+{"ts": "2025-08-14T02:55:03Z", "step": "research_report", "status": "OK", "notes": "slug=eames, coverage=0.0%, citations=0"}
+{"ts": "2025-08-14T02:55:06Z", "step": "research_report", "status": "OK", "notes": "slug=eames, coverage=0.0%, citations=0"}
+{"ts": "2025-08-14T02:55:10Z", "step": "trending_intake", "status": "OK", "notes": "mode=reuse, topics=20, slug=eames"}
+{"ts": "2025-08-14T02:55:37Z", "step": "trending_intake", "status": "OK", "notes": "mode=reuse, topics=20, slug=eames"}
+{"ts": "2025-08-14T02:55:37Z", "step": "fact_guard", "status": "START", "notes": "script=eames.txt;run_dir=eames;slug=eames, mode=reuse"}
+{"ts": "2025-08-14T02:56:51Z", "step": "fact_guard", "status": "OK", "notes": "claims=0;kept=0;removed=0;rewritten=0;flagged=0"}
+{"ts": "2025-08-14T02:56:55Z", "step": "research_report", "status": "OK", "notes": "slug=eames, coverage=0.0%, citations=0"}
+{"ts": "2025-08-14T02:56:58Z", "step": "trending_intake", "status": "OK", "notes": "mode=reuse, topics=5, slug=test-slug"}
+{"ts": "2025-08-14T02:57:09Z", "step": "fact_guard", "status": "START", "notes": "script=eames.txt;run_dir=eames;slug=test-slug, mode=reuse"}
+{"ts": "2025-08-14T02:58:16Z", "step": "fact_guard", "status": "OK", "notes": "claims=0;kept=0;removed=0;rewritten=0;flagged=0"}
+{"ts": "2025-08-14T02:58:20Z", "step": "research_report", "status": "OK", "notes": "slug=test-slug, coverage=0%, citations=0"}

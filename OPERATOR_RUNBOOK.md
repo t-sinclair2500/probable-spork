@@ -13,6 +13,11 @@ make asset-rebuild                    # Rebuild asset library manifest
 make asset-plan SLUG=<slug>          # Create asset plan (resolves existing assets)
 make asset-fill SLUG=<slug>          # Generate new assets to fill gaps
 make asset-reflow SLUG=<slug>        # Reflow storyboard with concrete assets
+
+# Run complete research pipeline for a topic
+make research-reuse SLUG=<slug>      # Research using cached data only
+make research-live SLUG=<slug>       # Research with live API calls (consumes quota)
+make research-report SLUG=<slug>     # Generate research coverage report
 ```
 
 ## Individual CLI Commands
@@ -28,7 +33,65 @@ python bin/asset_generator.py --plan runs/<slug>/asset_plan.json
 
 # Reflow storyboard
 python bin/reflow_assets.py --slug <slug>
+
+# Research pipeline commands
+python bin/trending_intake.py --mode reuse|live --slug <slug>
+python bin/research_collect.py --slug <slug> --mode reuse|live --max 50
+python bin/research_ground.py --slug <slug> --mode reuse|live
+python bin/fact_guard.py --slug <slug> --mode reuse|live
+python bin/research_report.py --slug <slug> --compact
 ```
+
+## Research Pipeline Management
+
+### Research Modes
+The research pipeline supports two modes to balance determinism with freshness:
+
+- **Reuse Mode** (`--mode reuse`): Uses cached data only, produces identical results across runs
+- **Live Mode** (`--mode live`): Makes API calls with rate limiting, updates cache for future reuse
+
+### Complete Research Pipeline
+```bash
+# Run complete research pipeline in reuse mode (recommended for testing)
+make research-reuse SLUG=eames-history
+
+# Run complete research pipeline in live mode (consumes API quota)
+make research-live SLUG=eames-history
+
+# Generate research coverage report
+make research-report SLUG=eames-history
+```
+
+### Individual Research Steps
+```bash
+# Trending topics intake (feeder only, non-citable)
+python bin/trending_intake.py --mode reuse --slug eames-history
+
+# Collect research content from sources
+python bin/research_collect.py --slug eames-history --mode reuse --max 50
+
+# Ground script content with research citations
+python bin/research_ground.py --slug eames-history --mode reuse
+
+# Fact-check and validate claims
+python bin/fact_guard.py --slug eames-history --mode reuse
+
+# Generate research coverage report
+python bin/research_report.py --slug eames-history --compact
+```
+
+### Research Artifacts
+Each research run creates artifacts under `data/<slug>/`:
+- `grounded_beats.json` — script beats with inline citations
+- `references.json` — normalized citation metadata
+- `fact_guard_report.json` — claim validation results
+- `trending_topics.json` — trending intake data (non-citable)
+
+### Research Acceptance Gates
+The research pipeline enforces quality gates:
+- **Citation Coverage**: ≥60% of beats must have ≥1 citation
+- **Average Citations**: ≥1.0 citations per beat on average
+- **Fact-Guard Clean**: No unsupported claims after validation
 
 ## Style Presets & Texture Control
 
@@ -85,6 +148,12 @@ All commands use structured logging with stage tags:
 - `[generator]` — Asset generation and gap-filling
 - `[reflow]` — Storyboard reflow and QA
 - `[texture_probe]` — Texture probe and preset operations
+- `[trending]` — Trending topics intake operations
+- `[collect]` — Research content collection
+- `[ground]` — Research grounding and citations
+- `[fact-guard]` — Fact-checking and validation
+- `[citations]` — Citation processing and metadata
+- `[research_report]` — Research coverage reporting
 
 ## Success Criteria
 - **Coverage:** 100% of storyboard placeholders resolved to concrete assets

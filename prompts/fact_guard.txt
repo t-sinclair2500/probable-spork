@@ -7,7 +7,20 @@ TASK: For each factual claim in the script:
 2. Check if it's supported by citations in the corresponding beat
 3. If unsupported: suggest removal, rewrite to cautious form, or flag for operator review
 
-IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON.
+CLAIM TYPES TO IDENTIFY:
+- Specific dates, years, or time periods
+- Proper nouns (names, places, companies, products)
+- Superlatives ("first", "most", "best", "only", "never", "always")
+- Specific statistics, percentages, or numbers
+- Claims about historical events or achievements
+- Technical specifications or capabilities
+- Expert opinions or authoritative statements
+
+ACTIONS TO TAKE:
+- "keep": Claim is general observation or opinion, no citation needed
+- "rewrite": Rewrite to cautious form that doesn't make specific claims
+- "remove": Remove unsupported factual claim entirely
+- "flag": Flag for operator review with TODO comment
 
 RETURN JSON:
 {

@@ -74,6 +74,27 @@ class AcceptanceValidator:
                 "geometry": {"status": "PENDING", "enabled": False},
                 "micro_animations": {"status": "PENDING", "enabled": False},
                 "performance": {"status": "PENDING"}
+            },
+            "evidence": {
+                "status": "PENDING",
+                "citations": {
+                    "total_count": 0,
+                    "unique_domains": 0,
+                    "beats_coverage_pct": 0.0
+                },
+                "policy_checks": {
+                    "min_citations_per_intent": "PENDING",
+                    "whitelist_compliance": "PENDING",
+                    "non_whitelisted_warnings": []
+                },
+                "fact_guard_summary": {
+                    "removed_count": 0,
+                    "rewritten_count": 0,
+                    "flagged_count": 0,
+                    "strict_mode_fail": False
+                },
+                "errors": [],
+                "warnings": []
             }
         }
     
@@ -445,6 +466,51 @@ class AcceptanceValidator:
             
         except Exception as e:
             log.error(f"[acceptance-assets] Failed to update video metadata: {e}")
+    
+    def _update_video_metadata_with_evidence(self, slug: str, evidence_results: Dict[str, Any]):
+        """Update video metadata with evidence and research quality information"""
+        log.info(f"[acceptance-evidence] Updating video metadata with evidence information for {slug}")
+        
+        video_metadata_path = os.path.join(BASE, "videos", f"{slug}.metadata.json")
+        if not os.path.exists(video_metadata_path):
+            log.warning(f"[acceptance-evidence] Video metadata not found: {video_metadata_path}")
+            return
+        
+        try:
+            with open(video_metadata_path, 'r') as f:
+                metadata = json.load(f)
+            
+            # Preserve existing metadata sections
+            if "citations" not in metadata:
+                metadata["citations"] = {}
+            
+            # Update citations section with evidence statistics
+            metadata["citations"].update({
+                "total_count": evidence_results["citations"]["total_count"],
+                "unique_domains": evidence_results["citations"]["unique_domains"],
+                "beats_coverage_pct": evidence_results["citations"]["beats_coverage_pct"],
+                "fact_guard_summary": {
+                    "removed": evidence_results["fact_guard_summary"]["removed_count"],
+                    "rewritten": evidence_results["fact_guard_summary"]["rewritten_count"],
+                    "flagged": evidence_results["fact_guard_summary"]["flagged_count"],
+                    "strict_mode_fail": evidence_results["fact_guard_summary"]["strict_mode_fail"]
+                },
+                "policy_compliance": {
+                    "min_citations_per_intent": evidence_results["policy_checks"]["min_citations_per_intent"],
+                    "whitelist_compliance": evidence_results["policy_checks"]["whitelist_compliance"]
+                },
+                "validation_status": evidence_results["status"],
+                "last_validated": datetime.utcnow().isoformat() + "Z"
+            })
+            
+            # Write updated metadata
+            with open(video_metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
+            
+            log.info(f"[acceptance-evidence] Updated video metadata with evidence information")
+            
+        except Exception as e:
+            log.error(f"[acceptance-evidence] Failed to update video metadata with evidence: {e}")
     
     def validate_youtube_lane(self) -> bool:
         """Validate YouTube lane artifacts and quality"""
@@ -1835,6 +1901,191 @@ class AcceptanceValidator:
         log.info(f"[acceptance-visual-polish] Visual polish validation completed: {visual_polish_results['status']}")
         return visual_polish_results
     
+    def _validate_evidence_quality(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate research quality: citations, domain quality, and fact-guard compliance"""
+        log.info("[acceptance-evidence] Starting evidence quality validation")
+        
+        evidence_results = {
+            "status": "PENDING",
+            "citations": {
+                "total_count": 0,
+                "unique_domains": 0,
+                "beats_coverage_pct": 0.0
+            },
+            "policy_checks": {
+                "min_citations_per_intent": "PENDING",
+                "whitelist_compliance": "PENDING",
+                "non_whitelisted_warnings": []
+            },
+            "fact_guard_summary": {
+                "removed_count": 0,
+                "rewritten_count": 0,
+                "flagged_count": 0,
+                "strict_mode_fail": False
+            },
+            "errors": [],
+            "warnings": []
+        }
+        
+        # Find slug and research artifacts
+        slug = self._extract_slug_from_artifacts(artifacts)
+        if not slug:
+            evidence_results["status"] = "FAIL"
+            evidence_results["errors"].append("Could not determine slug for evidence validation")
+            return evidence_results
+        
+        try:
+            # Load research artifacts
+            references_path = os.path.join(BASE, "data", slug, "references.json")
+            grounded_beats_path = os.path.join(BASE, "data", slug, "grounded_beats.json")
+            fact_guard_path = os.path.join(BASE, "data", slug, "fact_guard_report.json")
+            
+            # Check if research artifacts exist
+            if not os.path.exists(references_path):
+                evidence_results["errors"].append(f"Missing references.json: {references_path}")
+            if not os.path.exists(grounded_beats_path):
+                evidence_results["errors"].append(f"Missing grounded_beats.json: {grounded_beats_path}")
+            if not os.path.exists(fact_guard_path):
+                evidence_results["errors"].append(f"Missing fact_guard_report.json: {fact_guard_path}")
+            
+            if evidence_results["errors"]:
+                evidence_results["status"] = "FAIL"
+                return evidence_results
+            
+            # Load and validate references
+            with open(references_path, 'r') as f:
+                references = json.load(f)
+            
+            with open(grounded_beats_path, 'r') as f:
+                grounded_beats = json.load(f)
+            
+            with open(fact_guard_path, 'r') as f:
+                fact_guard_report = json.load(f)
+            
+            # Calculate citation metrics
+            total_citations = len(references)
+            evidence_results["citations"]["total_count"] = total_citations
+            
+            # Count unique domains
+            unique_domains = set()
+            for ref in references:
+                if isinstance(ref, dict) and "domain" in ref:
+                    unique_domains.add(ref["domain"])
+                elif isinstance(ref, dict) and "url" in ref:
+                    # Extract domain from URL if domain not directly available
+                    try:
+                        from urllib.parse import urlparse
+                        parsed = urlparse(ref["url"])
+                        if parsed.netloc:
+                            unique_domains.add(parsed.netloc)
+                    except Exception:
+                        pass
+            
+            evidence_results["citations"]["unique_domains"] = len(unique_domains)
+            
+            # Calculate beats coverage
+            beats_with_citations = 0
+            total_beats = len(grounded_beats)
+            
+            for beat in grounded_beats:
+                if isinstance(beat, dict) and "citations" in beat:
+                    citations = beat.get("citations", [])
+                    if len(citations) > 0:
+                        beats_with_citations += 1
+            
+            if total_beats > 0:
+                coverage_pct = (beats_with_citations / total_beats) * 100.0
+                evidence_results["citations"]["beats_coverage_pct"] = coverage_pct
+            else:
+                evidence_results["citations"]["beats_coverage_pct"] = 0.0
+            
+            # Validate fact-guard compliance
+            fact_guard_summary = fact_guard_report.get("summary", {})
+            evidence_results["fact_guard_summary"]["removed_count"] = fact_guard_summary.get("removed", 0)
+            evidence_results["fact_guard_summary"]["rewritten_count"] = fact_guard_summary.get("rewritten", 0)
+            evidence_results["fact_guard_summary"]["flagged_count"] = fact_guard_summary.get("flagged", 0)
+            
+            # Check strict mode failure (flagged > 0 in strict mode)
+            strictness = fact_guard_report.get("metadata", {}).get("strictness", "balanced")
+            if strictness == "strict" and fact_guard_summary.get("flagged", 0) > 0:
+                evidence_results["fact_guard_summary"]["strict_mode_fail"] = True
+                evidence_results["status"] = "FAIL"
+                evidence_results["errors"].append("Fact-guard strict mode: flagged claims found")
+            
+            # Load intent template to check citation requirements
+            outline_path = os.path.join(BASE, "scripts", f"{slug}.outline.json")
+            if os.path.exists(outline_path):
+                try:
+                    with open(outline_path, 'r') as f:
+                        outline = json.load(f)
+                    
+                    intent_type = outline.get("intent", "unknown")
+                    
+                    # Load intent templates to get evidence requirements
+                    intent_templates_path = os.path.join(BASE, "conf", "intent_templates.yaml")
+                    if os.path.exists(intent_templates_path):
+                        import yaml
+                        with open(intent_templates_path, 'r') as f:
+                            intent_templates = yaml.safe_load(f)
+                        
+                        intent_config = intent_templates.get("intents", {}).get(intent_type, {})
+                        evidence_load = intent_config.get("evidence_load", "medium")
+                        
+                        # Check citation minimums based on evidence load
+                        if evidence_load == "high":
+                            min_coverage = 60.0  # 60% of beats must have citations
+                            min_citations_per_beat = 1.0
+                        elif evidence_load == "medium":
+                            min_coverage = 40.0  # 40% of beats must have citations
+                            min_citations_per_beat = 0.5
+                        else:
+                            min_coverage = 20.0  # 20% of beats must have citations
+                            min_citations_per_beat = 0.3
+                        
+                        # Check coverage threshold
+                        if coverage_pct < min_coverage:
+                            evidence_results["policy_checks"]["min_citations_per_intent"] = "FAIL"
+                            evidence_results["status"] = "FAIL"
+                            evidence_results["errors"].append(
+                                f"Citation coverage {coverage_pct:.1f}% below threshold {min_coverage}% for {intent_type} intent"
+                            )
+                        else:
+                            evidence_results["policy_checks"]["min_citations_per_intent"] = "PASS"
+                        
+                        # Check citations per beat average
+                        if total_beats > 0:
+                            avg_citations_per_beat = total_citations / total_beats
+                            if avg_citations_per_beat < min_citations_per_beat:
+                                evidence_results["policy_checks"]["min_citations_per_intent"] = "FAIL"
+                                evidence_results["status"] = "FAIL"
+                                evidence_results["errors"].append(
+                                    f"Average citations per beat {avg_citations_per_beat:.1f} below threshold {min_citations_per_beat} for {intent_type} intent"
+                                )
+                    else:
+                        evidence_results["warnings"].append("Intent templates config not found, skipping citation policy validation")
+                        
+                except Exception as e:
+                    log.warning(f"[acceptance-evidence] Could not validate intent citation requirements: {e}")
+                    evidence_results["warnings"].append(f"Intent validation error: {str(e)}")
+            
+            # Check whitelist compliance (placeholder for future implementation)
+            # TODO: Load domain whitelist from research.yaml and validate references
+            evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
+            evidence_results["warnings"].append("Domain whitelist validation not yet implemented")
+            
+            # Determine overall evidence status
+            if evidence_results["status"] == "PENDING" and not evidence_results["errors"]:
+                evidence_results["status"] = "PASS"
+            
+            log.info(f"[acceptance-evidence] Evidence validation completed: {evidence_results['status']}")
+            return evidence_results
+            
+        except Exception as e:
+            log.error(f"[acceptance-evidence] Evidence validation error: {e}")
+            evidence_results["status"] = "FAIL"
+            evidence_results["errors"].append(f"Evidence validation error: {str(e)}")
+            return evidence_results
+    
     def run_validation(self) -> Dict[str, Any]:
         """Run complete validation and return results"""
         log.info("Starting acceptance validation...")
@@ -1845,8 +2096,17 @@ class AcceptanceValidator:
         # Validate blog lane  
         blog_ok = self.validate_blog_lane()
         
-        # Determine overall status
-        if youtube_ok and blog_ok:
+        # Validate evidence quality (research rigor)
+        evidence_ok = self._validate_evidence_quality(self.results["lanes"]["youtube"]["artifacts"])
+        self.results["evidence"] = evidence_ok
+        
+        # Update video metadata with evidence information
+        slug = self._extract_slug_from_artifacts(self.results["lanes"]["youtube"]["artifacts"])
+        if slug:
+            self._update_video_metadata_with_evidence(slug, evidence_ok)
+        
+        # Determine overall status (all lanes must pass)
+        if youtube_ok and blog_ok and evidence_ok["status"] == "PASS":
             self.results["overall_status"] = "PASS"
         else:
             self.results["overall_status"] = "FAIL"
@@ -1868,6 +2128,7 @@ class AcceptanceValidator:
         self.results["summary"] = {
             "youtube_lane": "PASS" if youtube_ok else "FAIL",
             "blog_lane": "PASS" if blog_ok else "FAIL",
+            "evidence_lane": "PASS" if evidence_ok["status"] == "PASS" else "FAIL",
             "total_artifacts": {
                 "youtube": len([v for v in self.results["lanes"]["youtube"]["artifacts"].values() if v]),
                 "blog": len([v for v in self.results["lanes"]["blog"]["artifacts"].values() if v])
