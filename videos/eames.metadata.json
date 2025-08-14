@@ -38,5 +38,13 @@
     },
     "validation_status": "PASS",
     "last_validated": "2025-08-14T02:38:49.922880Z"
+  },
+  "pacing": {
+    "words_per_sec": 5.47,
+    "cuts_per_min": 3.3,
+    "avg_scene_s": 18.0,
+    "speech_music_ratio": 10.0,
+    "source": "vo",
+    "computed_at": "2025-08-14T03:21:51.351298Z"
   }
 }

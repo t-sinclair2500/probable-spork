@@ -1,0 +1,39 @@
+# Intent-specific pacing profiles for content optimization
+# Each intent defines acceptable ranges for pacing metrics
+
+narrative_history:
+  words_per_sec: [2.0, 3.0]      # Slower, more contemplative pacing
+  cuts_per_min: [8, 18]          # Moderate scene changes
+  avg_scene_s: [5.0, 9.0]        # Longer scenes for storytelling
+  speech_ratio_default: 0.85     # High speech ratio for narrative content
+
+explainer_howto:
+  words_per_sec: [2.5, 3.5]      # Faster, instructional pacing
+  cuts_per_min: [10, 24]         # More frequent cuts for engagement
+  avg_scene_s: [4.0, 7.0]        # Shorter scenes for step-by-step
+  speech_ratio_default: 0.8       # Balanced speech/music for instruction
+
+product_showcase:
+  words_per_sec: [2.2, 3.2]      # Moderate pacing for product focus
+  cuts_per_min: [12, 22]         # Dynamic cuts for visual interest
+  avg_scene_s: [4.5, 7.5]        # Medium scenes for product details
+  speech_ratio_default: 0.75      # More music for visual appeal
+
+news_update:
+  words_per_sec: [3.0, 4.0]      # Fast, news-style pacing
+  cuts_per_min: [15, 30]         # Rapid cuts for urgency
+  avg_scene_s: [3.0, 6.0]        # Short scenes for quick updates
+  speech_ratio_default: 0.9       # High speech ratio for information
+
+entertainment:
+  words_per_sec: [2.0, 3.5]      # Variable pacing for engagement
+  cuts_per_min: [8, 25]          # Dynamic cuts for visual interest
+  avg_scene_s: [4.0, 8.0]        # Varied scene lengths
+  speech_ratio_default: 0.7       # More music for entertainment value
+
+# Default fallback for unknown intents
+default:
+  words_per_sec: [2.5, 3.5]
+  cuts_per_min: [10, 20]
+  avg_scene_s: [4.5, 7.5]
+  speech_ratio_default: 0.8
