@@ -147,18 +147,35 @@ async def create_job(
         # Generate unique job ID
         job_id = str(uuid.uuid4())
         
+        # Process brief configuration
+        brief_cfg = None
+        if job_create.brief:
+            # Use structured brief if provided
+            brief_cfg = job_create.brief.dict()
+            logger.info(f"[brief] Using structured brief for job {job_id}")
+        elif job_create.meta and job_create.meta.get("free_text_brief"):
+            # Parse free-text brief
+            from bin.brief_loader import parse_free_text_brief, resolve_brief
+            free_text = job_create.meta["free_text_brief"]
+            parsed_brief = parse_free_text_brief(free_text)
+            brief_cfg = resolve_brief(parsed_brief)
+            logger.info(f"[brief] Parsed free-text brief for job {job_id}: {free_text[:100]}...")
+        elif job_create.brief_config:
+            # Use legacy brief_config if provided
+            brief_cfg = job_create.brief_config
+            logger.info(f"[brief] Using legacy brief_config for job {job_id}")
+        else:
+            # Fallback to core brief loader
+            from bin.core import load_brief
+            brief_cfg = load_brief()
+            logger.info(f"[brief] Using default brief from conf/brief.yaml for job {job_id}")
+        
         # Create configuration snapshot
-        from bin.core import load_config, load_modules_cfg, load_brief
+        from bin.core import load_config, load_modules_cfg
         
         try:
             global_cfg = load_config()
             modules_cfg = load_modules_cfg()
-            
-            # Use brief_config from request, fallback to core if not provided
-            if job_create.brief_config:
-                brief_cfg = job_create.brief_config
-            else:
-                brief_cfg = load_brief()
             
             # Create config snapshot
             cfg_snapshot = {
@@ -206,6 +223,20 @@ async def create_job(
         
         # Save to database
         if db.create_job(job):
+            # Persist brief snapshot to job folder
+            try:
+                runs_dir = operator_config.get("storage.runs_dir", "runs")
+                job_dir = Path(runs_dir) / job_id
+                job_dir.mkdir(parents=True, exist_ok=True)
+                
+                brief_snapshot_path = job_dir / "compiled_brief.json"
+                with open(brief_snapshot_path, 'w') as f:
+                    json.dump(brief_cfg, f, indent=2, default=str)
+                
+                logger.info(f"[brief] Persisted brief snapshot to {brief_snapshot_path}")
+            except Exception as e:
+                logger.warning(f"Failed to persist brief snapshot: {e}")
+            
             # Add initial event using event logger
             event_logger.job_created(job_id, job_create.slug, current_operator)
             
@@ -223,8 +254,74 @@ async def create_job(
         logger.error(f"Failed to create job: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Job creation failed: {str(e)}"
+            detail="Job creation failed: {str(e)}"
         )
+
+
+@router.post("/compile-brief")
+async def compile_brief(
+    request: Dict[str, Any],
+    current_operator: str = Depends(get_current_operator)
+):
+    """Compile a free-text brief into structured format"""
+    try:
+        free_text = request.get("free_text_brief", "")
+        if not free_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="free_text_brief is required"
+            )
+        
+        from bin.brief_loader import parse_free_text_brief, resolve_brief
+        
+        # Parse the free-text brief
+        parsed_brief = parse_free_text_brief(free_text)
+        
+        # Resolve with base configuration
+        resolved_brief = resolve_brief(parsed_brief)
+        
+        # Return the compiled brief
+        return {
+            "compiled_brief": resolved_brief,
+            "assumptions": _extract_assumptions(free_text, resolved_brief),
+            "original_text": free_text
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to compile brief: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Brief compilation failed: {str(e)}"
+        )
+
+
+def _extract_assumptions(free_text: str, resolved_brief: Dict[str, Any]) -> List[str]:
+    """Extract assumptions made during brief parsing"""
+    assumptions = []
+    
+    # Check duration assumptions
+    if "video" in resolved_brief:
+        video_cfg = resolved_brief["video"]
+        if video_cfg.get("target_length_min") == 5 and video_cfg.get("target_length_max") == 7:
+            assumptions.append("Using default duration: 5-7 minutes")
+    
+    # Check tone assumptions
+    if resolved_brief.get("tone") == "informative":
+        assumptions.append("Using default tone: informative")
+    
+    # Check intent assumptions
+    if resolved_brief.get("intent") == "narrative_history":
+        assumptions.append("Using default intent: narrative_history")
+    
+    # Check texture assumptions
+    if "texture_preset" not in resolved_brief:
+        assumptions.append("No texture preset specified, using default")
+    
+    # Check CTA assumptions
+    if resolved_brief.get("monetization", {}).get("cta_enabled") is None:
+        assumptions.append("CTA setting not specified, using default")
+    
+    return assumptions
 
 
 @router.get("/jobs/{job_id}", response_model=Job)

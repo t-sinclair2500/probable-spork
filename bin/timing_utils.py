@@ -225,9 +225,14 @@ def compute_scene_durations(
     Returns:
         Tuple of (durations_list, strategy_used, rationale)
     """
-    # Get target duration from brief
-    target_min = brief.get('video', {}).get('target_length_min', 1.5)
-    target_max = brief.get('video', {}).get('target_length_max', target_min)
+    # Get target duration from brief (with fallback)
+    if brief and brief.get('video'):
+        target_min = brief['video'].get('target_length_min', 1.5)
+        target_max = brief['video'].get('target_length_max', target_min)
+    else:
+        # Default to 90 seconds (1.5 minutes) for Eames content
+        target_min = 1.5
+        target_max = 1.5
     
     # Use midpoint if min != max, otherwise use the single value
     if target_min == target_max:

@@ -26,10 +26,14 @@ class EventStreamManager:
         self.active_streams: Dict[str, Set[asyncio.Queue]] = {}
         self.log = logging.getLogger("event_stream")
         self.heartbeat_task: Optional[asyncio.Task] = None
-        self._start_heartbeat()
+        # Don't start heartbeat during import - will be started when needed
     
     def _start_heartbeat(self):
         """Start heartbeat task for SSE clients"""
+        # Only start if not already running
+        if self.heartbeat_task and not self.heartbeat_task.done():
+            return
+            
         async def heartbeat_loop():
             while True:
                 try:
@@ -41,7 +45,16 @@ class EventStreamManager:
                     self.log.error(f"Heartbeat error: {e}")
                     await asyncio.sleep(1)
         
-        self.heartbeat_task = asyncio.create_task(heartbeat_loop())
+        try:
+            self.heartbeat_task = asyncio.create_task(heartbeat_loop())
+        except RuntimeError:
+            # No event loop running, will start when needed
+            self.log.debug("No event loop running, heartbeat will start when needed")
+    
+    def ensure_heartbeat_started(self):
+        """Ensure heartbeat is started (call this when event loop is available)"""
+        if not self.heartbeat_task or self.heartbeat_task.done():
+            self._start_heartbeat()
     
     async def _send_heartbeat(self):
         """Send heartbeat to all active SSE clients"""
@@ -113,9 +126,15 @@ class EventLogger:
     
     def __init__(self):
         self.log = logging.getLogger("events")
-        self.stream_manager = EventStreamManager()
+        self.stream_manager = None  # Will be created when needed
         self._setup_logging()
         self._ensure_runs_dir()
+    
+    def _get_stream_manager(self):
+        """Get or create the stream manager"""
+        if self.stream_manager is None:
+            self.stream_manager = EventStreamManager()
+        return self.stream_manager
     
     def _setup_logging(self):
         """Setup structured logging with proper formatting"""
@@ -190,7 +209,8 @@ class EventLogger:
                 self._log_event_to_console(job_id, event)
                 
                 # Broadcast to SSE clients
-                await self.stream_manager.broadcast_event(job_id, event)
+                stream_manager = self._get_stream_manager()
+                await stream_manager.broadcast_event(job_id, event)
                 
                 return event
             else:

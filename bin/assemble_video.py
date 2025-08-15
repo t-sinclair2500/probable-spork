@@ -201,6 +201,7 @@ def write_video_metadata(slug: str, coverage_metrics: dict, scene_map: list, dur
 
 def assemble_from_animatics(slug: str, animatics_files: list, vo_duration: float, cfg) -> tuple[list, dict, float]:
     """Assemble video from animatics with coverage enforcement."""
+    print(f"🎬 Assembling video from {len(animatics_files)} animatic scenes...")
     log.info(f"Assembling from {len(animatics_files)} animatic scenes")
     
     timeline_clips = []
@@ -209,8 +210,12 @@ def assemble_from_animatics(slug: str, animatics_files: list, vo_duration: float
     t_cursor = 0.0
     total_duration = 0.0
     
+    print("📹 Loading animatic clips...")
     # Load animatic clips and calculate total duration
     for i, animatic_path in enumerate(animatics_files):
+        progress = ((i + 1) / len(animatics_files)) * 100
+        print(f"   📁 Loading scene {i+1}/{len(animatics_files)} ({progress:.1f}%): {os.path.basename(animatic_path)}")
+        
         try:
             clip = VideoFileClip(animatic_path).without_audio()
             scene_id = os.path.basename(animatic_path).replace(".mp4", "")
@@ -225,36 +230,23 @@ def assemble_from_animatics(slug: str, animatics_files: list, vo_duration: float
             })
             
             durations[scene_id] = clip.duration
-            
-            # Add to timeline
             timeline_clips.append(clip)
+            
+            # Update cursor
             t_cursor += clip.duration
             total_duration += clip.duration
             
-            log.info(f"Scene {scene_id}: {clip.duration:.2f}s (total: {total_duration:.2f}s)")
+            print(f"      ✅ Scene loaded: {clip.duration:.2f}s (total: {total_duration:.2f}s)")
             
         except Exception as e:
             log.error(f"Failed to load animatic {animatic_path}: {e}")
-            continue
+            print(f"      ❌ Failed to load scene: {e}")
+            return [], {}, 0.0
     
-    # If animatics are shorter than VO, loop or extend last scene
-    if total_duration < vo_duration:
-        remaining = vo_duration - total_duration
-        log.info(f"Animatics duration ({total_duration:.2f}s) < VO duration ({vo_duration:.2f}s), extending by {remaining:.2f}s")
-        
-        if timeline_clips:
-            last_scene = timeline_clips[-1]
-            # Extend last scene to fill remaining time
-            extended_duration = last_scene.duration + remaining
-            extended_clip = last_scene.set_duration(extended_duration)
-            
-            # Update timeline
-            timeline_clips[-1] = extended_clip
-            total_duration = vo_duration
-            
-            # Update scene map
-            scene_map[-1]["duration"] = extended_duration
-            scene_map[-1]["extended"] = True
+    print(f"\n📊 Video assembly summary:")
+    print(f"   Total scenes: {len(timeline_clips)}")
+    print(f"   Total duration: {total_duration:.2f}s")
+    print(f"   Average scene length: {total_duration/len(timeline_clips):.2f}s")
     
     return timeline_clips, durations, total_duration
 

@@ -1,3 +1,5 @@
+# Master config. Edit this file to control the pipeline before each run.
+
 storage:
   base_dir: "."  # Auto-detects current project directory
   videos_dir: "videos"
@@ -10,48 +12,83 @@ storage:
 
 pipeline:
   daily_videos: 1
-  video_length_seconds: 30
-  tone: "helpful"
-  niches: ["baby sleep regression tips","parenting advice"]
-  category_ids: [27,28]
+  video_length_seconds: 420      # target finished length
+  tone: "conversational"         # e.g., dramatic, silly, authoritative
+  niches: ["ai tools","raspberry pi tips","space trivia"]
+  category_ids: [27,28]          # YouTube Education, Science & Tech
   enable_captions: true
-  enable_synthetic_srt: true  # Generate SRT when ASR unavailable
   enable_thumbnails: true
-  pacing_cooldown_seconds: 60
+  pacing_cooldown_seconds: 60    # sleep between heavy steps
+
+video:
+  resolution: "1920x1080"
+  fps: 30
+  target_bitrate: "4000k"
+  codec: "h264"
+  preset: "fast"
+  crf: 23
 
 llm:
   provider: "ollama"
-  model: "llama3.2:3b"
+  model: "phi3:mini"             # default local model
   endpoint: "http://127.0.0.1:11434/api/generate"
   temperature: 0.7
   max_tokens: 1200
 
 asr:
-  provider: "whisper_cpp"
+  provider: "whisper_cpp"        # "whisper_cpp" or "openai"
   whisper_cpp_path: "auto"       # Auto-detects whisper-cli location
   model: "auto"                  # Auto-detects model location
   openai_enabled: false
 
 tts:
-  provider: "piper"
-  voice: "en_US-amy-medium"
+  provider: "coqui"              # "coqui" or "openai"
+  voice: "tts_models/en/ljspeech/tacotron2-DDC"
   rate_wpm: 165
-  ssml: true
-  lufs_target: -16.0
   openai_enabled: false
 
 assets:
   providers:
     - "pixabay"
     - "pexels"
-    # - "unsplash"  # Uncomment and add UNSPLASH_ACCESS_KEY to .env for attribution-required assets
+    # - "unsplash"   # Optional; requires UNSPLASH_ACCESS_KEY in .env and attribution
   max_per_section: 3
 
-# Video pipeline settings
-video:
-  animatics_only: true            # NEW default - skip stock asset downloads
-  enable_legacy_stock: false      # Keep legacy stock path disabled by default
-  min_coverage: 0.85              # Minimum scene coverage threshold
+# Music bed policy configuration
+music:
+  enabled: true                  # Enable/disable music bed functionality
+  library_path: "assets/music"   # Path to music library
+  auto_select: true              # Automatically select music based on content
+  require_music: false           # Whether music is required for all videos
+  fallback_to_silent: true      # Fallback to silent if no music available
+  
+  # Music selection criteria
+  selection:
+    bpm_weight: 0.4              # Weight for BPM matching (0.0-1.0)
+    mood_weight: 0.4             # Weight for mood matching (0.0-1.0)
+    genre_weight: 0.2            # Weight for genre matching (0.0-1.0)
+    
+  # Audio processing settings
+  processing:
+    enable_ducking: true         # Enable sidechain ducking
+    enable_fades: true           # Enable fade in/out effects
+    fade_in_ms: 500             # Fade-in duration in milliseconds
+    fade_out_ms: 500            # Fade-out duration in milliseconds
+    loop_strategy: "seamless"    # seamless, crossfade, or extend
+    
+  # Quality and licensing
+  quality:
+    min_bitrate: "128k"          # Minimum music bitrate
+    preferred_formats: ["mp3", "wav", "m4a"]
+    require_license_info: true   # Require license information for tracks
+
+render:
+  resolution: "1920x1080"
+  fps: 30
+  music_db: -22                 # Music volume in dB (negative = quieter)
+  duck_db: -15                  # Ducking level in dB when VO present
+  xfade_ms: 250
+  target_bitrate: "4000k"
 
 licenses:
   require_attribution: true
@@ -59,77 +96,7 @@ licenses:
 upload:
   auto_upload: false
   visibility: "public"
-  schedule: null
+  schedule: null  # e.g., "2025-08-10T14:00:00Z"
 
 limits:
   max_retries: 2
-
-testing:
-  asset_mode: "reuse"               # reuse | live (DEFAULT: reuse for safety)
-  fixture_dir: "assets/fixtures"    # where test fixtures are stored
-  live_budget_per_run: 5            # hard cap on new downloads in live mode
-  live_rate_limit_per_min: 10       # API calls per minute limit in live mode
-  fail_on_live_without_keys: true   # fail live tests if API keys missing
-
-# Video rendering settings
-render:
-  resolution: "1920x1080"
-  fps: 30
-  music_db: -22
-  duck_db: -15
-  xfade_ms: 250
-  target_bitrate: "4000k"
-  codec: "h264_videotoolbox"  # Hardware acceleration
-  preset: "fast"  # Encoding speed vs quality trade-off
-  crf: 23  # Quality setting (18-28 range, lower = better quality)
-  threads: 0  # Auto-detect optimal thread count
-  use_hardware_acceleration: true  # Enable/disable hardware acceleration
-  
-  # Audio quality targets
-  audio:
-    vo_lufs_target: -16.0      # Voiceover target LUFS
-    music_lufs_target: -23.0   # Music bed target LUFS  
-    true_peak_max: -1.0        # Maximum true peak in dBTP
-    ducking_min_db: 6.0        # Minimum ducking difference in dB
-    enable_auto_normalization: true  # Auto-normalize if out of spec
-
-# Texture and paper feel settings
-textures:
-  enable: true                     # Enable/disable texture overlay
-  grain_strength: 0.12            # Grain strength (0.0-1.0)
-  feather_px: 1.5                 # Edge feathering radius in pixels
-  posterize_levels: 6             # Number of posterization levels (2-16)
-  halftone:                       # Halftone effect
-    enable: false                  # Enable halftone dot pattern
-    cell_px: 6                    # Cell size in pixels
-    angle_deg: 15                 # Halftone angle in degrees
-    opacity: 0.12                 # Halftone effect opacity (0.0-1.0)
-
-# Procedural generation settings
-procedural:
-  seed: 42                          # Random seed for reproducible generation
-  max_colors_per_scene: 3           # Maximum distinct colors per scene
-  placement:
-    min_spacing_px: 64              # Minimum spacing between elements
-    safe_margin_px: 40              # Safe margin from scene edges
-  motion:
-    jitter_ms: 80                   # Motion jitter in milliseconds
-
-# Legibility and accessibility settings
-legibility:
-  enabled: true                     # Enable/disable automatic legibility defaults
-  wcag_level: "AA"                  # WCAG compliance level: A, AA, AAA
-  min_contrast_ratio: 4.5           # Minimum contrast ratio for normal text (AA standard)
-  auto_background_colors: true      # Automatically assign background colors to scenes
-  auto_text_colors: true            # Automatically assign contrasting text colors
-  background_mapping:
-    gradient1: "#f9fafb"            # Light gray background
-    paper: "#f9fafb"                # Paper texture background
-    solid_white: "#ffffff"          # Pure white
-    solid_black: "#111827"          # Brand black
-    solid_primary: "#2563eb"        # Brand primary blue
-    solid_secondary: "#7c3aed"      # Brand secondary purple
-    solid_accent: "#f59e0b"         # Brand accent amber
-  text_color_fallback:
-    light_background: "#111827"     # Dark text for light backgrounds
-    dark_background: "#ffffff"      # Light text for dark backgrounds

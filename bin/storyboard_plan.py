@@ -335,9 +335,15 @@ def create_storyboard(
     total_scenes = len(scenes)
     total_duration_ms = sum(s.duration_ms for s in scenes)
     
-    # Get target duration from brief
-    target_min = brief.get('video', {}).get('target_length_min', 1.5)
-    target_max = brief.get('video', {}).get('target_length_max', target_min)
+    # Get target duration from brief (with fallback)
+    if brief and brief.get('video'):
+        target_min = brief['video'].get('target_length_min', 1.5)
+        target_max = brief['video'].get('target_length_max', target_min)
+    else:
+        # Default to 90 seconds (1.5 minutes) for Eames content
+        target_min = 1.5
+        target_max = 1.5
+    
     target_sec = target_min if target_min == target_max else (target_min + target_max) / 2
     target_ms = int(target_sec * 60 * 1000)
     
@@ -477,29 +483,59 @@ def update_existing_scenescript_legibility(slug: str, brand_style: BrandStyle, l
 
 
 def main(brief=None, models_config=None):
-    """Main entry point for storyboard planning."""
+    """Main function for storyboard planning."""
     parser = argparse.ArgumentParser(description="Convert grounded beats to SceneScript")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("--slug", required=True, help="Content slug identifier")
     parser.add_argument("--dry-run", action="store_true", help="Validate without writing")
+    
     args = parser.parse_args()
     
-    log.info(f"Starting storyboard planning for slug: {args.slug}")
+    print("🎬 Probable Spork Storyboard Planning")
+    print("=" * 50)
+    print(f"📁 Content slug: {args.slug}")
+    print(f"🔍 Mode: {'Dry Run' if args.dry_run else 'Production'}")
+    print()
     
-    # Load inputs
+    # Parse brief data if provided
+    brief = None
+    if args.brief_data:
+        try:
+            brief = json.loads(args.brief_data)
+            print(f"📋 Brief: {brief.get('title', 'Untitled')}")
+            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"⚠️  Failed to parse brief data: {e}")
+            log.warning(f"Failed to parse brief data: {e}")
+    
+    print("\n📚 Loading content and configuration...")
+    
+    # Load grounded beats
+    print("   📖 Loading grounded beats...")
     beats = load_grounded_beats(args.slug)
     if not beats:
-        log.error("No grounded beats found, exiting")
-        sys.exit(1)
+        print(f"   ❌ No grounded beats found for {args.slug}")
+        log.error(f"No grounded beats found for {args.slug}")
+        return 1
     
-    brief = load_brief()
-    if not brief:
-        log.warning("No brief config found, using defaults")
-        brief = {"video": {"target_length_max": 7}}
+    print(f"   ✅ Loaded {len(beats)} grounded beats")
     
+    # Load brief configuration
+    print("   📋 Loading brief configuration...")
+    brief_config = load_brief()
+    if brief_config:
+        print(f"   ✅ Brief loaded: {brief_config.get('title', 'Untitled')}")
+    else:
+        print("   ⚠️  No brief configuration found, using defaults")
+    
+    # Load brand style
+    print("   🎨 Loading brand style...")
     try:
         brand_style = load_style()
+        print("   ✅ Brand style loaded successfully")
         log.info("Loaded brand style configuration")
     except Exception as e:
+        print(f"   ⚠️  Failed to load brand style: {e}, using defaults")
         log.warning(f"Failed to load brand style: {e}, using defaults")
         brand_style = BrandStyle(
             colors={"primary": "#2563eb"},
@@ -508,38 +544,53 @@ def main(brief=None, models_config=None):
         )
     
     # Get seed for deterministic asset generation
+    print("   🎲 Loading configuration...")
     try:
         from bin.core import load_config
         cfg = load_config()
         seed = getattr(cfg.procedural, 'seed', 42) if hasattr(cfg, 'procedural') else 42
+        print(f"   ✅ Configuration loaded (seed: {seed})")
     except Exception as e:
+        print(f"   ⚠️  Failed to load config: {e}, using default seed 42")
         log.warning(f"Failed to load config for seed: {e}, using default seed 42")
         seed = 42
     
     # Check if we should update existing scenescript with legibility defaults
     if not args.dry_run:
+        print("   🔍 Checking existing scenescript...")
         update_existing_scenescript_legibility(args.slug, brand_style, log)
     
     # Create storyboard
+    print("\n🎬 Creating storyboard...")
+    print("   📝 Converting beats to scenes...")
     storyboard = create_storyboard(args.slug, beats, brief, brand_style)
+    print(f"   ✅ Created {len(storyboard.scenes)} scenes")
     
     # Validate against schema
+    print("   ✅ Validating SceneScript...")
     try:
         validate_scene_script(storyboard)
+        print("   ✅ SceneScript validation passed")
         log.info("SceneScript validation passed")
     except Exception as e:
+        print(f"   ❌ SceneScript validation failed: {e}")
         log.error(f"SceneScript validation failed: {e}")
-        sys.exit(1)
+        return 1
     
     if args.dry_run:
+        print("\n🎉 Dry run completed successfully!")
         log.info("Dry run mode - SceneScript validated successfully")
-        return
+        return 0
     
     # Run QA gates
+    print("\n🔍 Running QA gates...")
     qa_results = []
     palette = brand_style.colors.values() if hasattr(brand_style.colors, 'values') else list(brand_style.colors.values())
     
-    for scene in storyboard.scenes:
+    for i, scene in enumerate(storyboard.scenes):
+        progress = ((i + 1) / len(storyboard.scenes)) * 100
+        print(f"   🎯 Scene {i+1}/{len(storyboard.scenes)} ({progress:.1f}%): {scene.id}")
+        
         # Convert scene to dict for QA gates
         scene_dict = scene.dict() if hasattr(scene, 'dict') else scene.__dict__
         scenes_meta = [{"duration_ms": s.duration_ms} for s in storyboard.scenes]
@@ -548,42 +599,65 @@ def main(brief=None, models_config=None):
         qa_results.append(scene_qa)
         
         if not scene_qa.ok:
+            print(f"      ⚠️  QA issues: {len(scene_qa.fails)} problems")
             log.warning(f"QA issues in scene: {scene_qa.fails}")
+        else:
+            print(f"      ✅ QA passed")
     
     # Log QA summary
     total_qa_issues = sum(1 for r in qa_results if not r.ok)
+    print(f"\n📊 QA Summary: {len(qa_results)} scenes checked, {total_qa_issues} with issues")
     log.info(f"QA Gates completed: {len(qa_results)} scenes checked, {total_qa_issues} with issues")
 
     # Run asset loop to ensure 100% asset coverage
-    log.info("Starting asset loop to ensure complete asset coverage...")
+    print("\n🔄 Running asset loop...")
+    print("   🎯 Ensuring complete asset coverage...")
     try:
         updated_storyboard, coverage_results = run_asset_loop(args.slug, storyboard, brand_style, seed=42)
         
         if coverage_results["is_fully_covered"]:
-            log.info("Asset loop completed successfully - 100% coverage achieved")
+            print("   ✅ Asset loop completed - 100% coverage achieved")
             storyboard = updated_storyboard
+            log.info("Asset loop completed successfully - 100% coverage achieved")
         else:
+            print(f"   ⚠️  Asset loop completed with {coverage_results['coverage_pct']:.1f}% coverage")
             log.warning(f"Asset loop completed with {coverage_results['coverage_pct']:.1f}% coverage")
             # Continue with partial coverage - assets will be generated during rendering
         
+        print(f"   📊 Coverage: {coverage_results['covered_requirements']}/{coverage_results['total_requirements']} ({coverage_results['coverage_pct']:.1f}%)")
         log.info(f"Asset coverage: {coverage_results['covered_requirements']}/{coverage_results['total_requirements']} ({coverage_results['coverage_pct']:.1f}%)")
         
     except Exception as e:
+        print(f"   ❌ Asset loop failed: {e}")
         log.error(f"Asset loop failed: {e}")
         log.warning("Continuing with original storyboard - assets will be generated during rendering")
 
     # Save to scenescripts directory
+    print("\n💾 Saving SceneScript...")
     output_path = Path("scenescripts") / f"{args.slug}.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     try:
         save_scene_script(storyboard, output_path)
+        print(f"   ✅ SceneScript saved to: {output_path}")
         log.info(f"SceneScript saved to: {output_path}")
     except Exception as e:
+        print(f"   ❌ Failed to save SceneScript: {e}")
         log.error(f"Failed to save SceneScript: {e}")
-        sys.exit(1)
+        return 1
+    
+    # Final summary
+    print("\n" + "=" * 50)
+    print("🎉 Storyboard Planning Complete!")
+    print("=" * 50)
+    print(f"📁 Output: {output_path}")
+    print(f"🎬 Scenes: {len(storyboard.scenes)}")
+    print(f"⏱️  Total Duration: {sum(s.duration_ms for s in storyboard.scenes)/1000:.1f}s")
+    print(f"🔍 QA Issues: {total_qa_issues}")
+    print(f"📊 Asset Coverage: {coverage_results.get('coverage_pct', 0):.1f}%")
     
     log.info("Storyboard planning completed successfully")
+    return 0
 
 
 if __name__ == "__main__":

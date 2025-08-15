@@ -37,11 +37,22 @@ class GateDecision(str, Enum):
 
 class Brief(BaseModel):
     """Brief configuration snapshot"""
-    slug: str
-    intent: str
-    tone: str
-    target_len_sec: int
+    title: str = ""
+    intent: str = "narrative_history"
+    audience: List[str] = []
+    tone: str = "informative"
+    video: Dict[str, Any] = {"target_length_min": 5, "target_length_max": 7}
+    blog: Dict[str, Any] = {"words_min": 900, "words_max": 1300}
+    keywords_include: List[str] = []
+    keywords_exclude: List[str] = []
+    sources_preferred: List[str] = []
+    monetization: Dict[str, Any] = {
+        "primary": ["lead_magnet", "email_capture"],
+        "cta_text": "Download our free guide"
+    }
+    notes: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    _source: Optional[str] = None
 
 
 class ConfigSnapshot(BaseModel):
@@ -81,7 +92,9 @@ class JobCreate(BaseModel):
     """Job creation request"""
     slug: str
     intent: str
-    brief_config: Dict[str, Any]
+    brief: Optional[Brief] = None  # Optional structured brief
+    brief_config: Optional[Dict[str, Any]] = None  # Legacy brief_config field
+    meta: Optional[Dict[str, Any]] = Field(default_factory=dict)  # Additional metadata including free_text_brief
 
 
 class Job(BaseModel):

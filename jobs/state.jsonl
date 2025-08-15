@@ -340,3 +340,23 @@
 {"ts": "2025-08-15T03:54:00Z", "step": "fact_guard", "status": "OK", "notes": "claims=0;kept=0;removed=0;rewritten=0;flagged=0"}
 {"ts": "2025-08-15T03:55:17Z", "step": "phase06_audit", "status": "COMPLETED", "notes": "Phase 6 Operator Console audit completed - PASS with minor issues. 27/35 tests passed. Core functionality working: FastAPI server, Gradio UI, HITL gates, security, job management. Issues: event logging validation, job auto-execution, some test configs. Overall: functional system ready for use."}
 {"ts": "2025-08-15T03:58:46Z", "step": "phase04_audit", "status": "COMPLETED", "notes": "Audit report written to phase04_intent_templates_research_rigor/phase04_Audit_Phase.md"}
+{"ts": "2025-08-15T06:52:34Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'blog_only': False, 'from_step': None, 'dry_run': False, 'brief': None, 'no_style_rewrite': False};brief=90-second history of Ray & Charles Eames;source=unknown"}
+{"ts": "2025-08-15T06:52:35Z", "step": "niche_trends", "status": "START", "notes": "brief=90-second history of Ray & Charles Eames"}
+{"ts": "2025-08-15T06:52:35Z", "step": "niche_trends", "status": "OK", "notes": "rows=1;brief=90-second history of Ray & Charles Eames"}
+{"ts": "2025-08-15T06:52:35Z", "step": "niche_trends", "status": "OK", "notes": "elapsed_ms=813"}
+{"ts": "2025-08-15T06:52:36Z", "step": "llm_cluster", "status": "START", "notes": "brief=90-second history of Ray & Charles Eames"}
+{"ts": "2025-08-15T06:53:43Z", "step": "llm_cluster", "status": "OK", "notes": "topics=1;brief=90-second history of Ray & Charles Eames"}
+{"ts": "2025-08-15T06:53:43Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=68380"}
+{"ts": "2025-08-15T06:53:44Z", "step": "llm_outline", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=723"}
+{"ts": "2025-08-15T06:53:53Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'blog_only': False, 'from_step': 'llm_outline', 'dry_run': False, 'brief': None, 'no_style_rewrite': False};brief=90-second history of Ray & Charles Eames;source=unknown"}
+{"ts": "2025-08-15T06:53:53Z", "step": "run_pipeline", "status": "ERROR", "notes": "exception=too many values to unpack (expected 2)"}
+{"ts": "2025-08-15T06:53:59Z", "step": "llm_outline", "status": "START", "notes": "brief=Untitled;intent=narrative_history"}
+{"ts": "2025-08-15T06:55:31Z", "step": "llm_outline", "status": "ERROR", "notes": "generation failed: Chat request failed: Extra data: line 2 column 1 (char 135)"}
+{"ts": "2025-08-15T06:57:18Z", "step": "animatics_generate", "status": "COMPLETED", "notes": "Rendered 1/1 scenes for eames"}
+{"ts": "2025-08-15T06:57:24Z", "step": "generate_captions", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-15T06:57:24Z", "step": "generate_captions", "status": "SKIP", "notes": "whisper.cpp missing or model not found"}
+{"ts": "2025-08-15T06:57:43Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-15T07:02:21Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-15T07:09:34Z", "step": "animatics_generate", "status": "FAILED", "notes": "'Scene' object has no attribute 'type'"}
+{"ts": "2025-08-15T07:09:50Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-15T07:12:19Z", "step": "assemble_video", "status": "OK", "notes": "eames.mp4"}

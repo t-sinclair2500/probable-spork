@@ -1,0 +1,27 @@
+{
+  "title": "Guide on Baby Sleep Regression",
+  "intent": "narrative_history",
+  "audience": [],
+  "tone": "comforting",
+  "video": {
+    "target_length_min": 3,
+    "target_length_max": 4
+  },
+  "blog": {
+    "words_min": 900,
+    "words_max": 1300
+  },
+  "keywords_include": [],
+  "keywords_exclude": [],
+  "sources_preferred": [],
+  "monetization": {
+    "primary": [
+      "lead_magnet",
+      "email_capture"
+    ],
+    "cta_text": "Download our free guide",
+    "cta_enabled": false
+  },
+  "notes": "3-4 min explainer on baby sleep regression, comforting tone, linen texture, CTA off",
+  "created_at": "2025-08-15 07:18:07.996705+00:00"
+}

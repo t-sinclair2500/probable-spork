@@ -98,6 +98,46 @@ class APIClient:
         """Get job events (polling fallback)"""
         result = self._make_request("GET", f"/jobs/{job_id}/events?limit={limit}")
         return result.get("events", []) if isinstance(result, dict) else []
+    
+    def compile_brief(self, free_text: str, preset: str, testing_mode: str, seed: int) -> Dict:
+        """Compile a free-text brief into structured format"""
+        try:
+            data = {
+                "free_text_brief": free_text,
+                "preset": preset,
+                "testing_mode": testing_mode,
+                "seed": seed
+            }
+            return self._make_request("POST", "/compile-brief", data)
+        except Exception as e:
+            logger.error(f"Failed to compile brief: {e}")
+            return {"error": str(e)}
+    
+    def create_job_with_brief(self, slug: str, intent: str, brief: Dict, preset: str, testing_mode: str, seed: int) -> Dict:
+        """Create a new job with the compiled brief"""
+        try:
+            # Add metadata to the brief
+            brief["meta"] = {
+                "preset": preset,
+                "testing_mode": testing_mode,
+                "seed": seed
+            }
+            
+            job_data = {
+                "slug": slug,
+                "intent": intent,
+                "brief": brief,
+                "meta": {
+                    "free_text_brief": brief.get("notes", ""),
+                    "preset": preset,
+                    "testing_mode": testing_mode,
+                    "seed": seed
+                }
+            }
+            return self._make_request("POST", "/jobs", job_data)
+        except Exception as e:
+            logger.error(f"Failed to create job with brief: {e}")
+            return {"error": str(e)}
 
 class EventStreamer:
     """Manages real-time event streaming with polling fallback"""
@@ -310,6 +350,182 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
             fn=create_job,
             inputs=[slug_input, intent_input, target_len_input, tone_input, testing_mode_input, notes_input],
             outputs=[job_result, job_result]
+        )
+        
+        # Quick Brief Panel
+        gr.Markdown("---")
+        gr.Markdown("## Quick Brief")
+        gr.Markdown("Enter a natural language brief and let the system parse it automatically")
+        
+        with gr.Row():
+            with gr.Column(scale=2):
+                brief_text_input = gr.Textbox(
+                    label="Free-Text Brief",
+                    placeholder="e.g., 3-4 min explainer on baby sleep regression, comforting tone, linen texture, CTA off",
+                    lines=3,
+                    info="Describe your content needs in plain English"
+                )
+                
+                with gr.Row():
+                    preset_input = gr.Dropdown(
+                        label="Style Preset",
+                        choices=["(none)", "print_soft", "print_strong", "flat_noise", "halftone_classic", "vintage_paper", "minimal", "modern_flat", "off"],
+                        value="(none)",
+                        info="Optional texture/style preset"
+                    )
+                    
+                    testing_mode_quick = gr.Radio(
+                        label="Testing Mode",
+                        choices=["reuse", "live"],
+                        value="reuse",
+                        info="reuse: use cached assets, live: download new assets"
+                    )
+                    
+                    seed_input = gr.Number(
+                        label="Seed",
+                        value=42,
+                        minimum=1,
+                        maximum=9999,
+                        step=1,
+                        info="Random seed for consistent generation"
+                    )
+                
+                with gr.Row():
+                    preview_btn = gr.Button("Preview Brief", variant="secondary")
+                    run_btn = gr.Button("Run Job", variant="primary", visible=False)
+                
+                brief_preview = gr.Code(
+                    label="Compiled Brief Preview",
+                    language="json",
+                    lines=15,
+                    interactive=False,
+                    visible=False
+                )
+                
+                # Hidden state to store the compiled brief object
+                compiled_brief_state = gr.State()
+                
+                assumptions_display = gr.Markdown(
+                    label="Assumptions Made",
+                    visible=False
+                )
+                
+                quick_brief_result = gr.Textbox(
+                    label="Quick Brief Result",
+                    interactive=False,
+                    lines=2,
+                    visible=False
+                )
+            
+            with gr.Column(scale=1):
+                gr.Markdown("### Quick Brief Examples")
+                gr.Markdown("""
+                **Duration & Type:**
+                - "3-4 min explainer on baby sleep regression"
+                - "90 second history of Ray and Charles Eames"
+                - "2 minute tutorial on Python decorators"
+                
+                **Tone & Style:**
+                - "comforting tone, linen texture"
+                - "authoritative, modern flat style"
+                - "conversational, vintage paper feel"
+                
+                **CTA & Monetization:**
+                - "CTA off, no monetization"
+                - "include lead magnet, CTA on"
+                """)
+        
+        # Quick Brief functionality
+        def preview_brief(free_text, preset, testing_mode, seed):
+            """Preview the compiled brief"""
+            if not free_text.strip():
+                return None, None, None, None, gr.Row(visible=False), gr.Button(visible=False)
+            
+            client = get_api_client()
+            if not client:
+                return "Please initialize API client first", None, None, None, gr.Row(visible=False), gr.Button(visible=False)
+            
+            try:
+                result = client.compile_brief(free_text, preset, testing_mode, seed)
+                if "error" in result:
+                    return f"Error: {result['error']}", None, None, None, gr.Row(visible=False), gr.Button(visible=False)
+                
+                compiled_brief = result.get("compiled_brief", {})
+                assumptions = result.get("assumptions", [])
+                
+                # Format assumptions
+                assumptions_text = "### Assumptions Made:\n"
+                if assumptions:
+                    for assumption in assumptions:
+                        assumptions_text += f"- {assumption}\n"
+                else:
+                    assumptions_text += "- No assumptions made, all fields specified\n"
+                
+                return (
+                    json.dumps(compiled_brief, indent=2),
+                    assumptions_text,
+                    compiled_brief,
+                    gr.Row(visible=True),
+                    gr.Button(visible=True)
+                )
+                
+            except Exception as e:
+                return f"Error: {str(e)}", None, None, None, gr.Row(visible=False), gr.Button(visible=False)
+        
+        def run_quick_brief_job(free_text, preset, testing_mode, seed, compiled_brief_json):
+            """Run a job with the compiled brief"""
+            if not compiled_brief_json:
+                return "No compiled brief available", "error"
+            
+            client = get_api_client()
+            if not client:
+                return "Please initialize API client first", "error"
+            
+            try:
+                # Parse the compiled brief JSON back to dict
+                if isinstance(compiled_brief_json, str):
+                    compiled_brief = json.loads(compiled_brief_json)
+                else:
+                    compiled_brief = compiled_brief_json
+                
+                # Generate slug from title or use timestamp
+                import time
+                slug = compiled_brief.get("title", "").lower().replace(" ", "-").replace("guide-on-", "").replace(" ", "-")
+                if not slug or slug == "guide-on":
+                    slug = f"quick-brief-{int(time.time())}"
+                
+                # Create job with compiled brief
+                result = client.create_job_with_brief(slug, "narrative_history", compiled_brief, preset, testing_mode, seed)
+                
+                if "error" not in result:
+                    job_id = result.get("id", "unknown")
+                    return f"Job created successfully! ID: {job_id}", "success"
+                else:
+                    return f"Failed to create job: {result['error']}", "error"
+                    
+            except Exception as e:
+                return f"Job creation error: {str(e)}", "error"
+        
+        # Wire up Quick Brief events
+        preview_btn.click(
+            fn=preview_brief,
+            inputs=[brief_text_input, preset_input, testing_mode_quick, seed_input],
+            outputs=[brief_preview, assumptions_display, compiled_brief_state, run_btn, run_btn]
+        ).then(
+            fn=lambda: gr.Code(visible=True),
+            outputs=[brief_preview]
+        ).then(
+            fn=lambda: gr.Markdown(visible=True),
+            outputs=[assumptions_display]
+        ).then(
+            fn=lambda: gr.Textbox(visible=True),
+            outputs=[quick_brief_result]
+        )
+        
+        run_btn.click(
+            fn=run_quick_brief_job,
+            inputs=[brief_text_input, preset_input, testing_mode_quick, seed_input, compiled_brief_state],
+            outputs=[quick_brief_result, quick_brief_result]
         )
     
     return page
@@ -557,8 +773,7 @@ def create_job_console_page(api_client: APIClient = None, event_streamer: EventS
                 gate_patch_input = gr.Code(
                     label="JSON Patch (optional)",
                     language="json",
-                    lines=5,
-                    placeholder='{"op": "replace", "path": "/text", "value": "new text"}'
+                    lines=5
                 )
                 
                 with gr.Row():

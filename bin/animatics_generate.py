@@ -498,63 +498,92 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         cfg = load_config()
         guard_system(cfg)
         
-        # Load SceneScript and brand style
-        scenescript = load_scenescript(slug)
-        style = load_style()
+        # Load SceneScript
+        try:
+            script = load_scenescript(slug)
+            log.info(f"Loaded SceneScript for {slug}: {len(script.scenes)} scenes")
+        except Exception as e:
+            log.error(f"Failed to load SceneScript for {slug}: {e}")
+            return False
         
-        # Initialize procedural engines
-        cfg = load_config()
-        procedural_cfg = getattr(cfg, 'procedural', {})
-        layout_engine = LayoutEngine(seed=getattr(procedural_cfg, 'seed', 42))
+        # Determine which scenes to render
+        if scene_id:
+            scenes_to_render = [s for s in script.scenes if s.id == scene_id]
+            if not scenes_to_render:
+                log.error(f"Scene {scene_id} not found in SceneScript")
+                return False
+            log.info(f"Rendering single scene: {scene_id}")
+        else:
+            scenes_to_render = script.scenes
+            log.info(f"Rendering all {len(scenes_to_render)} scenes")
+        
+        # Load brand style and assets
+        print(f"🎨 Loading brand style and assets for {slug}...")
+        try:
+            style = load_style()
+            log.info("Loaded brand style configuration")
+        except Exception as e:
+            log.error(f"Failed to load brand style: {e}")
+            return False
+        
+        # Load procedural configuration
+        procedural_cfg = None
+        try:
+            import yaml
+            modules_config_path = Path("conf/modules.yaml")
+            if modules_config_path.exists():
+                with open(modules_config_path, 'r') as f:
+                    modules_config = yaml.safe_load(f)
+                    procedural_cfg = modules_config.get('procedural', {})
+                log.info("Loaded procedural configuration")
+        except Exception as e:
+            log.warning(f"Failed to load procedural configuration: {e}")
+        
+        # Load texture configuration
+        texture_config = None
+        texture_metadata = {}
+        try:
+            if procedural_cfg and procedural_cfg.get('textures', {}).get('enable', False):
+                texture_config = procedural_cfg['textures']
+                log.info("Loaded texture configuration")
+        except Exception as e:
+            log.warning(f"Failed to load texture configuration: {e}")
+        
+        # Load palette
+        palette = None
         try:
             palette = load_palette()
-            log.info(f"Loaded procedural palette with {len(palette)} colors")
+            log.info(f"Loaded procedural palette with {len(palette.colors)} colors")
         except Exception as e:
-            log.warning(f"Failed to load procedural palette: {e}, using brand style colors")
-            palette = list(style.colors.values()) if hasattr(style.colors, 'values') else []
+            log.warning(f"Failed to load palette: {e}")
         
-        # Ensure output directory
+        # Ensure animatics directory exists
         anim_dir = ensure_animatics_dir(slug)
+        print(f"📁 Output directory: {anim_dir}")
         
-        # Filter scenes if specific scene requested
-        scenes_to_render = []
-        if scene_id:
-            scene = next((s for s in scenescript.scenes if s.id == scene_id), None)
-            if not scene:
-                log.error(f"Scene {scene_id} not found in {slug}")
-                return False
-            scenes_to_render = [scene]
-        else:
-            scenes_to_render = scenescript.scenes
-        
-        log.info(f"[duration-policy] Rendering {len(scenes_to_render)} scenes for {slug}")
-        log.info(f"[duration-policy] Total storyboard duration: {sum(s.duration_ms for s in scenes_to_render)}ms")
-        
-        # Rasterize assets for all scenes
-        all_elements = []
-        for scene in scenes_to_render:
-            all_elements.extend(scene.elements)
-        
-        # Get texture configuration
-        texture_config = getattr(cfg, 'textures', {})
-        
-        asset_paths = rasterize_element_assets(all_elements, style, texture_config)
+        # Rasterize SVG assets
+        print("🔄 Rasterizing SVG assets...")
+        asset_paths = rasterize_element_assets(script.scenes, style, texture_config)
         log.info(f"Rasterized {len(asset_paths)} assets")
         
-        # Collect texture metadata if available
-        texture_metadata = getattr(rasterize_element_assets, 'texture_metadata', {})
-        if texture_metadata:
-            log.info(f"[texture-integrate] Collected texture metadata for {len(texture_metadata)} elements")
-        
-        # Render each scene
+        # Render scenes with progress updates
         successful_renders = 0
         start_time = time.time()
+        total_scenes = len(scenes_to_render)
         
-        for scene in scenes_to_render:
+        print(f"\n🎬 Rendering {total_scenes} scenes...")
+        print("=" * 50)
+        
+        for i, scene in enumerate(scenes_to_render):
+            scene_num = i + 1
+            progress = (scene_num / total_scenes) * 100
+            print(f"📹 Scene {scene_num}/{total_scenes} ({progress:.1f}%): {scene.id}")
+            
             output_path = anim_dir / f"{scene.id}.mp4"
             
             # Check if already rendered (idempotence)
             if output_path.exists():
+                print(f"   ⏭️  Already rendered, skipping")
                 log.info(f"Scene {scene.id} already rendered, skipping")
                 successful_renders += 1
                 continue
@@ -571,12 +600,23 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
                 except Exception as e:
                     log.warning(f"Failed to load voiceover cues: {e}")
             
+            print(f"   🎨 Rendering scene...")
             if render_scene(scene, style, asset_paths, output_path, slug, vo_cues, procedural_cfg, palette):
                 successful_renders += 1
+                print(f"   ✅ Scene rendered successfully")
+            else:
+                print(f"   ❌ Scene rendering failed")
         
         total_time = time.time() - start_time
+        completion_rate = (successful_renders / total_scenes) * 100
+        
+        print("\n" + "=" * 50)
+        print(f"🎉 Rendering Complete: {successful_renders}/{total_scenes} scenes ({completion_rate:.1f}%)")
+        print(f"⏱️  Total time: {total_time:.2f}s")
+        print(f"📊 Success rate: {completion_rate:.1f}%")
+        
         log.info(
-            f"Rendered {successful_renders}/{len(scenes_to_render)} scenes "
+            f"Rendered {successful_renders}/{total_scenes} scenes "
             f"in {total_time:.2f}s"
         )
         
@@ -591,11 +631,11 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         # Log state
         log_state(
             "animatics_generate",
-            "COMPLETED" if successful_renders == len(scenes_to_render) else "PARTIAL",
-            f"Rendered {successful_renders}/{len(scenes_to_render)} scenes for {slug}"
+            "COMPLETED" if successful_renders == total_scenes else "PARTIAL",
+            f"Rendered {successful_renders}/{total_scenes} scenes for {slug}"
         )
         
-        return successful_renders == len(scenes_to_render)
+        return successful_renders == total_scenes
         
     except Exception as e:
         log.error(f"Failed to render animatics for {slug}: {e}")

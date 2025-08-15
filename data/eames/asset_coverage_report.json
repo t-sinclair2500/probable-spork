@@ -1,6 +1,6 @@
 {
   "slug": "eames",
-  "timestamp": 1755022467.6936152,
+  "timestamp": 1755241746.7917998,
   "brand_style": {
     "colors": {
       "primary": "#2563eb",
@@ -61,15 +61,15 @@
     ]
   },
   "asset_library_stats": {
-    "total": 10,
+    "total": 17,
     "brand": 0,
-    "generated": 5
+    "generated": 12
   },
   "coverage_history": [
     {
-      "timestamp": 1755022467.693598,
-      "total_requirements": 5,
-      "covered_requirements": 5,
+      "timestamp": 1755241746.7917998,
+      "total_requirements": 1,
+      "covered_requirements": 1,
       "coverage_pct": 100.0,
       "is_fully_covered": true,
       "requirements": [
@@ -77,35 +77,7 @@
           "asset_type": "background",
           "identifier": "gradient1",
           "coverage_status": "found",
-          "asset_path": "assets/brand/backgrounds/gradient1.svg",
-          "generated_path": null
-        },
-        {
-          "asset_type": "background",
-          "identifier": "gradient1",
-          "coverage_status": "found",
-          "asset_path": "assets/brand/backgrounds/gradient1.svg",
-          "generated_path": null
-        },
-        {
-          "asset_type": "background",
-          "identifier": "gradient1",
-          "coverage_status": "found",
-          "asset_path": "assets/brand/backgrounds/gradient1.svg",
-          "generated_path": null
-        },
-        {
-          "asset_type": "background",
-          "identifier": "gradient1",
-          "coverage_status": "found",
-          "asset_path": "assets/brand/backgrounds/gradient1.svg",
-          "generated_path": null
-        },
-        {
-          "asset_type": "background",
-          "identifier": "gradient1",
-          "coverage_status": "found",
-          "asset_path": "assets/brand/backgrounds/gradient1.svg",
+          "asset_path": "assets\\brand\\backgrounds\\gradient1.svg",
           "generated_path": null
         }
       ]
@@ -116,35 +88,7 @@
       "asset_type": "background",
       "identifier": "gradient1",
       "coverage_status": "found",
-      "asset_path": "assets/brand/backgrounds/gradient1.svg",
-      "generated_path": null
-    },
-    {
-      "asset_type": "background",
-      "identifier": "gradient1",
-      "coverage_status": "found",
-      "asset_path": "assets/brand/backgrounds/gradient1.svg",
-      "generated_path": null
-    },
-    {
-      "asset_type": "background",
-      "identifier": "gradient1",
-      "coverage_status": "found",
-      "asset_path": "assets/brand/backgrounds/gradient1.svg",
-      "generated_path": null
-    },
-    {
-      "asset_type": "background",
-      "identifier": "gradient1",
-      "coverage_status": "found",
-      "asset_path": "assets/brand/backgrounds/gradient1.svg",
-      "generated_path": null
-    },
-    {
-      "asset_type": "background",
-      "identifier": "gradient1",
-      "coverage_status": "found",
-      "asset_path": "assets/brand/backgrounds/gradient1.svg",
+      "asset_path": "assets\\brand\\backgrounds\\gradient1.svg",
       "generated_path": null
     }
   ]

@@ -1,42 +1,64 @@
 {
-  "duration": {
-    "target_ms": 90000,
-    "actual_ms": 90000,
-    "deviation_pct": 0.0,
-    "source": "brief"
+  "slug": "eames",
+  "timestamp": "2025-08-15T07:09:50Z",
+  "coverage": {
+    "visual_coverage_pct": 100.0,
+    "beat_coverage_pct": 100.0,
+    "transition_count": 4,
+    "transition_density": 0.0,
+    "total_duration": 90.0,
+    "black_fallback_duration": 0.0,
+    "asset_coverage_beats": 1,
+    "total_beats": 1,
+    "meets_coverage_threshold": true,
+    "meets_transition_rule": true,
+    "source": "animatics"
   },
-  "timing_settings": {},
-  "validation": {
-    "duration_pass": true,
-    "scene_bounds_pass": true,
-    "vo_aligned": false
-  },
-  "generated_at": "2025-08-15T06:15:59.112598Z",
-  "citations": {
-    "total_count": 0,
-    "unique_domains": 0,
-    "beats_coverage_pct": 0.0,
-    "fact_guard_summary": {
-      "removed": 0,
-      "rewritten": 0,
-      "flagged": 0,
-      "strict_mode_fail": false
+  "scene_map": [
+    {
+      "scene_id": "scene_000",
+      "file": "scene_000.mp4",
+      "start_time": 0,
+      "duration": 15.0,
+      "source": "animatic"
     },
-    "policy_compliance": {
-      "min_citations_per_intent": "PENDING",
-      "whitelist_compliance": "PASS"
+    {
+      "scene_id": "scene_001",
+      "file": "scene_001.mp4",
+      "start_time": 15.0,
+      "duration": 20.0,
+      "source": "animatic"
     },
-    "validation_status": "PASS",
-    "last_validated": "2025-08-15T06:15:59.135602Z"
+    {
+      "scene_id": "scene_002",
+      "file": "scene_002.mp4",
+      "start_time": 35.0,
+      "duration": 20.0,
+      "source": "animatic"
+    },
+    {
+      "scene_id": "scene_003",
+      "file": "scene_003.mp4",
+      "start_time": 55.0,
+      "duration": 20.0,
+      "source": "animatic"
+    },
+    {
+      "scene_id": "scene_004",
+      "file": "scene_004.mp4",
+      "start_time": 75.0,
+      "duration": 15.0,
+      "source": "animatic"
+    }
+  ],
+  "durations": {
+    "scene_000": 15.0,
+    "scene_001": 20.0,
+    "scene_002": 20.0,
+    "scene_003": 20.0,
+    "scene_004": 15.0
   },
-  "pacing": {
-    "acceptance_status": "WARN",
-    "acceptance_verdict": "WARN",
-    "acceptance_enabled": true,
-    "acceptance_errors": [],
-    "acceptance_warnings": [
-      "Metrics out of band (non-strict mode): words_per_sec, cuts_per_min, avg_scene_s"
-    ],
-    "acceptance_validated_at": "2025-08-15T06:15:59.144103Z"
-  }
+  "assembly_version": "2.0",
+  "source_mode": "animatics",
+  "animatics_preferred": true
 }
