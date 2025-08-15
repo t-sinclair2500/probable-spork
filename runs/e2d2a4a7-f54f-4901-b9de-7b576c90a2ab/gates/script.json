@@ -1,0 +1,13 @@
+{
+  "stage": "script",
+  "approved": false,
+  "by": "admin",
+  "at": "2025-08-15T03:45:31.029652+00:00",
+  "notes": "Test rejection for audit",
+  "patch": {
+    "script": {
+      "tone": "more formal"
+    }
+  },
+  "auto_approved": false
+}

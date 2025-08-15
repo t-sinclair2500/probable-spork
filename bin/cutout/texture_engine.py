@@ -173,6 +173,12 @@ def _apply_posterize(img: "PIL.Image.Image", levels: int) -> "PIL.Image.Image":
     if levels <= 1:
         return img
     
+    # PIL has a bug with levels > 8, causing "bad operand type for unary ~: 'float'"
+    # Limit to valid range and log warning
+    if levels > 8:
+        log.warning(f"Posterize level {levels} exceeds maximum (8), clamping to 8")
+        levels = 8
+    
     return ImageOps.posterize(img, levels)
 
 

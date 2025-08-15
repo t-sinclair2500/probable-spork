@@ -24,7 +24,7 @@ try:
     import yaml
     from PIL import Image, ImageDraw, ImageFont
     import numpy as np
-    from cutout.texture_engine import apply_textures_to_frame, texture_signature
+    from bin.cutout.texture_engine import apply_textures_to_frame, texture_signature
     from bin.core import get_logger, load_config
     
     log = get_logger("texture_probe")

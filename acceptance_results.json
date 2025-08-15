@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-14T16:28:20.139695Z",
+  "timestamp": "2025-08-15T03:57:54.310659Z",
   "pipeline": "acceptance_harness",
   "overall_status": "FAIL",
   "lanes": {
@@ -163,10 +163,10 @@
           },
           "mixed_audio": {
             "valid": false,
-            "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_vg0lps52/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
+            "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_3qlm6qu_/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
           },
           "valid": false,
-          "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_vg0lps52/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254.",
+          "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_3qlm6qu_/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254.",
           "targets": {
             "vo_lufs": -16.0,
             "music_lufs": -23.0,
@@ -220,7 +220,7 @@
             "Library has only 46 assets, reuse ratio not enforced"
           ]
         },
-        "error": "Audio validation failed: Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_vg0lps52/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
+        "error": "Audio validation failed: Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_3qlm6qu_/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
       }
     },
     "blog": {
