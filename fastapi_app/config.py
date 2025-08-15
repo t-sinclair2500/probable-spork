@@ -19,13 +19,13 @@ class OperatorConfig:
             if os.path.exists(self.config_path):
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     config = yaml.safe_load(f)
-                    logger.info(f"Loaded operator config from {self.config_path}")
+                    logger.info(f"[config] Loaded operator config from {self.config_path}")
                     return config
             else:
-                logger.warning(f"Operator config not found at {self.config_path}, using defaults")
+                logger.warning(f"[config] Operator config not found at {self.config_path}, using defaults")
                 return self._get_default_config()
         except Exception as e:
-            logger.error(f"Failed to load operator config: {e}, using defaults")
+            logger.error(f"[config] Failed to load operator config: {e}, using defaults")
             return self._get_default_config()
     
     def _get_default_config(self) -> Dict[str, Any]:
@@ -37,6 +37,20 @@ class OperatorConfig:
                 "workers": 1,
                 "log_level": "info",
                 "allow_external_bind": False
+            },
+            "ui": {
+                "enabled": True,
+                "host": "localhost",
+                "port": 7860,
+                "share": False,
+                "debug": False,
+                "features": {
+                    "real_time_updates": True,
+                    "sse_enabled": True,
+                    "polling_fallback": True,
+                    "download_artifacts": True,
+                    "job_cancellation": True
+                }
             },
             "security": {
                 "admin_token_env": "ADMIN_TOKEN",
@@ -109,7 +123,7 @@ class OperatorConfig:
     def reload(self):
         """Reload configuration from file"""
         self.config = self._load_config()
-        logger.info("Operator config reloaded")
+        logger.info("[config] Operator config reloaded")
     
     def get_sanitized_config(self) -> Dict[str, Any]:
         """Get configuration without sensitive information"""
@@ -124,6 +138,55 @@ class OperatorConfig:
                 security["admin_token_env"] = "[REDACTED]"
         
         return config_copy
+    
+    def validate_config(self) -> Dict[str, Any]:
+        """Validate configuration and return validation results"""
+        validation_results = {
+            "valid": True,
+            "errors": [],
+            "warnings": [],
+            "recommendations": []
+        }
+        
+        try:
+            # Check server configuration
+            host = self.get("server.host", "127.0.0.1")
+            allow_external = self.get("server.allow_external_bind", False)
+            
+            if not allow_external and host not in ["127.0.0.1", "localhost", "::1"]:
+                validation_results["errors"].append(f"External binding not allowed but host is {host}")
+                validation_results["valid"] = False
+            
+            # Check security configuration
+            if not self.get("security.admin_token_env") and self.get("security.default_token") == "default-admin-token-change-me":
+                validation_results["warnings"].append("Using default admin token - change this in production")
+            
+            # Check UI configuration
+            ui_enabled = self.get("ui.enabled", True)
+            if ui_enabled:
+                ui_port = self.get("ui.port", 7860)
+                if ui_port < 1024 or ui_port > 65535:
+                    validation_results["errors"].append(f"Invalid UI port: {ui_port}")
+                    validation_results["valid"] = False
+            
+            # Check storage paths
+            runs_dir = self.get("storage.runs_dir", "runs")
+            if not os.path.exists(runs_dir):
+                validation_results["warnings"].append(f"Runs directory does not exist: {runs_dir}")
+                validation_results["recommendations"].append(f"Create directory: mkdir -p {runs_dir}")
+            
+            # Check database path
+            db_path = self.get("storage.db_path", "jobs.db")
+            db_dir = os.path.dirname(db_path)
+            if db_dir and not os.path.exists(db_dir):
+                validation_results["warnings"].append(f"Database directory does not exist: {db_dir}")
+                validation_results["recommendations"].append(f"Create directory: mkdir -p {db_dir}")
+            
+        except Exception as e:
+            validation_results["errors"].append(f"Configuration validation failed: {e}")
+            validation_results["valid"] = False
+        
+        return validation_results
 
 # Global config instance
 operator_config = OperatorConfig()

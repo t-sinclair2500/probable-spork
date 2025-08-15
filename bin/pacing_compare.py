@@ -38,16 +38,16 @@ def load_intent_profiles() -> Dict:
     profiles_path = os.path.join(config_dir, 'intent_profiles.yaml')
     
     if not os.path.exists(profiles_path):
-        log.error(f"Intent profiles not found: {profiles_path}")
+        log.error(f"[pacing-compare] Intent profiles not found: {profiles_path}")
         return {}
     
     try:
         with open(profiles_path, 'r') as f:
             profiles = yaml.safe_load(f)
-        log.info(f"Loaded {len(profiles)} intent profiles")
+        log.info(f"[pacing-compare] Loaded {len(profiles)} intent profiles")
         return profiles
     except Exception as e:
-        log.error(f"Error loading intent profiles: {e}")
+        log.error(f"[pacing-compare] Error loading intent profiles: {e}")
         return {}
 
 
@@ -63,17 +63,17 @@ def get_current_intent() -> str:
         from bin.brief_loader import load_brief as _load_brief
         brief_cfg = _load_brief()
         intent = brief_cfg.get('intent', 'default')
-        log.info(f"Current intent: {intent}")
+        log.info(f"[pacing-compare] Current intent: {intent}")
         return intent
     except ImportError:
         # Fallback to core module
         try:
             brief_cfg = load_brief()
             intent = brief_cfg.get('intent', 'default')
-            log.info(f"Current intent: {intent}")
+            log.info(f"[pacing-compare] Current intent: {intent}")
             return intent
         except Exception as e:
-            log.warning(f"Could not load brief config, using default intent: {e}")
+            log.warning(f"[pacing-compare] Could not load brief config, using default intent: {e}")
             return 'default'
 
 
@@ -88,7 +88,7 @@ def compare_to_profile(kpi_data: Dict, profile: Dict) -> Dict:
     Returns:
         Dictionary with comparison results and flags
     """
-    log.info("Comparing KPIs to intent profile")
+    log.info("[pacing-compare] Comparing KPIs to intent profile")
     
     # Extract metrics from KPI data
     words_per_sec = kpi_data.get('words_per_sec', 0.0)
@@ -124,7 +124,7 @@ def compare_to_profile(kpi_data: Dict, profile: Dict) -> Dict:
         "compared_at": None  # Will be set by caller
     }
     
-    log.info(f"Comparison complete: {overall_status} overall, "
+    log.info(f"[pacing-compare] Comparison complete: {overall_status} overall, "
              f"WPS: {wps_status}, CPM: {cpm_status}, Scene: {scene_status}")
     
     return comparison
@@ -143,19 +143,19 @@ def _compare_metric(value: float, band: List[float], metric_name: str) -> str:
         Status: 'ok', 'fast', or 'slow'
     """
     if len(band) != 2:
-        log.warning(f"Invalid band for {metric_name}: {band}")
+        log.warning(f"[pacing-compare] Invalid band for {metric_name}: {band}")
         return 'ok'
     
     min_val, max_val = band[0], band[1]
     
     if value < min_val:
-        log.debug(f"{metric_name}: {value:.2f} < {min_val:.2f} (slow)")
+        log.debug(f"[pacing-compare] {metric_name}: {value:.2f} < {min_val:.2f} (slow)")
         return 'slow'
     elif value > max_val:
-        log.debug(f"{metric_name}: {value:.2f} > {max_val:.2f} (fast)")
+        log.debug(f"[pacing-compare] {metric_name}: {value:.2f} > {max_val:.2f} (fast)")
         return 'fast'
     else:
-        log.debug(f"{metric_name}: {value:.2f} in range [{min_val:.2f}, {max_val:.2f}] (ok)")
+        log.debug(f"[pacing-compare] {metric_name}: {value:.2f} in range [{min_val:.2f}, {max_val:.2f}] (ok)")
         return 'ok'
 
 
@@ -228,7 +228,7 @@ def save_pacing_report(slug: str, kpi_data: Dict, comparison: Dict,
     with open(report_path, 'w') as f:
         json.dump(complete_report, f, indent=2)
     
-    log.info(f"Complete pacing report saved to {report_path}")
+    log.info(f"[pacing-compare] Complete pacing report saved to {report_path}")
     return report_path
 
 
@@ -270,14 +270,14 @@ def update_video_metadata(slug: str, kpi_data: Dict, comparison: Dict,
         "overall_status": comparison['overall_status'],
         "adjusted": False,  # Will be set by feedback module
         "computed_at": kpi_data['metadata']['computed_at'],
-        "compared_at": comparison.get('metadata', {}).get('compared_at') or comparison.get('compared_at')
+        "compared_at": comparison.get('compared_at')
     }
     
     # Save updated metadata
     with open(metadata_path, 'w') as f:
         json.dump(metadata, f, indent=2)
     
-    log.info(f"Video metadata updated with pacing comparison: {metadata_path}")
+    log.info(f"[pacing-compare] Video metadata updated with pacing comparison: {metadata_path}")
     return metadata_path
 
 
@@ -292,12 +292,12 @@ def run_pacing_analysis(slug: str, kpi_data: Dict) -> Dict:
     Returns:
         Complete analysis results
     """
-    log.info(f"Running pacing analysis for {slug}")
+    log.info(f"[pacing-compare] Running pacing analysis for {slug}")
     
     # Load intent profiles
     profiles = load_intent_profiles()
     if not profiles:
-        log.error("No intent profiles available for comparison")
+        log.error("[pacing-compare] No intent profiles available for comparison")
         return {}
     
     # Get current intent
@@ -305,10 +305,10 @@ def run_pacing_analysis(slug: str, kpi_data: Dict) -> Dict:
     profile = profiles.get(current_intent, profiles.get('default', {}))
     
     if not profile:
-        log.error(f"No profile found for intent: {current_intent}")
+        log.error(f"[pacing-compare] No profile found for intent: {current_intent}")
         return {}
     
-    log.info(f"Using profile for intent: {current_intent}")
+    log.info(f"[pacing-compare] Using profile for intent: {current_intent}")
     
     # Compare KPIs to profile
     comparison = compare_to_profile(kpi_data, profile)
@@ -334,16 +334,14 @@ def run_pacing_analysis(slug: str, kpi_data: Dict) -> Dict:
         
         # Run feedback adjustment using integrated functions
         # Pass the KPI metrics and bands separately
-        kpi_metrics = report_data.get('kpi_metrics', {})
-        bands = report_data.get('comparison', {}).get('profile_used', {})
+        kpi_metrics = kpi_data
+        bands = comparison.get('profile_used', {})
         
         # Create a combined data structure for the feedback function
         feedback_data = {
             'kpi_metrics': kpi_metrics,
             'comparison': {'profile_used': bands}
         }
-        
-
         
         adjusted_scenes, feedback_summary = _run_integrated_feedback_adjustment(slug, feedback_data, scenes, modules_cfg)
         feedback_result = {
@@ -352,7 +350,7 @@ def run_pacing_analysis(slug: str, kpi_data: Dict) -> Dict:
         }
         
         if feedback_summary.get('adjusted'):
-            log.info(f"[pacing-feedback] Applied adjustments to {feedback_summary['adjusted_scenes']} scenes")
+            log.info(f"[pacing-compare] Applied adjustments to {feedback_summary['adjusted_scenes']} scenes")
             
             # Save adjusted scenescript
             adjusted_path = os.path.join(os.path.dirname(__file__), '..', 'scenescripts', f'{slug}_adjusted.json')
@@ -379,11 +377,11 @@ def run_pacing_analysis(slug: str, kpi_data: Dict) -> Dict:
                 with open(metadata_path, 'w') as f:
                     json.dump(metadata, f, indent=2)
                 
-                log.info(f"[pacing-feedback] Updated metadata: adjusted=true, total_adjustment={feedback_summary['total_adjustment_ms']}ms")
+                log.info(f"[pacing-compare] Updated metadata: adjusted=true, total_adjustment={feedback_summary['total_adjustment_ms']}ms")
         else:
-            log.info("[pacing-feedback] No adjustments needed or feedback disabled")
+            log.info("[pacing-compare] No adjustments needed or feedback disabled")
     else:
-        log.warning(f"[pacing-feedback] Scenescript not found: {scenescript_path}")
+        log.warning(f"[pacing-compare] Scenescript not found: {scenescript_path}")
     
     # Compile results
     analysis_result = {
@@ -396,7 +394,7 @@ def run_pacing_analysis(slug: str, kpi_data: Dict) -> Dict:
         "feedback_result": feedback_result
     }
     
-    log.info(f"Pacing analysis complete for {slug}")
+    log.info(f"[pacing-compare] Pacing analysis complete for {slug}")
     return analysis_result
 
 
@@ -405,51 +403,51 @@ def _check_adjustment_need(kpi: Dict, bands: Dict, tolerance_pct: float) -> bool
     """Check if any KPI is outside tolerance and needs adjustment."""
     metrics = ['words_per_sec', 'cuts_per_min', 'avg_scene_s']
     
-    log.info(f"[pacing-feedback] Checking adjustment need with tolerance: {tolerance_pct}%")
+    log.info(f"[pacing-compare] Checking adjustment need with tolerance: {tolerance_pct}%")
     
     # Extract KPI metrics from nested structure if needed
     kpi_metrics = kpi.get('kpi_metrics', kpi)
-    log.info(f"[pacing-feedback] KPI data structure: {list(kpi.keys())}")
-    log.info(f"[pacing-feedback] KPI metrics structure: {list(kpi_metrics.keys())}")
+    log.info(f"[pacing-compare] KPI data structure: {list(kpi.keys())}")
+    log.info(f"[pacing-compare] KPI metrics structure: {list(kpi_metrics.keys())}")
     
     for metric in metrics:
         if metric not in kpi_metrics or metric not in bands:
-            log.debug(f"[pacing-feedback] Skipping {metric}: not in KPI or bands")
+            log.debug(f"[pacing-compare] Skipping {metric}: not in KPI or bands")
             continue
             
         value = kpi_metrics[metric]
         band = bands[metric]
         
-        log.debug(f"[pacing-feedback] Checking {metric}: value={value}, band={band}")
+        log.debug(f"[pacing-compare] Checking {metric}: value={value}, band={band}")
         
         if len(band) != 2:
-            log.debug(f"[pacing-feedback] Skipping {metric}: band length != 2")
+            log.debug(f"[pacing-compare] Skipping {metric}: band length != 2")
             continue
             
         min_val, max_val = band
         if min_val <= value <= max_val:
-            log.debug(f"[pacing-feedback] {metric} {value} within band [{min_val}, {max_val}]")
+            log.debug(f"[pacing-compare] {metric} {value} within band [{min_val}, {max_val}]")
             continue
             
         # Calculate deviation percentage
         if value < min_val:
             deviation = (min_val - value) / min_val * 100
-            log.info(f"[pacing-feedback] {metric} {value} below band [{min_val}, {max_val}], "
+            log.info(f"[pacing-compare] {metric} {value} below band [{min_val}, {max_val}], "
                      f"deviation: {deviation:.1f}%")
         else:
             deviation = (value - max_val) / max_val * 100
-            log.info(f"[pacing-feedback] {metric} {value} above band [{min_val}, {max_val}], "
+            log.info(f"[pacing-compare] {metric} {value} above band [{min_val}, {max_val}], "
                      f"deviation: {deviation:.1f}%")
             
         if deviation > tolerance_pct:
-            log.info(f"[pacing-feedback] {metric} {value} outside band [{min_val}, {max_val}], "
+            log.info(f"[pacing-compare] {metric} {value} outside band [{min_val}, {max_val}], "
                      f"deviation: {deviation:.1f}% > {tolerance_pct}% - ADJUSTMENT NEEDED")
             return True
         else:
-            log.info(f"[pacing-feedback] {metric} {value} outside band but within tolerance: "
+            log.info(f"[pacing-compare] {metric} {value} outside band but within tolerance: "
                      f"deviation: {deviation:.1f}% <= {tolerance_pct}%")
     
-    log.info("[pacing-feedback] No adjustments needed - all metrics within tolerance")
+    log.info("[pacing-compare] No adjustments needed - all metrics within tolerance")
     return False
 
 
@@ -460,28 +458,28 @@ def _calculate_metric_adjustments(kpi: Dict, bands: Dict, tolerance_pct: float) 
     # Extract KPI metrics from nested structure if needed
     kpi_metrics = kpi.get('kpi_metrics', kpi)
     
-    log.info(f"[pacing-feedback] Calculating metric adjustments...")
-    log.info(f"[pacing-feedback] Available metrics: {list(kpi_metrics.keys())}")
-    log.info(f"[pacing-feedback] Available bands: {list(bands.keys())}")
+    log.info(f"[pacing-compare] Calculating metric adjustments...")
+    log.info(f"[pacing-compare] Available metrics: {list(kpi_metrics.keys())}")
+    log.info(f"[pacing-compare] Available bands: {list(bands.keys())}")
     
     for metric in ['words_per_sec', 'cuts_per_min', 'avg_scene_s']:
-        log.info(f"[pacing-feedback] Checking metric: {metric}")
+        log.info(f"[pacing-compare] Checking metric: {metric}")
         
         if metric not in kpi_metrics:
-            log.info(f"[pacing-feedback] Metric {metric} not in KPI data")
+            log.info(f"[pacing-compare] Metric {metric} not in KPI data")
             continue
             
         if metric not in bands:
-            log.info(f"[pacing-feedback] Metric {metric} not in bands")
+            log.info(f"[pacing-compare] Metric {metric} not in bands")
             continue
             
         value = kpi_metrics[metric]
         band = bands[metric]
         
-        log.info(f"[pacing-feedback] {metric}: value={value}, band={band}")
+        log.info(f"[pacing-compare] {metric}: value={value}, band={band}")
         
         if len(band) != 2:
-            log.info(f"[pacing-feedback] Band for {metric} is not length 2: {band}")
+            log.info(f"[pacing-compare] Band for {metric} is not length 2: {band}")
             continue
             
         min_val, max_val = band
@@ -489,16 +487,16 @@ def _calculate_metric_adjustments(kpi: Dict, bands: Dict, tolerance_pct: float) 
         if value < min_val:
             # Value is too low, need to increase (longer scenes, slower pacing)
             adjustments[metric] = 1.0  # Positive adjustment
-            log.info(f"[pacing-feedback] {metric} below band: {value} < {min_val} -> +1.0")
+            log.info(f"[pacing-compare] {metric} below band: {value} < {min_val} -> +1.0")
         elif value > max_val:
             # Value is too high, need to decrease (shorter scenes, faster pacing)
             adjustments[metric] = -1.0  # Negative adjustment
-            log.info(f"[pacing-feedback] {metric} above band: {value} > {max_val} -> -1.0")
+            log.info(f"[pacing-compare] {metric} above band: {value} > {max_val} -> -1.0")
         else:
             adjustments[metric] = 0.0  # No adjustment needed
-            log.info(f"[pacing-feedback] {metric} within band: {min_val} <= {value} <= {max_val} -> 0.0")
+            log.info(f"[pacing-compare] {metric} within band: {min_val} <= {value} <= {max_val} -> 0.0")
     
-    log.info(f"[pacing-feedback] Final metric adjustments: {adjustments}")
+    log.info(f"[pacing-compare] Final metric adjustments: {adjustments}")
     return adjustments
 
 
@@ -523,7 +521,7 @@ def _calculate_scene_slack(scenes: List[Dict], cfg: Dict) -> Dict[str, int]:
         
         scene_slack[scene_id] = total_slack
         
-        log.debug(f"[pacing-feedback] Scene {scene_id}: duration={duration}ms, "
+        log.debug(f"[pacing-compare] Scene {scene_id}: duration={duration}ms, "
                   f"slack_down={slack_down}ms, slack_up={slack_up}ms, total={total_slack}ms")
     
     return scene_slack
@@ -548,7 +546,7 @@ def _generate_scene_adjustments(
         overall_direction = metric_adjustments.get('avg_scene_s', 0.0)
     
     if overall_direction == 0:
-        log.info("[pacing-feedback] No overall adjustment direction determined")
+        log.info("[pacing-compare] No overall adjustment direction determined")
         return [{"id": scene.get("id", f"scene_{i:03d}"), "delta_ms": 0} for i, scene in enumerate(scenes)]
     
     # Sort scenes by available slack (descending)
@@ -589,7 +587,7 @@ def _generate_scene_adjustments(
         adjustments.append({"id": scene_id, "delta_ms": delta_ms})
         remaining_budget -= abs(delta_ms)
         
-        log.debug(f"[pacing-feedback] Scene {scene_id}: slack={slack}ms, "
+        log.debug(f"[pacing-compare] Scene {scene_id}: slack={slack}ms, "
                   f"adjustment={delta_ms:+d}ms, remaining_budget={remaining_budget}ms")
     
     # Add scenes with no slack
@@ -603,7 +601,7 @@ def _generate_scene_adjustments(
 
 def _apply_scene_adjustments(scenes: List[Dict], adjustments: List[Dict], cfg: Dict) -> List[Dict]:
     """Apply suggested adjustments to scene durations."""
-    log.info("[pacing-feedback] Applying duration adjustments")
+    log.info("[pacing-compare] Applying duration adjustments")
     
     # Load timing configuration
     timing_cfg = cfg.get('timing', {})
@@ -619,7 +617,7 @@ def _apply_scene_adjustments(scenes: List[Dict], adjustments: List[Dict], cfg: D
         # Find matching adjustment
         adjustment = next((adj for adj in adjustments if adj["id"] == scene_id), None)
         if not adjustment:
-            log.warning(f"[pacing-feedback] No adjustment found for scene {scene_id}")
+            log.warning(f"[pacing-compare] No adjustment found for scene {scene_id}")
             adjusted_scenes.append(scene)
             continue
         
@@ -639,7 +637,7 @@ def _apply_scene_adjustments(scenes: List[Dict], adjustments: List[Dict], cfg: D
         actual_delta = clamped_duration - original_duration
         
         if actual_delta != delta_ms:
-            log.info(f"[pacing-feedback] Scene {scene_id} adjustment clamped: "
+            log.info(f"[pacing-compare] Scene {scene_id} adjustment clamped: "
                      f"{delta_ms}ms → {actual_delta}ms")
         
         # Create adjusted scene
@@ -660,10 +658,10 @@ def _apply_scene_adjustments(scenes: List[Dict], adjustments: List[Dict], cfg: D
         adjusted_scenes.append(adjusted_scene)
         total_adjustment += abs(actual_delta)
         
-        log.info(f"[pacing-feedback] Scene {scene_id}: {original_duration}ms → {clamped_duration}ms "
+        log.info(f"[pacing-compare] Scene {scene_id}: {original_duration}ms → {clamped_duration}ms "
                  f"(delta: {actual_delta:+d}ms)")
     
-    log.info(f"[pacing-feedback] Applied adjustments to {len(adjusted_scenes)} scenes, "
+    log.info(f"[pacing-compare] Applied adjustments to {len(adjusted_scenes)} scenes, "
              f"total adjustment: {total_adjustment}ms")
     
     return adjusted_scenes
@@ -671,18 +669,18 @@ def _apply_scene_adjustments(scenes: List[Dict], adjustments: List[Dict], cfg: D
 
 def _run_integrated_feedback_adjustment(slug: str, kpi_data: Dict, scenes: List[Dict], cfg: Dict) -> Tuple[List[Dict], Dict]:
     """Run feedback adjustment using integrated functions."""
-    log.info(f"[pacing-feedback] Starting integrated feedback adjustment for {slug}")
+    log.info(f"[pacing-compare] Starting integrated feedback adjustment for {slug}")
     
     # Check if pacing feedback is enabled
     pacing_cfg = cfg.get('pacing', {})
     if not pacing_cfg.get('enable', True):
-        log.info("[pacing-feedback] Pacing feedback disabled in configuration")
+        log.info("[pacing-compare] Pacing feedback disabled in configuration")
         return scenes, {"enabled": False, "adjustments": []}
     
     # Extract bands from KPI data
     bands = kpi_data.get('comparison', {}).get('profile_used', {})
     if not bands:
-        log.warning("[pacing-feedback] No bands found in KPI data")
+        log.warning("[pacing-compare] No bands found in KPI data")
         return scenes, {"enabled": True, "error": "No bands found"}
     
     # Load pacing configuration
@@ -694,7 +692,7 @@ def _run_integrated_feedback_adjustment(slug: str, kpi_data: Dict, scenes: List[
     # Check if adjustments are needed (>10% out of band)
     adjustments_needed = _check_adjustment_need(kpi_data, bands, tolerance_pct)
     if not adjustments_needed:
-        log.info("[pacing-feedback] KPIs within tolerance, no adjustments needed")
+        log.info("[pacing-compare] KPIs within tolerance, no adjustments needed")
         return scenes, {"enabled": True, "adjustments": [], "adjusted": False}
     
     # Calculate which metrics need adjustment and direction
@@ -721,7 +719,7 @@ def _run_integrated_feedback_adjustment(slug: str, kpi_data: Dict, scenes: List[
         "adjusted_scenes": len([adj for adj in adjustments if adj["delta_ms"] != 0])
     }
     
-    log.info(f"[pacing-feedback] Integrated feedback adjustment complete: {summary['adjusted_scenes']} scenes adjusted")
+    log.info(f"[pacing-compare] Integrated feedback adjustment complete: {summary['adjusted_scenes']} scenes adjusted")
     
     return adjusted_scenes, summary
 

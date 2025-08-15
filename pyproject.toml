@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probable-spork"
+version = "0.1.0"
+description = "Cross-platform development environment for Probable Spork"
+requires-python = ">=3.9,<3.12"
+dependencies = []
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["fastapi_app", "ui", "bin", "scripts"]
+known_third_party = ["fastapi", "uvicorn", "gradio", "requests", "pathlib"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "test_*.py"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

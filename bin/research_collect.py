@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 import requests
 import hashlib
+from datetime import datetime, timedelta
 
 # Ensure repo root on path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -32,16 +33,29 @@ log = get_logger("research_collect")
 class ResearchCollector:
     """Collects and processes research content from web sources."""
     
-    def __init__(self, models_config: Optional[Dict] = None):
+    def __init__(self, models_config: Optional[Dict] = None, mode: str = "reuse"):
         """Initialize research collector."""
         self.config = load_config()
         self.models_config = models_config or self._load_models_config()
-        self.research_config = self.models_config.get('research', {})
+        self.research_config = self.config.get('research', {})
+        self.mode = mode
         
         # Database setup
         self.db_path = Path(BASE) / self.research_config.get('database', 'data/research.db')
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
+        
+        # Load domain allowlist and blacklist
+        self.domain_allowlist = set(self.research_config.get('domains', {}).get('allowlist', []))
+        self.domain_blacklist = set(self.research_config.get('domains', {}).get('blacklist', []))
+        
+        # Cache settings
+        self.cache_enabled = self.research_config.get('cache', {}).get('disk_cache', {}).get('enabled', True)
+        self.cache_base_path = Path(BASE) / self.research_config.get('cache', {}).get('disk_cache', {}).get('base_path', 'data/research_cache')
+        self.cache_ttl_hours = self.research_config.get('cache', {}).get('ttl_hours', 24)
+        
+        if self.cache_enabled:
+            self.cache_base_path.mkdir(parents=True, exist_ok=True)
     
     def _load_models_config(self) -> Dict:
         """Load models configuration."""
@@ -83,6 +97,23 @@ class ResearchCollector:
             """)
             
             conn.execute("""
+                CREATE TABLE IF NOT EXISTS research_cache (
+                    id INTEGER PRIMARY KEY,
+                    url TEXT UNIQUE NOT NULL,
+                    domain TEXT NOT NULL,
+                    title TEXT,
+                    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    published_at TEXT,
+                    text_raw TEXT,
+                    text_clean TEXT,
+                    extract_method TEXT,
+                    content_hash TEXT,
+                    cache_expires TIMESTAMP,
+                    metadata TEXT
+                )
+            """)
+            
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_chunks_source ON chunks(source_id)
             """)
             
@@ -90,7 +121,95 @@ class ResearchCollector:
                 CREATE INDEX IF NOT EXISTS idx_chunks_hash ON chunks(chunk_hash)
             """)
             
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_cache_domain ON research_cache(domain)
+            """)
+            
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_cache_expires ON research_cache(cache_expires)
+            """)
+            
             conn.commit()
+    
+    def _is_domain_allowed(self, domain: str) -> bool:
+        """Check if a domain is allowed for research collection."""
+        # Check blacklist first
+        if domain in self.domain_blacklist:
+            log.info(f"[collect] Domain {domain} is blacklisted")
+            return False
+        
+        # If allowlist is empty, allow all non-blacklisted domains
+        if not self.domain_allowlist:
+            return True
+        
+        # Check allowlist
+        is_allowed = domain in self.domain_allowlist
+        if not is_allowed:
+            log.info(f"[collect] Domain {domain} not in allowlist")
+        return is_allowed
+    
+    def _get_cached_content(self, url: str) -> Optional[Dict]:
+        """Get cached content if available and not expired."""
+        if not self.cache_enabled:
+            return None
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute("""
+                    SELECT url, domain, title, ts, published_at, text_raw, text_clean, extract_method, metadata
+                    FROM research_cache 
+                    WHERE url = ? AND cache_expires > ?
+                """, (url, datetime.utcnow()))
+                
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        'url': row[0],
+                        'domain': row[1],
+                        'title': row[2],
+                        'ts': row[3],
+                        'published_at': row[4],
+                        'text_raw': row[5],
+                        'text_clean': row[6],
+                        'extract_method': row[7],
+                        'metadata': json.loads(row[8]) if row[8] else {}
+                    }
+        except Exception as e:
+            log.warning(f"Failed to get cached content: {e}")
+        
+        return None
+    
+    def _cache_content(self, content_data: Dict):
+        """Cache content with expiration."""
+        if not self.cache_enabled:
+            return
+        
+        try:
+            expires = datetime.utcnow() + timedelta(hours=self.cache_ttl_hours)
+            
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    INSERT OR REPLACE INTO research_cache 
+                    (url, domain, title, ts, published_at, text_raw, text_clean, extract_method, content_hash, cache_expires, metadata)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    content_data['url'],
+                    content_data['domain'],
+                    content_data.get('title', ''),
+                    content_data.get('ts', datetime.utcnow().isoformat()),
+                    content_data.get('published_at', ''),
+                    content_data.get('text_raw', ''),
+                    content_data.get('text_clean', ''),
+                    content_data.get('extract_method', 'unknown'),
+                    content_data.get('content_hash', ''),
+                    expires.isoformat(),
+                    json.dumps(content_data.get('metadata', {}))
+                ))
+                conn.commit()
+                
+                log.info(f"[collect] Cached content for {content_data['domain']}")
+        except Exception as e:
+            log.warning(f"Failed to cache content: {e}")
     
     def collect_from_brief(self, brief: Dict) -> List[Dict]:
         """
@@ -109,7 +228,7 @@ class ResearchCollector:
             log.warning("No keywords found in brief, using default research")
             keywords = ["content creation", "video production"]
         
-        log.info(f"Collecting research for keywords: {keywords}")
+        log.info(f"[collect] Collecting research for keywords: {keywords}")
         
         # Collect from preferred sources first
         sources = []
@@ -122,7 +241,7 @@ class ResearchCollector:
                 log.error(f"Failed to collect from {source}: {e}")
         
         # Collect from general search if we need more sources
-        max_sources = self.research_config.get('max_sources', 8)
+        max_sources = self.research_config.get('collection', {}).get('max_sources_per_topic', 15)
         if len(sources) < max_sources:
             additional_sources = self._collect_from_search(keywords, max_sources - len(sources))
             sources.extend(additional_sources)
@@ -143,7 +262,21 @@ class ResearchCollector:
     
     def _fetch_web_content(self, url: str, keywords: List[str]) -> Optional[Dict]:
         """Fetch and process web content."""
+        # Check cache first
+        cached = self._get_cached_content(url)
+        if cached:
+            log.info(f"[collect] Using cached content for {url}")
+            return cached
+        
+        # Check if we should fetch live content
+        if self.mode == "reuse":
+            log.info(f"[collect] Reuse mode: skipping live fetch for {url}")
+            return None
+        
         try:
+            # Rate limiting
+            self._apply_rate_limiting()
+            
             headers = {
                 'User-Agent': 'Mozilla/5.0 (compatible; ResearchBot/1.0)'
             }
@@ -151,7 +284,7 @@ class ResearchCollector:
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
             
-            # Extract text content (simplified - could use trafilatura for better extraction)
+            # Extract text content
             content = self._extract_text_content(response.text)
             
             if not content or len(content) < 100:
@@ -161,27 +294,95 @@ class ResearchCollector:
             if not self._is_relevant_content(content, keywords):
                 return None
             
+            # Process and store content
+            content_data = {
+                'url': url,
+                'title': self._extract_title(response.text),
+                'domain': urlparse(url).netloc,
+                'ts': datetime.utcnow().isoformat(),
+                'published_at': self._extract_published_date(response.text),
+                'text_raw': response.text,
+                'text_clean': content,
+                'extract_method': 'trafilatura',  # Primary method
+                'content_hash': hashlib.md5(content.encode()).hexdigest(),
+                'metadata': {
+                    'content_length': len(content),
+                    'response_status': response.status_code,
+                    'content_type': response.headers.get('content-type', ''),
+                    'keywords_matched': keywords
+                }
+            }
+            
+            # Cache the content
+            self._cache_content(content_data)
+            
             # Store in database
             source_id = self._store_source(url, content)
             if source_id:
                 self._chunk_and_store_content(source_id, content)
                 
-                return {
-                    'url': url,
-                    'title': self._extract_title(response.text),
-                    'domain': urlparse(url).netloc,
-                    'source_id': source_id,
-                    'content_length': len(content)
-                }
+                return content_data
             
         except Exception as e:
             log.error(f"Failed to fetch {url}: {e}")
         
         return None
     
+    def _apply_rate_limiting(self):
+        """Apply rate limiting for web requests."""
+        # Simple rate limiting - could be enhanced with more sophisticated logic
+        time.sleep(2)  # 2 second delay between requests
+    
+    def _extract_published_date(self, html: str) -> Optional[str]:
+        """Extract published date from HTML."""
+        # Look for common date patterns
+        date_patterns = [
+            r'<meta property="article:published_time" content="([^"]+)"',
+            r'<meta name="publish_date" content="([^"]+)"',
+            r'<time datetime="([^"]+)"',
+            r'<span class="date">([^<]+)</span>'
+        ]
+        
+        for pattern in date_patterns:
+            match = re.search(pattern, html, re.IGNORECASE)
+            if match:
+                return match.group(1)
+        
+        return None
+    
     def _extract_text_content(self, html: str) -> str:
         """Extract text content from HTML."""
-        # Simple text extraction - could be enhanced with trafilatura
+        # Try trafilatura first if available
+        try:
+            import trafilatura
+            extracted = trafilatura.extract(html)
+            if extracted and len(extracted) > 100:
+                return extracted
+        except ImportError:
+            pass
+        
+        # Fallback to BeautifulSoup
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # Remove script and style tags
+            for script in soup(["script", "style"]):
+                script.decompose()
+            
+            # Get text
+            text = soup.get_text()
+            
+            # Clean up whitespace
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            text = ' '.join(chunk for chunk in chunks if chunk)
+            
+            return text
+        except ImportError:
+            pass
+        
+        # Last resort: regex-based extraction
         # Remove script and style tags
         html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
         html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
@@ -201,196 +402,120 @@ class ResearchCollector:
         return "Untitled"
     
     def _is_relevant_content(self, content: str, keywords: List[str]) -> bool:
-        """Check if content is relevant to keywords."""
+        """Check if content is relevant to the given keywords."""
         content_lower = content.lower()
         keyword_matches = sum(1 for keyword in keywords if keyword.lower() in content_lower)
-        return keyword_matches >= len(keywords) * 0.3  # At least 30% of keywords present
+        return keyword_matches > 0
     
     def _store_source(self, url: str, content: str) -> Optional[int]:
-        """Store source information in database."""
-        content_hash = hashlib.sha256(content.encode()).hexdigest()
-        
+        """Store source in database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute("""
-                    INSERT OR REPLACE INTO sources (url, content_hash, metadata)
-                    VALUES (?, ?, ?)
-                """, (url, content_hash, json.dumps({'collected_at': time.time()})))
-                
+                    INSERT OR REPLACE INTO sources (url, title, domain, content_hash, metadata)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    url,
+                    "Extracted Title",  # Will be updated later
+                    urlparse(url).netloc,
+                    hashlib.md5(content.encode()).hexdigest(),
+                    json.dumps({'extracted_at': datetime.utcnow().isoformat()})
+                ))
                 conn.commit()
                 return cursor.lastrowid
-                
         except Exception as e:
             log.error(f"Failed to store source: {e}")
             return None
     
     def _chunk_and_store_content(self, source_id: int, content: str):
         """Chunk content and store in database."""
-        chunk_size = self.research_config.get('chunk_size_tokens', 1200)
+        # Simple chunking by paragraphs
+        chunks = content.split('\n\n')
         
-        # Simple chunking by sentences (could be enhanced with proper tokenization)
-        sentences = re.split(r'[.!?]+', content)
-        chunks = []
-        current_chunk = ""
-        
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
+        for i, chunk in enumerate(chunks):
+            if len(chunk.strip()) < 50:  # Skip very short chunks
                 continue
-            
-            if len(current_chunk) + len(sentence) > chunk_size * 4:  # Rough character estimate
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence
-            else:
-                current_chunk += " " + sentence
-        
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-        
-        # Store chunks
-        for chunk in chunks:
-            chunk_hash = hashlib.sha256(chunk.encode()).hexdigest()
+                
+            chunk_hash = hashlib.md5(chunk.encode()).hexdigest()
             
             try:
                 with sqlite3.connect(self.db_path) as conn:
                     conn.execute("""
-                        INSERT OR IGNORE INTO chunks (source_id, chunk_text, chunk_hash, token_count)
+                        INSERT OR REPLACE INTO chunks (source_id, chunk_text, chunk_hash, token_count)
                         VALUES (?, ?, ?, ?)
-                    """, (source_id, chunk, chunk_hash, len(chunk.split())))
-                    
+                    """, (
+                        source_id,
+                        chunk,
+                        chunk_hash,
+                        len(chunk.split())  # Rough token count
+                    ))
                     conn.commit()
-                    
             except Exception as e:
                 log.error(f"Failed to store chunk: {e}")
     
-    def _collect_from_search(self, keywords: List[str], max_sources: int) -> List[Dict]:
-        """Collect from general search (placeholder for now)."""
-        # This could integrate with search APIs or use predefined reputable sources
-        log.info(f"Collecting {max_sources} additional sources from search")
-        return []
-    
     def _fetch_from_source_type(self, source_type: str, keywords: List[str]) -> Optional[Dict]:
-        """Fetch from source type (e.g., documentation sites)."""
-        # Placeholder for source type handling
-        log.info(f"Fetching from source type: {source_type}")
+        """Fetch content from a specific source type."""
+        # This would implement specific logic for different source types
+        # For now, return None
+        log.info(f"Source type {source_type} not yet implemented")
         return None
     
-    def plan_research(self, topic: str) -> Dict:
-        """Generate research plan using the research model."""
-        try:
-            model_name = self.research_config.get('name', 'mistral:7b-instruct')
-            
-            with model_session(model_name) as session:
-                system_prompt = """You are a research planner. Generate a structured research plan for the given topic.
-                
-Return your response as JSON with the following structure:
-{
-  "queries": ["search query 1", "search query 2", ...],
-  "sources": ["source type 1", "source type 2", ...],
-  "focus_areas": ["area 1", "area 2", ...]
-}"""
-                
-                response = session.chat(
-                    system=system_prompt,
-                    user=f"Create a research plan for: {topic}"
-                )
-                
-                try:
-                    import json
-                    return json.loads(response)
-                except:
-                    log.warning("Failed to parse research plan as JSON")
-                    return {"queries": [topic], "sources": ["web"], "focus_areas": [topic]}
-                    
-        except Exception as e:
-            log.error(f"Research planning failed: {e}")
-            return {"queries": [topic], "sources": ["web"], "focus_areas": [topic]}
+    def _collect_from_search(self, keywords: List[str], max_sources: int) -> List[Dict]:
+        """Collect content from general search."""
+        # This would implement search-based collection
+        # For now, return empty list
+        log.info(f"Search-based collection not yet implemented")
+        return []
 
-def main(brief=None, models_config=None):
+def main(brief=None, models_config=None, mode="reuse", slug=None):
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Collect research content for content creation")
+    parser = argparse.ArgumentParser(description="Collect research content")
     parser.add_argument("--brief", help="Path to brief file")
     parser.add_argument("--brief-data", help="JSON string containing brief data")
-    parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
     parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
                        help='Mode: reuse (cache only) or live (with API calls)')
     parser.add_argument("--slug", required=True, help="Topic slug for research collection")
-    parser.add_argument("--max", type=int, default=50, help="Maximum sources to collect")
     args = parser.parse_args()
     
-    if args.dry_run:
-        log.info("DRY RUN MODE - No changes will be made")
+    # Use command line args if provided, otherwise use function parameters
+    mode = args.mode if hasattr(args, 'mode') else mode
+    slug = args.slug if hasattr(args, 'slug') else slug
     
-    try:
-        # Load brief
-        brief = None
-        if args.brief_data:
-            try:
-                brief = json.loads(args.brief_data)
-                log.info(f"Loaded brief from --brief-data: {brief.get('title', 'Untitled')}")
-            except (json.JSONDecodeError, TypeError) as e:
-                log.error(f"Failed to parse brief data: {e}")
-                return 1
-        elif args.brief:
-            brief_path = Path(args.brief)
-            if brief_path.exists():
-                import yaml
-                with open(brief_path, 'r', encoding='utf-8') as f:
-                    brief = yaml.safe_load(f)
-            else:
-                log.error(f"Brief file not found: {brief_path}")
-                return 1
+    if not slug:
+        log.error("Slug is required")
+        return
+    
+    # Load brief data
+    if brief is None:
+        if args.brief:
+            with open(args.brief, 'r') as f:
+                brief = json.load(f)
+        elif args.brief_data:
+            brief = json.loads(args.brief_data)
         else:
-            # Try to load default brief
-            brief_path = Path(BASE) / "conf" / "brief.yaml"
-            if brief_path.exists():
-                import yaml
-                with open(brief_path, 'r', encoding='utf-8') as f:
-                    brief = yaml.safe_load(f)
-            else:
-                log.warning("No brief file found, using minimal configuration")
-                brief = {"keywords_include": ["content creation"]}
-        
-        # Initialize collector
-        collector = ResearchCollector()
-        
-        # Log mode and slug
-        log.info(f"Research collection: mode={args.mode}, slug={args.slug}, max={args.max}")
-        
-        # Collect research
-        sources = collector.collect_from_brief(brief)
-        
-        log.info(f"Collected {len(sources)} research sources")
-        for source in sources:
-            log.info(f"  - {source['domain']}: {source['title']}")
-        
-        return 0
-        
-    except Exception as e:
-        log.error(f"Research collection failed: {e}")
-        return 1
+            brief = {"keywords_include": [slug]}
+    
+    log.info(f"[collect] Starting research collection for slug: {slug}, mode: {mode}")
+    
+    # Initialize collector
+    collector = ResearchCollector(models_config, mode)
+    
+    # Collect research
+    sources = collector.collect_from_brief(brief)
+    
+    # Save results
+    output_dir = Path(BASE) / "data" / slug
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save collected sources
+    sources_path = output_dir / "collected_sources.json"
+    with open(sources_path, 'w', encoding='utf-8') as f:
+        json.dump(sources, f, indent=2, ensure_ascii=False)
+    
+    log.info(f"[collect] Research collection completed: {len(sources)} sources collected")
+    log.info(f"[collect] Results saved to {sources_path}")
+    
+    return sources
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Collect research content for content creation")
-    parser.add_argument("--brief-data", help="JSON string containing brief data")
-    parser.add_argument("--brief", help="Path to brief file")
-    parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
-    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
-                       help='Mode: reuse (cache only) or live (with API calls)')
-    parser.add_argument("--slug", required=True, help="Topic slug for research collection")
-    parser.add_argument("--max", type=int, default=50, help="Maximum sources to collect")
-    
-    args = parser.parse_args()
-    
-    # Parse brief data if provided
-    brief = None
-    if args.brief_data:
-        try:
-            brief = json.loads(args.brief_data)
-            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
-        except (json.JSONDecodeError, TypeError) as e:
-            log.warning(f"Failed to parse brief data: {e}")
-    
-    with single_lock():
-        main(brief, models_config=None)  # models_config not passed via CLI
+    main()

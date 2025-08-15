@@ -1,418 +1,298 @@
-SHELL := /bin/bash
-VENV := venv
-PY := $(VENV)/bin/python
-export PYTHONPATH := $(CURDIR)
+# Cross-platform Makefile for Probable Spork
+# Supports both Windows and Unix-like systems
 
-.PHONY: install check docs run-once quick-run blog-once cron-install backup health test pi-deploy pi-run-once pi-blog-once pi-sync pull-artifacts pi-health music-setup music-import music-stats music-validate op-console clean-op-console test-orchestrator
+# OS detection
+ifeq ($(OS),Windows_NT)
+    # Windows
+    SHELL := cmd
+    PY := .venv\Scripts\python.exe
+    VENV := .venv
+    RM := rmdir /s /q
+    MKDIR := mkdir
+    RMDIR := rmdir /s /q
+    CP := copy
+    PYTHON := python
+    VENV_CMD := python -m venv
+    ACTIVATE := .venv\Scripts\activate
+else
+    # Unix-like (macOS, Linux)
+    SHELL := /bin/bash
+    PY := .venv/bin/python
+    VENV := .venv
+    RM := rm -rf
+    MKDIR := mkdir -p
+    RMDIR := rm -rf
+    CP := cp
+    PYTHON := python3
+    VENV_CMD := python3 -m venv
+    ACTIVATE := source .venv/bin/activate
+endif
 
-install:
-	@echo "Checking Python version..."
-	@python3 --version | grep -E "(3\.9|3\.10|3\.11)" > /dev/null || (echo "❌ ERROR: Python 3.9, 3.10, or 3.11 required. Current version:" && python3 --version && echo "Use: python3.11 -m venv .venv" && exit 1)
-	@echo "✅ Python version compatible"
-	python3 -m venv $(VENV)
-	. $(VENV)/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
+# Default target
+.DEFAULT_GOAL := help
 
-check:
-	$(PY) bin/check_env.py
+.PHONY: help setup start check clean test install-deps
 
-docs:
+help: ## Show this help message
+	@echo "Probable Spork - Cross-Platform Development"
 	@echo "=========================================="
-	@echo "📚 One-Pi Content Pipeline Documentation"
-	@echo "=========================================="
 	@echo ""
-	@echo "🚀 QUICK START & SETUP:"
-	@echo "  README.md               - Project overview and installation"
-	@echo "  OPERATOR_RUNBOOK.md     - Complete operational guide"
-	@echo "  .env.example           - Environment variables setup"
+	@echo "Available targets:"
+ifeq ($(OS),Windows_NT)
+	@echo "  setup         # Create virtual environment and install dependencies"
+	@echo "  start         # Start the development environment"
+	@echo "  check         # Validate environment and configuration"
+	@echo "  clean         # Remove virtual environment and caches"
+	@echo "  test          # Run test suite"
+	@echo "  format        # Format Python code with Black and isort"
+	@echo "  lint          # Lint Python code"
+	@echo "  format-check  # Check if code needs formatting"
+	@echo "  optimize      # Optimize for current hardware"
+	@echo "  serve-api     # Start FastAPI server"
+	@echo "  serve-ui      # Start Gradio UI"
+	@echo "  smoke-test    # Run API smoke tests"
+	@echo "  backup-repo   # Create repository backup"
+	@echo "  backup-wp     # Create WordPress backup"
+	@echo "  research-live # Run research collection in live mode (requires SLUG=)"
+	@echo "  research-reuse # Run research collection in reuse mode (requires SLUG=)"
+	@echo "  fact-guard    # Run fact-guard analysis (requires SLUG=)"
+else
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+endif
 	@echo ""
-	@echo "🔧 DEVELOPMENT & TASKS:"
-	@echo "  MASTER_TODO.md         - Current development tasks and priorities"
-	@echo "  PHASE2_CURSOR.md       - Implementation guide with status"
-	@echo "  tests/                 - Test suite and validation"
+	@echo "Quick start:"
+	@echo "  make setup    # Create virtual environment and install dependencies"
+	@echo "  make start    # Start the development environment"
+	@echo "  make check    # Validate environment and configuration"
 	@echo ""
-	@echo "📋 CONFIGURATION:"
-	@echo "  conf/global.yaml       - Master pipeline configuration"
-	@echo "  conf/blog.yaml         - Blog-specific settings"
-	@echo "  .env                   - API keys and secrets (create from .env.example)"
-	@echo ""
-	@echo "📊 MONITORING & HEALTH:"
-	@echo "  make health            - Start health monitoring server"
-	@echo "  make web-ui            - Start real-time web dashboard (port 8099)"
-	@echo "  make analytics         - Generate comprehensive analytics report"
-	@echo "  jobs/state.jsonl       - Pipeline execution logs"
-	@echo "  logs/                  - Detailed application logs"
-	@echo ""
-	@echo "🧪 TESTING & VALIDATION:"
-	@echo "  make test              - Run full test suite"
-	@echo "  make test-svg-ops      - Test SVG path operations"
-	@echo "  make demo-svg-ops      - Demonstrate SVG path operations"
-	@echo "  make check             - Validate environment setup"
-	@echo "  make check-llm         - Check Ollama LLM integration"
-	@echo "  make quick-run         - Test pipeline with short durations"
-	@echo "  make fact-check FILE=  - Fact-check markdown content"
-	@echo "  make asset-quality     - Analyze asset quality and relevance"
-	@echo ""
-	@echo "🎵 MUSIC LIBRARY MANAGEMENT:"
-	@echo "  make music-setup       - Setup music library structure"
-	@echo "  make music-import      - Import music from directory"
-	@echo "  make music-stats       - View library statistics"
-	@echo "  make music-validate    - Validate library integrity"
-	@echo "  make music-test        - Test music selection system"
-	@echo ""
-	@echo "🎬 PIPELINE OPERATIONS:"
-	@echo "  make run-once          - Full YouTube pipeline execution"
-	@echo "  make blog-once         - Full blog pipeline execution"
-	@echo "  make backup            - Backup WordPress and repository"
-	@echo ""
-	@echo "📱 RASPBERRY PI DEPLOYMENT:"
-	@echo "  make pi-deploy         - Deploy to Raspberry Pi"
-	@echo "  make pi-health         - Check Pi health status"
-	@echo "  make pull-artifacts    - Retrieve generated content from Pi"
-	@echo ""
-	@echo "📚 ADDITIONAL RESOURCES:"
-	@echo "  DOC_MAP.md             - Complete documentation index"
-	@echo "  docs/archive/          - Historical documentation"
-	@echo "  PURPOSE_SUMMARY.md     - Project goals and architecture"
-	@echo ""
-	@echo "For development tasks and current priorities, see: MASTER_TODO.md"
+	@echo "Research commands (require SLUG parameter):"
+	@echo "  make research-live SLUG=eames-history    # Collect research in live mode"
+	@echo "  make research-reuse SLUG=eames-history   # Use cached research only"
+	@echo "  make fact-guard SLUG=eames-history       # Run fact-guard analysis"
 
-run-once:
-	$(PY) bin/niche_trends.py
-	$(PY) bin/llm_cluster.py
-	$(PY) bin/llm_outline.py
-	$(PY) bin/llm_script.py
-	$(PY) bin/fetch_assets.py
-	SHORT_RUN_SECS=0 $(PY) bin/tts_generate.py
-	SHORT_RUN_SECS=0 $(PY) bin/generate_captions.py
-	SHORT_RUN_SECS=0 $(PY) bin/assemble_video.py
-	$(PY) bin/upload_stage.py
+setup: ## Create virtual environment and install dependencies
+	@echo "Setting up development environment..."
+	@if not exist $(VENV) ( \
+		echo "Creating virtual environment..." && \
+		$(VENV_CMD) $(VENV) \
+	) else ( \
+		echo "Virtual environment already exists" \
+	)
+	@echo "Installing Python dependencies..."
+	@$(PY) -m pip install --upgrade pip
+	@if exist requirements-basic.txt ( \
+		echo "Installing basic requirements..." && \
+		$(PY) -m pip install -r requirements-basic.txt \
+	) else if exist requirements.txt ( \
+		echo "Installing full requirements..." && \
+		$(PY) -m pip install -r requirements.txt \
+	) else ( \
+		echo "No requirements file found" \
+	)
+	@echo "✅ Setup complete! Run 'make start' to begin development."
 
-# Quick test run with capped durations (SHORT_RUN_SECS, default 25s)
-quick-run:
-	SHORT_RUN_SECS?=25; export SHORT_RUN_SECS; \
-	$(PY) bin/niche_trends.py; \
-	$(PY) bin/llm_cluster.py; \
-	$(PY) bin/llm_outline.py; \
-	$(PY) bin/llm_script.py; \
-	$(PY) bin/fetch_assets.py; \
-	$(PY) bin/tts_generate.py; \
-	$(PY) bin/generate_captions.py; \
-	$(PY) bin/assemble_video.py; \
+start: ## Start the development environment
+	@echo "Starting development environment..."
+	@$(PY) scripts/bootstrap.py
+	@$(PY) scripts/start.py
 
-# Trending topics intake
-trending-intake:
-	$(PY) bin/trending_intake.py --mode reuse --limit 10
+check: ## Validate environment and configuration
+	@echo "Checking development environment..."
+	@if exist $(PY) ( \
+		echo "✅ Virtual environment found" && \
+		$(PY) --version && \
+		$(PY) -c "import sys; print(f'Python path: {sys.executable}')" \
+	) else ( \
+		echo "❌ Virtual environment not found. Run 'make setup' first." && \
+		exit 1 \
+	)
+	@if exist requirements.txt ( \
+		echo "✅ Requirements file found" \
+	) else ( \
+		echo "⚠️  No requirements.txt found" \
+	)
+	@if exist .env ( \
+		echo "✅ Environment file found" \
+	) else if exist .env.example ( \
+		echo "⚠️  .env file missing. Copy .env.example to .env and configure." \
+	) else ( \
+		echo "⚠️  No .env or .env.example found" \
+	)
+	@echo "✅ Environment check complete"
 
-trending-intake-live:
-	$(PY) bin/trending_intake.py --mode live --providers reddit,youtube,google_trends --limit 20
-	$(PY) bin/upload_stage.py
+format: ## Format Python code with Black and isort
+	@echo "🎨 Formatting Python code..."
+	@$(PY) -m pip install --quiet black isort
+	@$(PY) -m isort .
+	@$(PY) -m black .
+	@echo "✅ Code formatting complete"
 
-blog-once:
-	$(PY) bin/blog_pick_topics.py
-	$(PY) bin/blog_generate_post.py
-	$(PY) bin/blog_render_html.py
-	$(PY) bin/blog_post_wp.py
-	$(PY) bin/blog_ping_search.py
+lint: ## Lint Python code
+	@echo "🔍 Linting Python code..."
+	@$(PY) -m pip install --quiet flake8
+	@$(PY) -m flake8 --max-line-length=88 --extend-ignore=E203,W503 .
+	@echo "✅ Code linting complete"
 
-# Music Library Management
-music-setup:
-	$(PY) bin/music_manager.py setup
+format-check: ## Check if code needs formatting
+	@echo "🔍 Checking code formatting..."
+	@$(PY) -m pip install --quiet black isort
+	@$(PY) -m isort --check-only .
+	@$(PY) -m black --check .
+	@echo "✅ Code formatting is correct"
 
-music-import:
-	@echo "Usage: make music-import SOURCE=/path/to/music LICENSE='license-type'"
-	$(PY) bin/music_manager.py import --source $(SOURCE) --license $(LICENSE)
+optimize: ## Optimize configuration for current hardware
+	@echo "🚀 Optimizing configuration for your hardware..."
+	@$(PY) scripts/optimize_hardware.py
 
-music-stats:
-	$(PY) bin/music_manager.py stats
+clean: ## Remove virtual environment and caches
+	@echo "Cleaning up development environment..."
+	@if exist $(VENV) ( \
+		echo "Removing virtual environment..." && \
+		$(RMDIR) $(VENV) \
+	) else ( \
+		echo "No virtual environment to remove" \
+	)
+	@if exist __pycache__ ( \
+		echo "Removing Python cache..." && \
+		$(RMDIR) __pycache__ \
+	)
+	@if exist .pytest_cache ( \
+		echo "Removing pytest cache..." && \
+		$(RMDIR) .pytest_cache \
+	)
+	@if exist .mypy_cache ( \
+		echo "Removing mypy cache..." && \
+		$(RMDIR) .mypy_cache \
+	)
+	@echo "✅ Cleanup complete"
 
-music-validate:
-	$(PY) bin/music_manager.py validate
+test: ## Run tests
+	@echo "Running tests..."
+	@$(PY) -m pytest tests/ -v
 
-music-test:
-	@echo "Usage: make music-test SCRIPT=/path/to/script TONE=tone DURATION=duration"
-	$(PY) bin/music_manager.py test --script $(SCRIPT) --tone $(TONE) --duration $(DURATION)
+install-deps: ## Install additional dependencies (alias for setup)
+	@$(MAKE) setup
 
-cron-install:
-	crontab ops/crontab.seed.txt
+# Research commands
+research-live: ## Run research collection in live mode (requires SLUG=)
+	@if not defined SLUG ( \
+		echo "❌ SLUG parameter required. Usage: make research-live SLUG=eames-history" && \
+		exit 1 \
+	)
+	@echo "🔍 Running research collection in LIVE mode for slug: $(SLUG)"
+	@$(PY) bin/research_collect.py --slug $(SLUG) --mode live
 
-backup:
-	bash bin/backup_wp.sh
-	bash bin/backup_repo.sh
+research-reuse: ## Run research collection in reuse mode (requires SLUG=)
+	@if not defined SLUG ( \
+		echo "❌ SLUG parameter required. Usage: make research-reuse SLUG=eames-history" && \
+		exit 1 \
+	)
+	@echo "🔍 Running research collection in REUSE mode for slug: $(SLUG)"
+	@$(PY) bin/research_collect.py --slug $(SLUG) --mode reuse
 
-health:
-	$(PY) bin/health_server.py
+fact-guard: ## Run fact-guard analysis (requires SLUG=)
+	@if not defined SLUG ( \
+		echo "❌ SLUG parameter required. Usage: make fact-guard SLUG=eames-history" && \
+		exit 1 \
+	)
+	@echo "🛡️ Running fact-guard analysis for slug: $(SLUG)"
+	@$(PY) bin/fact_guard.py --slug $(SLUG) --strictness balanced
 
-web-ui:
-	$(PY) bin/web_ui.py
+# Legacy targets for backward compatibility
+run-once: ## Run full pipeline once (legacy)
+	@echo "Running full pipeline..."
+	@$(PY) bin/niche_trends.py
+	@$(PY) bin/llm_cluster.py
+	@$(PY) bin/llm_outline.py
+	@$(PY) bin/llm_script.py
+	@$(PY) bin/fetch_assets.py
+	@$(PY) bin/tts_generate.py
+	@$(PY) bin/assemble_video.py
+	@$(PY) bin/upload_stage.py
 
-analytics:
-	$(PY) bin/analytics_collector.py
+# Cross-platform script execution (Python-based)
+serve-api: ## Start FastAPI server
+	@echo "Starting FastAPI server..."
+	@$(PY) scripts/serve_api.py
 
-fact-check:
-	@echo "Usage: make fact-check FILE=path/to/content.md"
-	@if [ -z "$(FILE)" ]; then echo "Please specify FILE=path/to/content.md"; exit 1; fi
-	$(PY) bin/fact_check.py $(FILE)
+serve-ui: ## Start Gradio UI
+	@echo "Starting Gradio UI..."
+	@$(PY) scripts/serve_ui.py
 
-asset-quality:
-	@echo "Usage: make asset-quality FILE=path/to/asset QUERY='search query'"
-	@if [ -z "$(FILE)" ]; then echo "Please specify FILE=path/to/asset"; exit 1; fi
-	@if [ -z "$(QUERY)" ]; then echo "Please specify QUERY='search terms'"; exit 1; fi
-	$(PY) bin/asset_quality.py $(FILE) --query "$(QUERY)"
+smoke-test: ## Run smoke test
+	@echo "Running smoke test..."
+	@$(PY) scripts/smoke_op_console.py
 
-test:
-	@echo "Running REUSE mode tests (no network calls)..."
-	TEST_ASSET_MODE=reuse $(PY) -m pytest tests/ -m "not liveapi" -v
-	@echo "Running E2E test in reuse mode..."
-	TEST_ASSET_MODE=reuse $(PY) bin/test_e2e.py
+# Operator Console targets
+op-console-api: ## Start operator console API server
+	@echo "Starting operator console API server..."
+	@$(PY) scripts/serve_api.py
 
-test-svg-ops:
-	@echo "Testing SVG Path Operations..."
-	$(PY) test_svg_path_ops.py
+op-console-ui: ## Start operator console UI
+	@echo "Starting operator console UI..."
+	@$(PY) scripts/serve_ui.py
 
-demo-svg-ops:
-	@echo "Demonstrating SVG Path Operations..."
-	$(PY) demo_svg_path_ops.py
-
-check-llm:
-	@echo "Checking Ollama LLM integration..."
-	$(PY) bin/check_llm_integration.py $(ARGS)
-
-test-live:
-	@echo "Running LIVE mode tests (requires API keys)..."
-	@echo "WARNING: This will make actual API calls and consume quota!"
-	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	TEST_ASSET_MODE=live $(PY) -m pytest tests/ -m "liveapi" -v
-
-test-all:
-	@echo "Running ALL tests (reuse + live modes)..."
-	$(MAKE) test
-	$(MAKE) test-live
-
-# Pipeline mode toggles
-animatics-only:
-	@echo "Setting pipeline to animatics-only mode..."
-	@yq -yi '.video.animatics_only = true | .video.enable_legacy_stock = false' conf/global.yaml
-	@echo "✅ Pipeline now in animatics-only mode (default)"
-
-legacy-on:
-	@echo "Enabling legacy stock asset pipeline..."
-	@yq -yi '.video.animatics_only = false | .video.enable_legacy_stock = true' conf/global.yaml
-	@echo "✅ Legacy stock asset pipeline enabled"
-
-procedural-pipeline:
-	@echo "Running procedural animatics pipeline..."
-	$(PY) bin/run_pipeline.py --dry-run --topic "2-minute history of Ray & Charles Eames"
-
-procedural-pipeline-live:
-	@echo "Running procedural animatics pipeline (live mode)..."
-	$(PY) bin/run_pipeline.py --topic "2-minute history of Ray & Charles Eames"
-
-pipeline-status:
-	@echo "Current pipeline configuration:"
-	@yq '.video' conf/global.yaml
-
-# -------- Research Pipeline Management --------
-research-reuse:
-	@echo "Usage: make research-reuse SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Running research pipeline in REUSE mode for $(SLUG)..."
-	$(PY) bin/trending_intake.py --mode reuse --slug $(SLUG)
-	$(PY) bin/research_collect.py --slug $(SLUG) --mode reuse --max 50
-	$(PY) bin/research_ground.py scripts/$(SLUG).txt --slug $(SLUG) --mode reuse
-	$(PY) bin/fact_guard.py --slug $(SLUG) --mode reuse
-	@echo "Research pipeline completed in REUSE mode for $(SLUG)"
-
-research-live:
-	@echo "Usage: make research-live SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "WARNING: This will make live API calls and consume quota!"
-	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	@echo "Running research pipeline in LIVE mode for $(SLUG)..."
-	$(PY) bin/trending_intake.py --mode live --slug $(SLUG)
-	$(PY) bin/research_collect.py --slug $(SLUG) --mode live --max 50
-	$(PY) bin/research_ground.py scripts/$(SLUG).txt --slug $(SLUG) --mode live
-	$(PY) bin/fact_guard.py --slug $(SLUG) --mode live
-	@echo "Research pipeline completed in LIVE mode for $(SLUG)"
-
-research-report:
-	@echo "Usage: make research-report SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Generating research report for $(SLUG)..."
-	$(PY) bin/research_report.py --slug $(SLUG) --compact
-	@echo "Research report completed for $(SLUG)"
-
-# -------- Asset Loop Management --------
-asset-rebuild:
-	@echo "Rebuilding asset library manifest..."
-	$(PY) bin/asset_manifest.py --rebuild
-
-asset-plan:
-	@echo "Usage: make asset-plan SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Creating asset plan for $(SLUG)..."
-	$(PY) bin/asset_librarian.py --slug $(SLUG)
-
-asset-fill:
-	@echo "Usage: make asset-fill SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Filling asset gaps for $(SLUG)..."
-	$(PY) bin/asset_generator.py --plan runs/$(SLUG)/asset_plan.json
-
-asset-reflow:
-	@echo "Usage: make asset-reflow SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Reflowing assets for $(SLUG)..."
-	$(PY) bin/reflow_assets.py --slug $(SLUG)
-
-asset-loop:
-	@echo "Usage: make asset-loop SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Running complete asset loop for $(SLUG)..."
-	$(MAKE) asset-rebuild
-	$(MAKE) asset-plan SLUG=$(SLUG)
-	$(MAKE) asset-fill SLUG=$(SLUG)
-	$(MAKE) asset-reflow SLUG=$(SLUG)
-	@echo "Asset loop completed for $(SLUG)"
-
-# -------- Pacing KPI & Feedback Management --------
-pacing-report:
-	@echo "Usage: make pacing-report SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Computing pacing KPIs for $(SLUG)..."
-	$(PY) bin/pacing_kpi.py --slug $(SLUG)
-	@echo "Pacing report completed for $(SLUG)"
-
-pacing-tune:
-	@echo "Usage: make pacing-tune SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Running KPI computation and feedback adjustment for $(SLUG)..."
-	$(MAKE) pacing-report SLUG=$(SLUG)
-	$(PY) bin/pacing_feedback.py --slug $(SLUG) --apply
-	@echo "Pacing tuning completed for $(SLUG)"
-
-pacing-smoke:
-	@echo "Usage: make pacing-smoke SLUG=<slug>"
-	@if [ -z "$(SLUG)" ]; then echo "Please specify SLUG=<slug>"; exit 1; fi
-	@echo "Running pacing smoke test for $(SLUG)..."
-	$(MAKE) pacing-report SLUG=$(SLUG)
-	$(PY) bin/pacing_feedback.py --slug $(SLUG) --dry-run
-	@echo "Pacing smoke test completed for $(SLUG)"
-
-# -------- Raspberry Pi Helpers --------
-PI_HOST ?= onepi
-PI_DIR ?= ~/youtube_onepi_pipeline
-SSH := ssh $(PI_HOST)
-RSYNC := rsync -az --delete
-RSYNC_EXCLUDES := \
-	--exclude '.git' \
-	--exclude '.venv' \
-	--exclude 'logs/' \
-	--exclude 'data/cache/' \
-	--exclude 'assets/' \
-	--exclude 'videos/' \
-	--exclude 'voiceovers/'
-
-pi-deploy:
-	@$(SSH) "set -e; cd $(PI_DIR) && git fetch --all && git reset --hard origin/main && python3 -m venv .venv && . .venv/bin/activate && pip -q install --upgrade pip && pip -q install -r requirements.txt && python bin/check_env.py"
-
-pi-run-once:
-	@$(SSH) "set -e; cd $(PI_DIR) && . .venv/bin/activate && make run-once"
-
-pi-blog-once:
-	@$(SSH) "set -e; cd $(PI_DIR) && . .venv/bin/activate && make blog-once"
-
-pi-sync:
-	@$(RSYNC) $(RSYNC_EXCLUDES) ./ $(PI_HOST):$(PI_DIR)/
-	@$(SSH) "set -e; cd $(PI_DIR) && python3 -m venv .venv && . .venv/bin/activate && pip -q install --upgrade pip && pip -q install -r requirements.txt && python bin/check_env.py"
-
-pull-artifacts:
-	@mkdir -p videos voiceovers
-	@$(RSYNC) $(PI_HOST):$(PI_DIR)/videos/ ./videos/ || true
-	@$(RSYNC) $(PI_HOST):$(PI_DIR)/voiceovers/ ./voiceovers/ || true
-
-pi-health:
-	@curl -s http://$(PI_HOST):8088/health | python -m json.tool || true
-
-# =============================================================================
-# OPERATOR CONSOLE TARGETS
-# =============================================================================
-
-op-console:
-	@echo "Starting FastAPI + Gradio UI..."
-	@echo "FastAPI: http://127.0.0.1:8008"
-	@echo "Gradio UI: http://127.0.0.1:7860"
-	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
-	@echo ""
-	@echo "Starting FastAPI server in background..."
-	@./scripts/serve_api.sh &
-	@echo "Waiting for FastAPI to start..."
+op-console: ## Start both API and UI for operator console
+	@echo "Starting operator console (API + UI)..."
+	@echo "Starting API server in background..."
+	@$(PY) scripts/serve_api.py &
+	@echo "Waiting for API to start..."
 	@sleep 3
-	@echo "Starting Gradio UI..."
-	@./scripts/serve_ui.sh
+	@echo "Starting UI..."
+	@$(PY) scripts/serve_ui.py
 
-op-console-api:
-	@echo "Starting FastAPI Operator Console API..."
-	@echo "Server will be available at: http://127.0.0.1:8008"
-	@echo "API docs: http://127.0.0.1:8008/docs"
-	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
-	@echo ""
-	./scripts/serve_api.sh
+op-console-smoke: ## Run operator console smoke test
+	@echo "Running operator console smoke test..."
+	@$(PY) scripts/smoke_op_console.py
 
-op-console-ui:
-	@echo "Starting Gradio UI..."
-	@echo "UI will be available at: http://127.0.0.1:7860"
-	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
-	@echo ""
-	./scripts/serve_ui.sh
+# Backup operations
+backup-repo: ## Create repository backup
+	@echo "Creating repository backup..."
+	@$(PY) scripts/backup_repo.py
 
-gradio-ui:
-	@echo "Starting Gradio UI..."
-	@echo "UI will be available at: http://127.0.0.1:7860"
-	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
-	@echo ""
-	$(PY) ui/gradio_app.py
+backup-wp: ## Create WordPress backup
+	@echo "Creating WordPress backup..."
+	@$(PY) scripts/backup_wp.py
 
-op-console-full:
-	@echo "Starting FastAPI + Gradio UI..."
-	@echo "FastAPI: http://127.0.0.1:8008"
-	@echo "Gradio UI: http://127.0.0.1:7860"
-	@echo "Admin token: default-admin-token-change-me (set ADMIN_TOKEN env var to override)"
-	@echo ""
-	@echo "Starting FastAPI server in background..."
-	@$(PY) run_server.py &
-	@echo "Waiting for FastAPI to start..."
-	@sleep 3
-	@echo "Starting Gradio UI..."
-	@$(PY) ui/gradio_app.py
+# Legacy shell script support (for backward compatibility)
+ifeq ($(OS),Windows_NT)
+serve-api-shell: ## Start FastAPI server (PowerShell)
+	@echo "Starting FastAPI server (PowerShell)..."
+	@powershell -ExecutionPolicy Bypass -File scripts/serve_api.ps1
 
-clean-op-console:
-	@echo "Cleaning operator console artifacts..."
-	@rm -f jobs.db
-	@rm -rf __pycache__
-	@rm -rf fastapi_app/__pycache__
-	@rm -rf ui/__pycache__
-	@echo "✅ Operator console cleaned"
+serve-ui-shell: ## Start Gradio UI (PowerShell)
+	@echo "Starting Gradio UI (PowerShell)..."
+	@powershell -ExecutionPolicy Bypass -File scripts/serve_ui.ps1
 
-test-api:
-	@echo "Testing FastAPI endpoints..."
-	$(PY) test_api.py
+smoke-test-shell: ## Run smoke test (PowerShell)
+	@echo "Running smoke test (PowerShell)..."
+	@powershell -ExecutionPolicy Bypass -File scripts/smoke_op_console.ps1
+else
+serve-api-shell: ## Start FastAPI server (Bash)
+	@echo "Starting FastAPI server (Bash)..."
+	@bash scripts/serve_api.sh
 
-test-orchestrator:
-	@echo "Testing orchestrator state machine..."
-	$(PY) test_orchestrator.py
+serve-ui-shell: ## Start Gradio UI (Bash)
+	@echo "Starting Gradio UI (Bash)..."
+	@bash scripts/serve_ui.sh
 
-test-orchestrator-simple:
-	@echo "Testing orchestrator state machine (simple mode)..."
-	$(PY) test_orchestrator_simple.py
+smoke-test-shell: ## Run smoke test (Bash)
+	@echo "Running smoke test (Bash)..."
+	@bash scripts/smoke_op_console.sh
+endif
 
-test-orchestrator-basic:
-	@echo "Testing basic orchestrator functionality..."
-	$(PY) test_orchestrator_basic.py
+blog-once: ## Run blog pipeline once (legacy)
+	@echo "Running blog pipeline..."
+	@$(PY) bin/blog_pick_topics.py
+	@$(PY) bin/blog_generate_post.py
+	@$(PY) bin/blog_render_html.py
+	@$(PY) bin/blog_post_wp.py
+	@$(PY) bin/blog_ping_search.py
 
-test-gradio-ui:
-	@echo "Testing Gradio UI components..."
-	$(PY) test_gradio_ui.py
+health: ## Start health server (legacy)
+	@echo "Starting health server..."
+	@$(PY) bin/health_server.py
 
-test-security:
-	@echo "Testing security implementation..."
-	$(PY) test_security.py
+web-ui: ## Start web UI (legacy)
+	@echo "Starting web UI..."
+	@$(PY) bin/web_ui.py

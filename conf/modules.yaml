@@ -111,6 +111,7 @@ pacing:
   max_adjust_ms_per_scene: 1000  # Maximum adjustment per scene in milliseconds
   max_total_adjust_ms: 5000      # Maximum total adjustment across all scenes
   tolerance_pct: 10              # Percentage tolerance for "ok" vs "fast/slow"
+  require_kpis: true             # Require KPI presence for acceptance PASS
 
 # Geometry engine settings
 geometry:

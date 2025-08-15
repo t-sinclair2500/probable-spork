@@ -9,21 +9,27 @@ intents:
       - id: "hook"
         label: "Opening Hook"
         target_ms: 8000
+        needs_citations: false
       - id: "context"
         label: "Historical Context"
         target_ms: 12000
+        needs_citations: true
       - id: "key_figure"
         label: "Key Figure Introduction"
         target_ms: 15000
+        needs_citations: true
       - id: "major_event"
         label: "Major Historical Event"
         target_ms: 18000
+        needs_citations: true
       - id: "impact"
         label: "Lasting Impact"
         target_ms: 12000
+        needs_citations: true
       - id: "closing"
         label: "Reflective Close"
         target_ms: 7000
+        needs_citations: false
     visual_density_target: 3
     evidence_load: "high"
     description: "Educational content about historical figures, events, or movements"
@@ -35,21 +41,27 @@ intents:
       - id: "problem"
         label: "Problem Statement"
         target_ms: 6000
+        needs_citations: false
       - id: "overview"
         label: "Solution Overview"
         target_ms: 8000
+        needs_citations: false
       - id: "step1"
         label: "Step 1"
         target_ms: 10000
+        needs_citations: false
       - id: "step2"
         label: "Step 2"
         target_ms: 10000
+        needs_citations: false
       - id: "step3"
         label: "Step 3"
         target_ms: 10000
+        needs_citations: false
       - id: "summary"
         label: "Quick Summary"
         target_ms: 6000
+        needs_citations: false
     visual_density_target: 4
     evidence_load: "medium"
     description: "Step-by-step instructional content with actionable takeaways"
@@ -61,24 +73,31 @@ intents:
       - id: "intro"
         label: "Review Introduction"
         target_ms: 5000
+        needs_citations: false
       - id: "criteria"
         label: "Evaluation Criteria"
         target_ms: 8000
+        needs_citations: true
       - id: "item1"
         label: "Item 1 Review"
         target_ms: 12000
+        needs_citations: true
       - id: "item2"
         label: "Item 2 Review"
         target_ms: 12000
+        needs_citations: true
       - id: "item3"
         label: "Item 3 Review"
         target_ms: 12000
+        needs_citations: true
       - id: "ranking"
         label: "Final Ranking"
         target_ms: 8000
+        needs_citations: false
       - id: "recommendation"
         label: "Clear Recommendation"
         target_ms: 5000
+        needs_citations: false
     visual_density_target: 5
     evidence_load: "medium"
     description: "Product/service comparison with clear recommendations"
@@ -90,21 +109,27 @@ intents:
       - id: "topic"
         label: "Topic Introduction"
         target_ms: 6000
+        needs_citations: false
       - id: "context"
         label: "Current Context"
         target_ms: 10000
+        needs_citations: true
       - id: "argument1"
         label: "First Argument"
         target_ms: 12000
+        needs_citations: true
       - id: "argument2"
         label: "Second Argument"
         target_ms: 12000
+        needs_citations: true
       - id: "counterpoint"
         label: "Counterpoint"
         target_ms: 10000
+        needs_citations: true
       - id: "conclusion"
         label: "Analytical Conclusion"
         target_ms: 8000
+        needs_citations: false
     visual_density_target: 3
     evidence_load: "high"
     description: "Analytical content presenting balanced viewpoints with evidence"
@@ -121,3 +146,4 @@ defaults:
   visual_density_target: 3
   evidence_load: "medium"
   tone: "conversational, informative"
+  needs_citations: true

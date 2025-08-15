@@ -468,24 +468,44 @@ def require_keys(env: dict, keys: List[str], feature_name: str):
 def single_lock():
     lock_path = os.path.join(BASE, "jobs", "lock")
     os.makedirs(os.path.dirname(lock_path), exist_ok=True)
-    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR)
-    try:
-        import fcntl
-
-        fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        yield
-    except BlockingIOError:
-        log.info("Another job is running. Exiting.")
-        sys.exit(0)
-    finally:
+    
+    # Windows-compatible locking
+    if os.name == 'nt':  # Windows
+        try:
+            # Simple file-based locking for Windows
+            if os.path.exists(lock_path):
+                log.info("Another job is running. Exiting.")
+                sys.exit(0)
+            
+            # Create lock file
+            with open(lock_path, 'w') as f:
+                f.write(str(os.getpid()))
+            
+            yield
+            
+        finally:
+            try:
+                if os.path.exists(lock_path):
+                    os.remove(lock_path)
+            except Exception:
+                pass
+    else:  # Unix-like systems
+        fd = os.open(lock_path, os.O_CREAT | os.O_RDWR)
         try:
             import fcntl
-
-            fcntl.lockf(fd, fcntl.LOCK_UN)
-            os.close(fd)
-            os.remove(lock_path)
-        except Exception:
-            pass
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            yield
+        except BlockingIOError:
+            log.info("Another job is running. Exiting.")
+            sys.exit(0)
+        finally:
+            try:
+                import fcntl
+                fcntl.lockf(fd, fcntl.LOCK_UN)
+                os.close(fd)
+                os.remove(lock_path)
+            except Exception:
+                pass
 
 
 def log_state(step: str, status: str = "OK", notes: str = ""):

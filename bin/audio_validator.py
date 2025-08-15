@@ -4,6 +4,7 @@ Audio Validation and Measurement
 
 Measures audio quality metrics including LUFS, true peak, and ducking effectiveness.
 Used by the acceptance pipeline to ensure audio meets broadcast standards.
+Enhanced with FFmpeg robustness and ffprobe validation.
 """
 
 import json
@@ -25,12 +26,164 @@ from bin.core import get_logger, load_config
 log = get_logger("audio_validator")
 
 
+class AudioValidationError(Exception):
+    """Custom exception for audio validation failures"""
+    def __init__(self, message: str, error_type: str, details: Dict[str, Any] = None):
+        self.message = message
+        self.error_type = error_type
+        self.details = details or {}
+        super().__init__(self.message)
+
+
+class FFmpegValidator:
+    """Validates FFmpeg/FFprobe availability and provides robust audio processing"""
+    
+    def __init__(self):
+        self.ffmpeg_path = None
+        self.ffprobe_path = None
+        self._validate_ffmpeg_installation()
+    
+    def _validate_ffmpeg_installation(self):
+        """Validate FFmpeg and FFprobe installation"""
+        try:
+            # Check ffmpeg
+            result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                self.ffmpeg_path = 'ffmpeg'
+                log.info("[audio-accept] FFmpeg found and working")
+            else:
+                raise AudioValidationError("FFmpeg failed version check", "ffmpeg_installation_failed")
+        except FileNotFoundError:
+            raise AudioValidationError("FFmpeg not found in PATH", "ffmpeg_not_found")
+        except subprocess.TimeoutExpired:
+            raise AudioValidationError("FFmpeg version check timed out", "ffmpeg_timeout")
+        except Exception as e:
+            raise AudioValidationError(f"FFmpeg validation error: {str(e)}", "ffmpeg_validation_error")
+        
+        try:
+            # Check ffprobe
+            result = subprocess.run(['ffprobe', '-version'], capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                self.ffprobe_path = 'ffprobe'
+                log.info("[audio-accept] FFprobe found and working")
+            else:
+                raise AudioValidationError("FFprobe failed version check", "ffprobe_installation_failed")
+        except FileNotFoundError:
+            raise AudioValidationError("FFprobe not found in PATH", "ffprobe_not_found")
+        except subprocess.TimeoutExpired:
+            raise AudioValidationError("FFprobe version check timed out", "ffprobe_timeout")
+        except Exception as e:
+            raise AudioValidationError(f"FFprobe validation error: {str(e)}", "ffprobe_validation_error")
+    
+    def probe_audio_stream(self, file_path: str) -> Dict[str, Any]:
+        """Probe audio stream information using ffprobe"""
+        try:
+            cmd = [
+                self.ffprobe_path,
+                '-v', 'quiet',
+                '-print_format', 'json',
+                '-show_streams',
+                '-select_streams', 'a:0',  # Select first audio stream
+                file_path
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode != 0:
+                raise AudioValidationError(
+                    f"FFprobe failed: {result.stderr}",
+                    "ffprobe_probe_failed",
+                    {"stderr": result.stderr, "returncode": result.returncode}
+                )
+            
+            probe_data = json.loads(result.stdout)
+            streams = probe_data.get('streams', [])
+            
+            if not streams:
+                raise AudioValidationError(
+                    "No audio streams found in file",
+                    "no_audio_streams",
+                    {"file_path": file_path}
+                )
+            
+            audio_stream = streams[0]
+            log.info(f"[audio-accept] Audio stream probed: {audio_stream.get('codec_name', 'unknown')} "
+                    f"({audio_stream.get('sample_rate', 'unknown')}Hz, "
+                    f"{audio_stream.get('channels', 'unknown')}ch)")
+            
+            return audio_stream
+            
+        except json.JSONDecodeError as e:
+            raise AudioValidationError(
+                f"Failed to parse ffprobe output: {str(e)}",
+                "ffprobe_parse_error",
+                {"file_path": file_path, "raw_output": result.stdout if 'result' in locals() else None}
+            )
+        except subprocess.TimeoutExpired:
+            raise AudioValidationError(
+                "FFprobe probe timed out",
+                "ffprobe_timeout",
+                {"file_path": file_path}
+            )
+        except Exception as e:
+            raise AudioValidationError(
+                f"FFprobe probe error: {str(e)}",
+                "ffprobe_error",
+                {"file_path": file_path}
+            )
+    
+    def extract_audio_safely(self, video_path: str, output_path: str, codec: str = "mp3") -> str:
+        """Extract audio from video with fallback codec handling"""
+        # Try preferred codec first
+        codecs_to_try = [codec, "aac", "mp3", "wav"]
+        
+        for attempt_codec in codecs_to_try:
+            try:
+                cmd = [
+                    self.ffmpeg_path,
+                    '-i', video_path,
+                    '-vn',  # No video
+                    '-acodec', attempt_codec,
+                    '-y',  # Overwrite output
+                    output_path
+                ]
+                
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                
+                if result.returncode == 0 and os.path.exists(output_path):
+                    log.info(f"[audio-accept] Audio extracted successfully with {attempt_codec} codec")
+                    return output_path
+                else:
+                    log.warning(f"[audio-accept] Failed to extract with {attempt_codec}: {result.stderr}")
+                    
+            except subprocess.TimeoutExpired:
+                log.warning(f"[audio-accept] Audio extraction timed out with {attempt_codec}")
+                continue
+            except Exception as e:
+                log.warning(f"[audio-accept] Audio extraction error with {attempt_codec}: {str(e)}")
+                continue
+        
+        raise AudioValidationError(
+            f"Failed to extract audio with any codec: {', '.join(codecs_to_try)}",
+            "audio_extraction_failed",
+            {"video_path": video_path, "attempted_codecs": codecs_to_try}
+        )
+
+
 class AudioValidator:
     """Validates audio quality metrics for acceptance pipeline"""
     
     def __init__(self, config=None):
         self.config = config or load_config()
         self.temp_dir = tempfile.mkdtemp(prefix="audio_validator_")
+        
+        # Initialize FFmpeg validator
+        try:
+            self.ffmpeg = FFmpegValidator()
+            log.info("[audio-accept] FFmpeg validation initialized successfully")
+        except AudioValidationError as e:
+            log.error(f"[audio-accept] FFmpeg validation failed: {e.message}")
+            raise
         
         # Audio targets from config
         audio_cfg = getattr(self.config.render, 'audio', None)
@@ -56,9 +209,9 @@ class AudioValidator:
         except Exception:
             pass
     
-    def validate_audio_file(self, audio_path: str, expected_type: str = "mixed") -> Dict[str, Any]:
+    def validate_audio_for_acceptance(self, audio_path: str, expected_type: str = "mixed") -> Dict[str, Any]:
         """
-        Validate audio file against quality targets.
+        Validate audio file for acceptance pipeline with robust error handling.
         
         Args:
             audio_path: Path to audio file
@@ -67,58 +220,87 @@ class AudioValidator:
         Returns:
             Dict with validation results and metrics
         """
-        if not os.path.exists(audio_path):
-            return {
-                "valid": False,
-                "error": f"Audio file not found: {audio_path}"
-            }
+        log.info(f"[audio-accept] Starting acceptance validation for {audio_path} ({expected_type})")
         
         try:
+            # Validate file exists
+            if not os.path.exists(audio_path):
+                return {
+                    "valid": False,
+                    "error": f"Audio file not found: {audio_path}",
+                    "error_type": "file_not_found"
+                }
+            
+            # Probe audio stream first
+            try:
+                stream_info = self.ffmpeg.probe_audio_stream(audio_path)
+                log.info(f"[audio-accept] Audio stream validated: {stream_info.get('codec_name', 'unknown')}")
+            except AudioValidationError as e:
+                return {
+                    "valid": False,
+                    "error": f"Audio stream validation failed: {e.message}",
+                    "error_type": e.error_type,
+                    "details": e.details
+                }
+            
             # Measure basic audio metrics
-            metrics = self._measure_audio_metrics(audio_path)
+            try:
+                metrics = self._measure_audio_metrics(audio_path)
+                log.info(f"[audio-accept] Audio metrics measured: LUFS={metrics.get('lufs', 'N/A')}, "
+                        f"Peak={metrics.get('true_peak', 'N/A')}")
+            except Exception as e:
+                return {
+                    "valid": False,
+                    "error": f"Audio measurement failed: {str(e)}",
+                    "error_type": "measurement_failed",
+                    "stream_info": stream_info
+                }
             
             # Validate against targets
             validation = self._validate_metrics(metrics, expected_type)
             
             # If validation fails, attempt one normalization (if enabled)
             if not validation["valid"] and validation.get("can_normalize", False) and self.enable_auto_normalization:
-                log.info(f"Audio validation failed, attempting normalization for {audio_path}")
-                normalized_path = self._normalize_audio(audio_path, expected_type)
-                if normalized_path:
-                    # Re-validate normalized audio
-                    normalized_metrics = self._measure_audio_metrics(normalized_path)
-                    normalized_validation = self._validate_metrics(normalized_metrics, expected_type)
-                    
-                    validation.update({
-                        "normalized": True,
-                        "normalized_path": normalized_path,
-                        "normalized_metrics": normalized_metrics,
-                        "normalized_validation": normalized_validation
-                    })
-                    
-                    # Use normalized results if successful
-                    if normalized_validation["valid"]:
-                        validation["valid"] = True
-                        validation["final_metrics"] = normalized_metrics
-                        validation["final_validation"] = "normalized"
-                    else:
-                        validation["final_metrics"] = metrics
-                        validation["final_validation"] = "original"
-                else:
-                    validation["normalization_failed"] = True
-                    validation["final_metrics"] = metrics
-                    validation["final_validation"] = "original"
-            else:
-                validation["final_metrics"] = metrics
-                validation["final_validation"] = "original"
+                log.info(f"[audio-accept] Audio validation failed, attempting normalization for {audio_path}")
+                try:
+                    normalized_path = self._normalize_audio(audio_path, expected_type)
+                    if normalized_path:
+                        # Re-validate normalized audio
+                        normalized_metrics = self._measure_audio_metrics(normalized_path)
+                        normalized_validation = self._validate_metrics(normalized_metrics, expected_type)
+                        
+                        validation.update({
+                            "normalized": True,
+                            "normalized_path": normalized_path,
+                            "normalized_metrics": normalized_metrics,
+                            "normalized_validation": normalized_validation
+                        })
+                        
+                        # Use normalized results if successful
+                        if normalized_validation["valid"]:
+                            validation.update(normalized_validation)
+                            log.info(f"[audio-accept] Audio normalized and now passes validation")
+                        else:
+                            log.warning(f"[audio-accept] Audio normalization failed to resolve issues")
+                except Exception as e:
+                    log.warning(f"[audio-accept] Audio normalization failed: {str(e)}")
+                    validation["normalization_error"] = str(e)
             
+            # Add stream information to results
+            validation["stream_info"] = stream_info
+            validation["file_path"] = audio_path
+            validation["expected_type"] = expected_type
+            
+            log.info(f"[audio-accept] Acceptance validation completed: {'PASS' if validation['valid'] else 'FAIL'}")
             return validation
             
         except Exception as e:
-            log.error(f"Audio validation failed for {audio_path}: {e}")
+            log.error(f"[audio-accept] Unexpected error during acceptance validation: {str(e)}")
             return {
                 "valid": False,
-                "error": f"Validation error: {str(e)}"
+                "error": f"Unexpected validation error: {str(e)}",
+                "error_type": "unexpected_error",
+                "file_path": audio_path
             }
     
     def validate_ducking(self, mixed_audio_path: str, voiceover_path: str, 
@@ -518,14 +700,21 @@ class AudioValidator:
             return {"error": f"Measurement failed: {str(e)}"}
 
 
+def validate_ducking_for_acceptance(mixed_audio_path: str, voiceover_path: str) -> Dict[str, Any]:
+    """Validate ducking effectiveness for acceptance pipeline."""
+    try:
+        validator = AudioValidator()
+        return validator.validate_ducking(mixed_audio_path, voiceover_path)
+    except Exception as e:
+        log.error(f"[audio-accept] Ducking validation error: {str(e)}")
+        return {
+            "valid": False,
+            "error": f"Ducking validation error: {str(e)}",
+            "error_type": "ducking_validation_error"
+        }
+
+
 def validate_audio_for_acceptance(audio_path: str, expected_type: str = "mixed") -> Dict[str, Any]:
     """Convenience function for acceptance pipeline."""
     validator = AudioValidator()
-    return validator.validate_audio_file(audio_path, expected_type)
-
-
-def validate_ducking_for_acceptance(mixed_audio_path: str, voiceover_path: str, 
-                                  music_path: Optional[str] = None) -> Dict[str, Any]:
-    """Convenience function for acceptance pipeline."""
-    validator = AudioValidator()
-    return validator.validate_ducking(mixed_audio_path, voiceover_path, music_path)
+    return validator.validate_audio_for_acceptance(audio_path, expected_type)

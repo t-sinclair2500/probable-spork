@@ -1,14 +1,57 @@
-# Normalize line endings
-* text=auto eol=lf
+# Normalize line endings across platforms
+* text=auto
 
-# Treat images and videos as binary
+# Python files - always use LF
+*.py text eol=lf
+
+# Shell scripts - always use LF
+*.sh text eol=lf
+
+# PowerShell scripts - use CRLF for Windows
+*.ps1 text eol=crlf
+
+# Markdown files - always use LF
+*.md text eol=lf
+
+# Configuration files - always use LF
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+
+# Documentation files - always use LF
+*.txt text eol=lf
+*.rst text eol=lf
+
+# Web files - always use LF
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+
+# Binary files - never modify
 *.png binary
 *.jpg binary
 *.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
 *.mp4 binary
-*.mov binary
-*.wav binary
 *.mp3 binary
-
-# Merge strategy for lock/state files
-jobs/state.jsonl merge=union
+*.wav binary
+*.avi binary
+*.mov binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary

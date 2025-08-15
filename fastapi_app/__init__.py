@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from .routes import router
 from .db import db
 from .config import operator_config
-from .security import get_cors_config, validate_binding_config, get_security_summary
+from .security import get_cors_config, validate_binding_config, enforce_local_binding, get_security_summary, log_security_status
 from .orchestrator import orchestrator
 
 # Configure logging
@@ -27,25 +27,28 @@ async def check_gate_timeouts_task():
             # Check every 30 seconds
             await asyncio.sleep(30)
         except Exception as e:
-            logger.error(f"Error in gate timeout checker: {e}")
+            logger.error(f"[orchestrator] Error in gate timeout checker: {e}")
             await asyncio.sleep(60)  # Wait longer on error
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
-    logger.info("Starting Probable Spork Orchestrator")
+    logger.info("[api] Starting Probable Spork Orchestrator")
+    
+    # Enforce local binding for security
+    safe_host = enforce_local_binding()
+    logger.info(f"[api] Enforced binding to {safe_host} for security")
     
     # Validate security configuration
     if not validate_binding_config():
-        logger.error("Security configuration validation failed")
+        logger.error("[api] Security configuration validation failed")
         raise RuntimeError("Security configuration validation failed")
     
     # Log security summary
-    security_summary = get_security_summary()
-    logger.info(f"Security configuration: {security_summary}")
+    log_security_status()
     
-    logger.info(f"Server configured for {operator_config.get('server.host')}:{operator_config.get('server.port')}")
+    logger.info(f"[api] Server configured for {safe_host}:{operator_config.get('server.port')}")
     
     # Start background task
     timeout_task = asyncio.create_task(check_gate_timeouts_task())
@@ -53,7 +56,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("Shutting down Probable Spork Orchestrator")
+    logger.info("[api] Shutting down Probable Spork Orchestrator")
     timeout_task.cancel()
     try:
         await timeout_task
@@ -80,15 +83,15 @@ if cors_config["allow_origins"] or cors_config["allow_methods"] or cors_config["
         expose_headers=cors_config["expose_headers"],
         max_age=cors_config["max_age"]
     )
-    logger.info("CORS enabled with configuration")
+    logger.info("[api] CORS enabled with configuration")
 else:
-    logger.info("CORS disabled (default security)")
+    logger.info("[api] CORS disabled (default security)")
 
 # Include routes
 app.include_router(router, prefix="/api/v1")
 
-# Add health endpoint at root level
+# Add health endpoint at root level (no authentication required)
 @app.get("/healthz")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint (no authentication required)"""
     return {"status": "healthy", "timestamp": asyncio.get_event_loop().time()}

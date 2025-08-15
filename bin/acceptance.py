@@ -4,6 +4,7 @@ Acceptance Harness for Content Pipeline
 
 Runs the orchestrator in DRY mode and validates all artifacts with quality thresholds.
 Emits PASS/FAIL JSON with artifact pointers and quality metrics.
+Enhanced with Phase 1 fixes: FFmpeg robustness, SRT fallbacks, legibility defaults, duration policy.
 """
 
 import argparse
@@ -42,6 +43,9 @@ class AcceptanceValidator:
         self.blog_cfg = blog_cfg
         self.modules_cfg = load_modules_cfg()
         
+        # Load render configuration for acceptance settings
+        self.render_cfg = self._load_render_config()
+        
         # Create temporary directory for audio validation
         import tempfile
         self.temp_dir = tempfile.mktemp(prefix="acceptance_")
@@ -54,11 +58,11 @@ class AcceptanceValidator:
                 "blog": {"status": "PENDING", "artifacts": {}, "quality": {}}
             },
             "quality_thresholds": {
-                "script_score_min": 50,
+                "script_score_min": self.render_cfg.get("acceptance", {}).get("min_script_score", 50),
                 "seo_lint_pass": True,
-                "visual_coverage_min": 85,
-                "min_assets": 10,
-                "min_script_words": 350
+                "visual_coverage_min": self.render_cfg.get("acceptance", {}).get("min_coverage", 0.85) * 100,
+                "min_assets": self.render_cfg.get("acceptance", {}).get("min_assets", 10),
+                "min_script_words": self.render_cfg.get("acceptance", {}).get("min_script_words", 350)
             },
             "assets": {
                 "status": "PENDING",
@@ -105,8 +109,32 @@ class AcceptanceValidator:
                 "adjusted": False,
                 "errors": [],
                 "warnings": []
+            },
+            "acceptance_config": {
+                "duration_tolerance_pct": self.render_cfg.get("acceptance", {}).get("tolerance_pct", 5.0),
+                "audio_validation_required": self.render_cfg.get("acceptance", {}).get("audio_validation_required", True),
+                "caption_validation_required": self.render_cfg.get("acceptance", {}).get("caption_validation_required", True),
+                "legibility_validation_required": self.render_cfg.get("acceptance", {}).get("legibility_validation_required", True),
+                "wcag_aa_threshold": self.render_cfg.get("acceptance", {}).get("wcag_aa_threshold", 4.5)
             }
         }
+    
+    def _load_render_config(self) -> Dict[str, Any]:
+        """Load render configuration for acceptance settings"""
+        try:
+            render_path = os.path.join(BASE, "conf", "render.yaml")
+            if os.path.exists(render_path):
+                import yaml
+                with open(render_path, 'r', encoding='utf-8') as f:
+                    render_cfg = yaml.safe_load(f)
+                log.info("[acceptance] Loaded render.yaml configuration")
+                return render_cfg
+            else:
+                log.warning("[acceptance] render.yaml not found, using defaults")
+                return {}
+        except Exception as e:
+            log.warning(f"[acceptance] Failed to load render.yaml: {e}, using defaults")
+            return {}
     
     def __del__(self):
         """Clean up temporary files."""
@@ -226,14 +254,16 @@ class AcceptanceValidator:
             return asset_results
     
     def _check_palette_compliance(self, asset_plan: Dict[str, Any], slug: str) -> Dict[str, Any]:
-        """Check if all assets comply with approved palette colors"""
+        """Check if all assets comply with approved palette colors using manifest data"""
         log.info("[acceptance-assets] Checking palette compliance")
         
         result = {
             "status": "PENDING",
             "violations": [],
             "approved_colors": [],
-            "total_assets": 0
+            "total_assets": 0,
+            "compliant_assets": 0,
+            "delta_e_violations": []
         }
         
         # Load approved palette from design language
@@ -250,36 +280,72 @@ class AcceptanceValidator:
             approved_colors = list(design_language.get("colors", {}).values())
             result["approved_colors"] = approved_colors
             
-            # Check asset generation report for palette violations
-            generation_report_path = os.path.join(BASE, "runs", slug, "asset_generation_report.json")
-            if os.path.exists(generation_report_path):
-                with open(generation_report_path, 'r') as f:
-                    generation_report = json.load(f)
+            # Load library manifest for palette validation
+            library_manifest_path = os.path.join(BASE, "data", "library_manifest.json")
+            if os.path.exists(library_manifest_path):
+                with open(library_manifest_path, 'r') as f:
+                    manifest = json.load(f)
                 
-                generated_assets = generation_report.get("generated_assets", [])
-                result["total_assets"] = len(generated_assets)
+                # Check resolved assets against manifest
+                resolved_assets = asset_plan.get("resolved", [])
+                result["total_assets"] = len(resolved_assets)
                 
-                for asset in generated_assets:
-                    asset_palette = asset.get("palette", [])
-                    for color in asset_palette:
-                        if color not in approved_colors:
+                for asset in resolved_assets:
+                    asset_hash = asset.get("asset_hash")
+                    if asset_hash and asset_hash in manifest.get("assets", {}):
+                        manifest_asset = manifest["assets"][asset_hash]
+                        palette_ok = manifest_asset.get("palette_ok", False)
+                        
+                        if palette_ok:
+                            result["compliant_assets"] += 1
+                        else:
+                            delta_e_violations = manifest_asset.get("delta_e_violations", [])
+                            if delta_e_violations:
+                                result["delta_e_violations"].extend(delta_e_violations)
+                                result["violations"].append({
+                                    "asset_path": asset.get("asset", "unknown"),
+                                    "element_id": asset.get("element_id", "unknown"),
+                                    "violations": delta_e_violations
+                                })
+                
+                # Check asset generation report for additional palette violations
+                generation_report_path = os.path.join(BASE, "runs", slug, "asset_generation_report.json")
+                if os.path.exists(generation_report_path):
+                    with open(generation_report_path, 'r') as f:
+                        generation_report = json.load(f)
+                    
+                    generated_assets = generation_report.get("generated_assets", [])
+                    for asset in generated_assets:
+                        if not asset.get("palette_compliant", True):
                             result["violations"].append({
                                 "asset_path": asset.get("path", "unknown"),
-                                "invalid_color": color,
-                                "element_id": asset.get("element_id", "unknown")
+                                "element_id": asset.get("element_id", "unknown"),
+                                "palette_violations": asset.get("palette_violations", [])
+                            })
+            else:
+                log.warning("[acceptance-assets] Library manifest not found, using basic palette check")
+                
+                # Fallback to basic palette check
+                resolved_assets = asset_plan.get("resolved", [])
+                result["total_assets"] = len(resolved_assets)
+                
+                for asset in resolved_assets:
+                    if asset.get("reuse_type") == "generated":
+                        # For generated assets, check if they have palette violations
+                        if not asset.get("palette_compliant", True):
+                            result["violations"].append({
+                                "asset_path": asset.get("asset", "unknown"),
+                                "element_id": asset.get("element_id", "unknown"),
+                                "reason": "Generated asset not palette compliant"
                             })
             
-            # Check resolved assets for palette info
-            resolved_assets = asset_plan.get("resolved", [])
-            for asset in resolved_assets:
-                # For existing assets, we'd need to analyze the actual SVG content
-                # For now, we'll assume existing brand assets are compliant
-                pass
-            
+            # Determine status
             if result["violations"]:
                 result["status"] = "FAIL"
+                log.warning(f"[acceptance-assets] Found {len(result['violations'])} palette violations")
             else:
                 result["status"] = "pass"
+                log.info(f"[acceptance-assets] All {result['total_assets']} assets are palette compliant")
             
             return result
             
@@ -771,6 +837,32 @@ class AcceptanceValidator:
             
             return False
         
+        # SRT/Caption validation and generation
+        caption_validation = self._validate_captions(artifacts)
+        youtube_results["quality"]["captions"] = caption_validation
+        
+        # Check if caption failure blocks acceptance
+        caption_required = self.render_cfg.get("acceptance", {}).get("caption_validation_required", True)
+        caption_blocks = self.render_cfg.get("acceptance", {}).get("caption_failure_blocks", False)
+        
+        if not caption_validation.get("valid", False) and caption_required and caption_blocks:
+            caption_error = caption_validation.get("error", "Caption validation failed")
+            youtube_results["status"] = "FAIL"
+            youtube_results["quality"]["error"] = f"Caption validation failed: {caption_error}"
+            return False
+        
+        # Legibility validation
+        legibility_validation = self._validate_legibility(artifacts)
+        youtube_results["quality"]["legibility"] = legibility_validation
+        
+        # Check if legibility failure blocks acceptance
+        legibility_required = self.render_cfg.get("acceptance", {}).get("legibility_validation_required", True)
+        if not legibility_validation.get("valid", False) and legibility_required:
+            legibility_error = legibility_validation.get("error", "Legibility validation failed")
+            youtube_results["status"] = "FAIL"
+            youtube_results["quality"]["error"] = f"Legibility validation failed: {legibility_error}"
+            return False
+        
         # Check asset validation results
         if asset_quality.get("status") == "FAIL":
             asset_errors = asset_quality.get("errors", [])
@@ -1212,8 +1304,18 @@ class AcceptanceValidator:
         audio_quality = {}
         
         try:
-            # Import audio validation
+            # Import enhanced audio validation with FFmpeg robustness
             from bin.audio_validator import validate_audio_for_acceptance, validate_ducking_for_acceptance
+            
+            # Check if audio validation is required
+            audio_required = self.render_cfg.get("acceptance", {}).get("audio_validation_required", True)
+            if not audio_required:
+                log.info("[acceptance] Audio validation disabled in render.yaml")
+                return {
+                    "valid": True,
+                    "disabled": True,
+                    "reason": "Audio validation disabled in configuration"
+                }
             
             # Validate voiceover if present
             if artifacts["voiceover"]:
@@ -1435,19 +1537,30 @@ class AcceptanceValidator:
         result = {"pass": False, "details": {}, "issues": []}
         
         try:
-            # Load timing configuration
+            # Load timing configuration from render.yaml (preferred) or modules.yaml
             timing_config = {}
-            try:
-                from bin.core import load_modules_cfg
-                timing_config = load_modules_cfg().get('timing', {})
-            except Exception as e:
-                log.warning(f"Could not load timing config: {e}")
-                # Use defaults
+            if self.render_cfg:
+                acceptance_cfg = self.render_cfg.get("acceptance", {})
                 timing_config = {
-                    'target_tolerance_pct': 5.0,
-                    'min_scene_ms': 2500,
-                    'max_scene_ms': 30000
+                    'target_tolerance_pct': acceptance_cfg.get('tolerance_pct', 5.0),
+                    'min_scene_ms': acceptance_cfg.get('min_scene_ms', 2500),
+                    'max_scene_ms': acceptance_cfg.get('max_scene_ms', 30000)
                 }
+                log.info(f"[duration-policy] Using render.yaml timing config: tolerance={timing_config['target_tolerance_pct']}%")
+            else:
+                try:
+                    from bin.core import load_modules_cfg
+                    timing_config = load_modules_cfg().get('timing', {})
+                    log.info(f"[duration-policy] Using modules.yaml timing config: tolerance={timing_config.get('target_tolerance_pct', 5.0)}%")
+                except Exception as e:
+                    log.warning(f"Could not load timing config: {e}")
+                    # Use defaults
+                    timing_config = {
+                        'target_tolerance_pct': 5.0,
+                        'min_scene_ms': 2500,
+                        'max_scene_ms': 30000
+                    }
+                    log.info(f"[duration-policy] Using default timing config: tolerance={timing_config['target_tolerance_pct']}%")
             
             # Get brief configuration for target duration
             brief = {}
@@ -2092,45 +2205,74 @@ class AcceptanceValidator:
                         
                         # Check citation minimums based on evidence load
                         if evidence_load == "high":
-                            min_coverage = 60.0  # 60% of beats must have citations
-                            min_citations_per_beat = 1.0
+                            min_coverage = 80.0
+                            min_citations_per_beat = 2
                         elif evidence_load == "medium":
-                            min_coverage = 40.0  # 40% of beats must have citations
-                            min_citations_per_beat = 0.5
+                            min_coverage = 60.0
+                            min_citations_per_beat = 1
                         else:
-                            min_coverage = 20.0  # 20% of beats must have citations
-                            min_citations_per_beat = 0.3
+                            min_coverage = 40.0
+                            min_citations_per_beat = 1
                         
-                        # Check coverage threshold
+                        # Validate coverage
                         if coverage_pct < min_coverage:
                             evidence_results["policy_checks"]["min_citations_per_intent"] = "FAIL"
                             evidence_results["status"] = "FAIL"
                             evidence_results["errors"].append(
-                                f"Citation coverage {coverage_pct:.1f}% below threshold {min_coverage}% for {intent_type} intent"
+                                f"Citation coverage {coverage_pct:.1f}% below minimum {min_coverage}% for {evidence_load} evidence load"
                             )
                         else:
                             evidence_results["policy_checks"]["min_citations_per_intent"] = "PASS"
                         
-                        # Check citations per beat average
-                        if total_beats > 0:
-                            avg_citations_per_beat = total_citations / total_beats
-                            if avg_citations_per_beat < min_citations_per_beat:
-                                evidence_results["policy_checks"]["min_citations_per_intent"] = "FAIL"
-                                evidence_results["status"] = "FAIL"
-                                evidence_results["errors"].append(
-                                    f"Average citations per beat {avg_citations_per_beat:.1f} below threshold {min_citations_per_beat} for {intent_type} intent"
-                                )
+                        # Validate citations per beat
+                        avg_citations = total_citations / total_beats if total_beats > 0 else 0
+                        if avg_citations < min_citations_per_beat:
+                            evidence_results["policy_checks"]["min_citations_per_intent"] = "FAIL"
+                            evidence_results["status"] = "FAIL"
+                            evidence_results["errors"].append(
+                                f"Average citations {avg_citations:.1f} below minimum {min_citations_per_beat} per beat for {evidence_load} evidence load"
+                            )
+                        else:
+                            evidence_results["policy_checks"]["min_citations_per_intent"] = "PASS"
                     else:
                         evidence_results["warnings"].append("Intent templates config not found, skipping citation policy validation")
-                        
                 except Exception as e:
                     log.warning(f"[acceptance-evidence] Could not validate intent citation requirements: {e}")
                     evidence_results["warnings"].append(f"Intent validation error: {str(e)}")
             
-            # Check whitelist compliance (placeholder for future implementation)
-            # TODO: Load domain whitelist from research.yaml and validate references
-            evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
-            evidence_results["warnings"].append("Domain whitelist validation not yet implemented")
+            # Validate domain whitelist compliance
+            try:
+                # Load research configuration for domain allowlist
+                research_config_path = os.path.join(BASE, "conf", "research.yaml")
+                if os.path.exists(research_config_path):
+                    import yaml
+                    with open(research_config_path, 'r') as f:
+                        research_config = yaml.safe_load(f)
+                    
+                    allowlist = set(research_config.get("domains", {}).get("allowlist", []))
+                    blacklist = set(research_config.get("domains", {}).get("blacklist", []))
+                    
+                    if allowlist:  # Only validate if allowlist is configured
+                        non_whitelisted_domains = []
+                        for domain in unique_domains:
+                            if domain not in allowlist and domain not in blacklist:
+                                non_whitelisted_domains.append(domain)
+                        
+                        if non_whitelisted_domains:
+                            evidence_results["policy_checks"]["whitelist_compliance"] = "WARN"
+                            evidence_results["policy_checks"]["non_whitelisted_warnings"] = non_whitelisted_domains
+                            evidence_results["warnings"].append(f"Found {len(non_whitelisted_domains)} non-whitelisted domains: {', '.join(non_whitelisted_domains[:5])}")
+                        else:
+                            evidence_results["policy_checks"]["whitelist_compliance"] = "PASS"
+                    else:
+                        evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
+                        evidence_results["warnings"].append("Domain allowlist not configured, skipping whitelist validation")
+                else:
+                    evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
+                    evidence_results["warnings"].append("Research config not found, skipping whitelist validation")
+            except Exception as e:
+                evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
+                evidence_results["warnings"].append(f"Whitelist validation error: {str(e)}")
             
             # Determine overall evidence status
             if evidence_results["status"] == "PENDING" and not evidence_results["errors"]:
@@ -2197,6 +2339,22 @@ class AcceptanceValidator:
             kpi_metrics = pacing_report.get("kpi_metrics", {})
             comparison = pacing_report.get("comparison", {})
             
+            # Integrity guard: ensure KPI metrics are present and valid
+            if not kpi_metrics or not comparison:
+                pacing_results["status"] = "FAIL"
+                pacing_results["verdict"] = "FAIL"
+                pacing_results["errors"].append("Missing KPI metrics or comparison data in pacing report")
+                return pacing_results
+            
+            # Check that required KPI fields are present
+            required_kpis = ["words_per_sec", "cuts_per_min", "avg_scene_s"]
+            missing_kpis = [kpi for kpi in required_kpis if kpi not in kpi_metrics or kpi_metrics[kpi] is None]
+            if missing_kpis:
+                pacing_results["status"] = "FAIL"
+                pacing_results["verdict"] = "FAIL"
+                pacing_results["errors"].append(f"Missing required KPI metrics: {', '.join(missing_kpis)}")
+                return pacing_results
+            
             pacing_results["kpi_metrics"] = kpi_metrics
             pacing_results["comparison"] = comparison
             
@@ -2262,6 +2420,180 @@ class AcceptanceValidator:
             pacing_results["errors"].append(f"Pacing validation error: {str(e)}")
             return pacing_results
     
+    def _validate_captions(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate captions and generate SRT if missing"""
+        log.info("[acceptance] Starting caption validation")
+        
+        try:
+            # Check if captions exist
+            if artifacts.get("captions"):
+                log.info(f"[acceptance] Found existing captions: {artifacts['captions']}")
+                return {
+                    "valid": True,
+                    "source": "existing",
+                    "path": artifacts["captions"],
+                    "generation_method": "none"
+                }
+            
+            # No captions found - generate them if fallback generation is enabled
+            fallback_enabled = self.render_cfg.get("captions", {}).get("fallback_generation", True)
+            if not fallback_enabled:
+                return {
+                    "valid": False,
+                    "error": "Captions required but fallback generation disabled",
+                    "error_type": "fallback_disabled"
+                }
+            
+            # Generate SRT using the new SRT generator
+            try:
+                from bin.srt_generate import generate_srt_for_acceptance
+                
+                # Find script path
+                script_path = None
+                if artifacts.get("script"):
+                    script_path = os.path.join(BASE, "scripts", artifacts["script"])
+                
+                if not script_path or not os.path.exists(script_path):
+                    return {
+                        "valid": False,
+                        "error": "Script not found for SRT generation",
+                        "error_type": "script_not_found"
+                    }
+                
+                # Determine intent type from outline
+                intent_type = "default"
+                if artifacts.get("outline"):
+                    outline_path = os.path.join(BASE, "scripts", artifacts["outline"])
+                    if os.path.exists(outline_path):
+                        try:
+                            with open(outline_path, 'r', encoding='utf-8') as f:
+                                outline_data = json.load(f)
+                            intent_type = outline_data.get("intent", "default")
+                        except Exception as e:
+                            log.warning(f"[acceptance] Could not read outline for intent: {e}")
+                
+                # Generate SRT
+                srt_result = generate_srt_for_acceptance(
+                    script_path=script_path,
+                    intent_type=intent_type
+                )
+                
+                if srt_result["success"]:
+                    log.info(f"[acceptance] SRT generated successfully: {srt_result['generation_method']}")
+                    return {
+                        "valid": True,
+                        "source": "generated",
+                        "path": srt_result["srt_path"],
+                        "generation_method": srt_result["generation_method"],
+                        "duration_sec": srt_result.get("duration_sec", 0),
+                        "word_count": srt_result.get("word_count", 0)
+                    }
+                else:
+                    return {
+                        "valid": False,
+                        "error": f"SRT generation failed: {srt_result['error']}",
+                        "error_type": "generation_failed",
+                        "details": srt_result
+                    }
+                    
+            except ImportError as e:
+                return {
+                    "valid": False,
+                    "error": f"SRT generation module not available: {str(e)}",
+                    "error_type": "module_not_available"
+                }
+            except Exception as e:
+                return {
+                    "valid": False,
+                    "error": f"SRT generation error: {str(e)}",
+                    "error_type": "generation_error"
+                }
+                
+        except Exception as e:
+            log.error(f"[acceptance] Caption validation error: {str(e)}")
+            return {
+                "valid": False,
+                "error": f"Caption validation error: {str(e)}",
+                "error_type": "validation_error"
+            }
+    
+    def _validate_legibility(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate text legibility and inject backgrounds if needed"""
+        log.info("[acceptance] Starting legibility validation")
+        
+        try:
+            # Check if legibility validation is required
+            legibility_required = self.render_cfg.get("acceptance", {}).get("legibility_validation_required", True)
+            if not legibility_required:
+                log.info("[acceptance] Legibility validation disabled in render.yaml")
+                return {
+                    "valid": True,
+                    "disabled": True,
+                    "reason": "Legibility validation disabled in configuration"
+                }
+            
+            # Check if we have a SceneScript to validate
+            if not artifacts.get("scenescript"):
+                log.info("[acceptance] No SceneScript found, skipping legibility validation")
+                return {
+                    "valid": True,
+                    "skipped": True,
+                    "reason": "No SceneScript available for validation"
+                }
+            
+            # Load SceneScript data
+            scenescript_path = os.path.join(BASE, "scenescripts", artifacts["scenescript"])
+            if not os.path.exists(scenescript_path):
+                return {
+                    "valid": False,
+                    "error": f"SceneScript file not found: {scenescript_path}",
+                    "error_type": "file_not_found"
+                }
+            
+            try:
+                with open(scenescript_path, 'r', encoding='utf-8') as f:
+                    scenescript_data = json.load(f)
+            except Exception as e:
+                return {
+                    "valid": False,
+                    "error": f"Failed to read SceneScript: {str(e)}",
+                    "error_type": "read_error"
+                }
+            
+            # Validate legibility using the new legibility validator
+            try:
+                from bin.legibility import validate_scenescript_legibility
+                
+                legibility_result = validate_scenescript_legibility(scenescript_data)
+                
+                if legibility_result["valid"]:
+                    log.info(f"[acceptance] Legibility validation passed: {legibility_result['summary']}")
+                else:
+                    log.warning(f"[acceptance] Legibility validation failed: {legibility_result['summary']}")
+                
+                return legibility_result
+                
+            except ImportError as e:
+                return {
+                    "valid": False,
+                    "error": f"Legibility validation module not available: {str(e)}",
+                    "error_type": "module_not_available"
+                }
+            except Exception as e:
+                return {
+                    "valid": False,
+                    "error": f"Legibility validation error: {str(e)}",
+                    "error_type": "validation_error"
+                }
+                
+        except Exception as e:
+            log.error(f"[acceptance] Legibility validation error: {str(e)}")
+            return {
+                "valid": False,
+                "error": f"Legibility validation error: {str(e)}",
+                "error_type": "validation_error"
+            }
+    
     def run_validation(self) -> Dict[str, Any]:
         """Run complete validation and return results"""
         log.info("Starting acceptance validation...")
@@ -2287,6 +2619,18 @@ class AcceptanceValidator:
             self._update_video_metadata_with_pacing(slug, pacing_ok)
         
         # Determine overall status (all lanes must pass)
+        # Pacing integrity guard: require KPI presence and comparison result before allowing PASS
+        pacing_has_kpis = (pacing_ok.get("kpi_metrics") and 
+                           pacing_ok.get("comparison") and 
+                           pacing_ok.get("kpi_metrics").get("words_per_sec") is not None)
+        
+        if not pacing_has_kpis:
+            log.warning("[acceptance-pacing] Pacing integrity guard: Missing KPI metrics or comparison data")
+            pacing_ok["status"] = "FAIL"
+            pacing_ok["verdict"] = "FAIL"
+            pacing_ok["errors"].append("Pacing integrity guard: Missing KPI metrics or comparison data")
+            self.results["pacing"] = pacing_ok
+        
         if youtube_ok and blog_ok and evidence_ok["status"] == "PASS" and pacing_ok["status"] == "PASS":
             self.results["overall_status"] = "PASS"
         else:
@@ -2317,7 +2661,183 @@ class AcceptanceValidator:
             }
         }
         
+        # Validate determinism if required
+        determinism_required = self.render_cfg.get("acceptance", {}).get("require_deterministic_runs", True)
+        if determinism_required:
+            determinism_validation = self._validate_determinism()
+            self.results["determinism"] = determinism_validation
+            log.info(f"[acceptance] Determinism validation: {determinism_validation['status']}")
+        
+        # Add acceptance configuration summary
+        self.results["acceptance_config_summary"] = {
+            "duration_tolerance_pct": self.results["acceptance_config"]["duration_tolerance_pct"],
+            "audio_validation_required": self.results["acceptance_config"]["audio_validation_required"],
+            "caption_validation_required": self.results["acceptance_config"]["caption_validation_required"],
+            "legibility_validation_required": self.results["acceptance_config"]["legibility_validation_required"],
+            "wcag_aa_threshold": self.results["acceptance_config"]["wcag_aa_threshold"]
+        }
+        
         return self.results
+    
+    def _validate_determinism(self) -> Dict[str, Any]:
+        """Validate that results are deterministic across runs"""
+        log.info("[acceptance] Starting determinism validation")
+        
+        try:
+            # Check if we have a previous run to compare against
+            previous_results_path = os.path.join(BASE, "acceptance_results.json")
+            if not os.path.exists(previous_results_path):
+                return {
+                    "status": "SKIP",
+                    "reason": "No previous results to compare against",
+                    "deterministic": True
+                }
+            
+            # Load previous results
+            try:
+                with open(previous_results_path, 'r', encoding='utf-8') as f:
+                    previous_results = json.load(f)
+            except Exception as e:
+                return {
+                    "status": "SKIP",
+                    "reason": f"Could not read previous results: {str(e)}",
+                    "deterministic": True
+                }
+            
+            # Compare key acceptance metrics
+            current_metrics = {
+                "overall_status": self.results["overall_status"],
+                "youtube_lane_status": self.results["lanes"]["youtube"]["status"],
+                "blog_lane_status": self.results["lanes"]["blog"]["status"],
+                "evidence_status": self.results.get("evidence", {}).get("status", "UNKNOWN"),
+                "pacing_status": self.results.get("pacing", {}).get("status", "UNKNOWN"),
+                "duration_tolerance_pct": self.results["acceptance_config"]["duration_tolerance_pct"],
+                "wcag_aa_threshold": self.results["acceptance_config"]["wcag_aa_threshold"]
+            }
+            
+            previous_metrics = {
+                "overall_status": previous_results.get("overall_status", "UNKNOWN"),
+                "youtube_lane_status": previous_results.get("lanes", {}).get("youtube", {}).get("status", "UNKNOWN"),
+                "blog_lane_status": previous_results.get("lanes", {}).get("blog", {}).get("status", "UNKNOWN"),
+                "evidence_status": previous_results.get("evidence", {}).get("status", "UNKNOWN"),
+                "pacing_status": previous_results.get("pacing", {}).get("status", "UNKNOWN"),
+                "duration_tolerance_pct": previous_results.get("acceptance_config_summary", {}).get("duration_tolerance_pct", 0),
+                "wcag_aa_threshold": previous_results.get("acceptance_config_summary", {}).get("wcag_aa_threshold", 0)
+            }
+            
+            # Check for differences
+            differences = []
+            for key in current_metrics:
+                if current_metrics[key] != previous_metrics[key]:
+                    differences.append({
+                        "metric": key,
+                        "current": current_metrics[key],
+                        "previous": previous_metrics[key]
+                    })
+            
+            # Check SRT consistency if available
+            srt_consistency = self._check_srt_consistency(previous_results)
+            
+            # Determine if results are deterministic
+            deterministic = len(differences) == 0 and srt_consistency["consistent"]
+            
+            result = {
+                "status": "PASS" if deterministic else "FAIL",
+                "deterministic": deterministic,
+                "differences": differences,
+                "srt_consistency": srt_consistency,
+                "current_metrics": current_metrics,
+                "previous_metrics": previous_metrics
+            }
+            
+            if deterministic:
+                log.info("[acceptance] Determinism validation PASSED - results are consistent")
+            else:
+                log.warning(f"[acceptance] Determinism validation FAILED - {len(differences)} differences found")
+                for diff in differences:
+                    log.warning(f"[acceptance] Difference: {diff['metric']} = {diff['current']} (was {diff['previous']})")
+            
+            return result
+            
+        except Exception as e:
+            log.error(f"[acceptance] Determinism validation error: {str(e)}")
+            return {
+                "status": "ERROR",
+                "error": f"Determinism validation error: {str(e)}",
+                "deterministic": False
+            }
+    
+    def _check_srt_consistency(self, previous_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Check if SRT files are consistent across runs"""
+        try:
+            # Get current SRT info
+            current_captions = self.results["lanes"]["youtube"]["quality"].get("captions", {})
+            previous_captions = previous_results.get("lanes", {}).get("youtube", {}).get("quality", {}).get("captions", {})
+            
+            if not current_captions or not previous_captions:
+                return {
+                    "consistent": True,
+                    "reason": "No caption data to compare"
+                }
+            
+            # Compare generation method and source
+            current_method = current_captions.get("generation_method", "unknown")
+            previous_method = previous_captions.get("generation_method", "unknown")
+            
+            if current_method != previous_method:
+                return {
+                    "consistent": False,
+                    "reason": f"Generation method changed: {current_method} vs {previous_method}",
+                    "current_method": current_method,
+                    "previous_method": previous_method
+                }
+            
+            # If both are generated, check if they should be identical
+            if current_method == "heuristic" and previous_method == "heuristic":
+                # Heuristic generation should be deterministic with same seed
+                current_path = current_captions.get("path", "")
+                previous_path = previous_captions.get("path", "")
+                
+                if current_path and previous_path:
+                    # Check if files exist and compare content
+                    current_srt_path = os.path.join(BASE, current_path)
+                    previous_srt_path = os.path.join(BASE, previous_path)
+                    
+                    if os.path.exists(current_srt_path) and os.path.exists(previous_srt_path):
+                        try:
+                            with open(current_srt_path, 'r', encoding='utf-8') as f:
+                                current_content = f.read()
+                            with open(previous_srt_path, 'r', encoding='utf-8') as f:
+                                previous_content = f.read()
+                            
+                            if current_content == previous_content:
+                                return {
+                                    "consistent": True,
+                                    "reason": "Heuristic SRT content identical"
+                                }
+                            else:
+                                return {
+                                    "consistent": False,
+                                    "reason": "Heuristic SRT content differs",
+                                    "current_size": len(current_content),
+                                    "previous_size": len(previous_content)
+                                }
+                        except Exception as e:
+                            return {
+                                "consistent": False,
+                                "reason": f"Could not compare SRT content: {str(e)}"
+                            }
+            
+            return {
+                "consistent": True,
+                "reason": "Caption consistency check passed"
+            }
+            
+        except Exception as e:
+            return {
+                "consistent": False,
+                "reason": f"SRT consistency check error: {str(e)}"
+            }
 
 
 def run_orchestrator_dry_run() -> bool:

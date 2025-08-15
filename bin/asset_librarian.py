@@ -58,6 +58,10 @@ class AssetLibrarian:
         
         # Load modules config for thresholds
         self.modules_config = self._load_modules_config()
+        
+        # Seed for deterministic asset selection
+        self.seed = None
+        self.random_state = None
     
     def _load_manifest(self) -> Dict[str, Any]:
         """Load the asset library manifest."""
@@ -99,6 +103,15 @@ class AssetLibrarian:
                 "max_per_section": 3
             }
         }
+    
+    def set_seed(self, seed: Optional[int] = None):
+        """Set seed for deterministic asset selection."""
+        if seed is None:
+            seed = random.randint(1, 1000000)
+        
+        self.seed = seed
+        self.random_state = random.Random(seed)
+        log.info(f"[librarian] Set deterministic seed: {seed}")
     
     def _get_palette_colors(self) -> List[str]:
         """Get approved palette colors from design language."""
@@ -159,11 +172,17 @@ class AssetLibrarian:
             # Calculate match score (lower is better)
             score = asset.get("usage_count", 0)  # Prefer less-used assets
             
-            matches.append((asset_hash, asset, score))
+            # Add deterministic tiebreaker using seed
+            if self.random_state:
+                tiebreaker = self.random_state.random()
+            else:
+                tiebreaker = 0.0
+            
+            matches.append((asset_hash, asset, score, tiebreaker))
         
-        # Sort by score (lowest first) and return top matches
-        matches.sort(key=lambda x: x[2])
-        return [(hash_key, asset) for hash_key, asset, _ in matches]
+        # Sort by score (lowest first) and tiebreaker for deterministic selection
+        matches.sort(key=lambda x: (x[2], x[3]))
+        return [(hash_key, asset) for hash_key, asset, _, _ in matches]
     
     def _select_variant(self, asset: Dict[str, Any], requested_variants: Optional[List[str]] = None) -> str:
         """Select a variant for the asset based on requested variants."""
@@ -204,14 +223,18 @@ class AssetLibrarian:
         self, 
         scenescript: Dict[str, Any], 
         manifest: Optional[Dict[str, Any]] = None,
-        policy: Optional[Dict[str, Any]] = None
+        policy: Optional[Dict[str, Any]] = None,
+        seed: Optional[int] = None
     ) -> Dict[str, Any]:
         """Resolve storyboard placeholders into concrete assets."""
         if manifest:
             self.manifest = manifest
         
+        # Set seed for deterministic selection
+        self.set_seed(seed)
+        
         slug = scenescript.get("slug", "unknown")
-        log.info(f"[librarian] Resolving assets for {slug}")
+        log.info(f"[librarian] Resolving assets for {slug} with seed {self.seed}")
         
         # Create runs directory for this slug
         run_dir = self.runs_dir / slug
@@ -277,7 +300,9 @@ class AssetLibrarian:
             "resolved_count": len(resolved),
             "gaps_count": len(gaps),
             "manifest_version": self.manifest.get("version", "unknown"),
-            "generated_at": self._get_timestamp()
+            "generated_at": self._get_timestamp(),
+            "seed": self.seed,
+            "deterministic": True
         }
         
         # Save asset plan
@@ -406,6 +431,7 @@ def main():
     parser = argparse.ArgumentParser(description="Asset Librarian Resolver")
     parser.add_argument("--slug", required=True, help="Slug of the content to resolve")
     parser.add_argument("--scenescript", help="Path to scenescript JSON file")
+    parser.add_argument("--seed", type=int, help="Random seed for deterministic asset selection")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     
     args = parser.parse_args()
@@ -436,12 +462,14 @@ def main():
     
     # Resolve assets
     try:
-        asset_plan = librarian.resolve_assets(scenescript)
+        asset_plan = librarian.resolve_assets(scenescript, seed=args.seed)
         
         print(f"\nAsset Resolution Complete for {args.slug}")
         print(f"  Resolved: {asset_plan['resolved_count']}/{asset_plan['total_placeholders']}")
         print(f"  Reuse ratio: {asset_plan['reuse_ratio']:.2%}")
         print(f"  Gaps: {asset_plan['gaps_count']}")
+        print(f"  Seed: {asset_plan['seed']}")
+        print(f"  Deterministic: {asset_plan['deterministic']}")
         
         if asset_plan['gaps']:
             print(f"\nGaps identified:")

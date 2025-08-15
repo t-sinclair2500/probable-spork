@@ -3,7 +3,7 @@
   "resolved": [
     {
       "element_id": "scene_000_bg",
-      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "asset": "assets\\brand\\backgrounds\\gradient1.svg",
       "scale": 1.0,
       "variant": "default",
       "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
@@ -11,7 +11,7 @@
     },
     {
       "element_id": "scene_001_bg",
-      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "asset": "assets\\brand\\backgrounds\\gradient1.svg",
       "scale": 1.0,
       "variant": "default",
       "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
@@ -19,7 +19,7 @@
     },
     {
       "element_id": "scene_002_bg",
-      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "asset": "assets\\brand\\backgrounds\\gradient1.svg",
       "scale": 1.0,
       "variant": "default",
       "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
@@ -27,7 +27,7 @@
     },
     {
       "element_id": "scene_003_bg",
-      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "asset": "assets\\brand\\backgrounds\\gradient1.svg",
       "scale": 1.0,
       "variant": "default",
       "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
@@ -35,7 +35,7 @@
     },
     {
       "element_id": "scene_004_bg",
-      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "asset": "assets\\brand\\backgrounds\\gradient1.svg",
       "scale": 1.0,
       "variant": "default",
       "asset_hash": "41c60c9bb8a1d132a002abdde5953dd223434160",
@@ -48,5 +48,7 @@
   "resolved_count": 5,
   "gaps_count": 0,
   "manifest_version": "1.0",
-  "generated_at": "2025-08-14T16:29:06.436893Z"
+  "generated_at": "2025-08-15T05:48:45.410052Z",
+  "seed": 935990,
+  "deterministic": true
 }

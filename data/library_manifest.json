@@ -1,61 +1,314 @@
 {
   "version": "1.0",
-  "generated_at": "2025-08-14T16:28:46.468487Z",
-  "total_assets": 46,
+  "generated_at": "2025-08-15T05:44:46.733148Z",
+  "total_assets": 48,
   "assets": {
-    "121219f6c9e42e60a3999efa85f5dde1294aa3ba": {
-      "path": "assets/design/svg/objects/nelson_bench.svg",
+    "4f4cd8177ea4194b2c33d0cf0802e35f6c28444b": {
+      "path": "assets\\design\\svg\\backgrounds\\atomic_starburst.svg",
       "tags": [
-        "object",
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#F6BE00",
+        "#F8F1E5",
+        "#D62828"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "4f4cd8177ea4194b2c33d0cf0802e35f6c28444b",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.679166Z",
+      "license": "Brand"
+    },
+    "e66624e16c8cddd5a8ac6137326e682a5b74bd00": {
+      "path": "assets\\design\\svg\\backgrounds\\boomerang_forms.svg",
+      "tags": [
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#F6BE00",
+        "#D62828",
+        "#FFFFFF"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "e66624e16c8cddd5a8ac6137326e682a5b74bd00",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.679166Z",
+      "license": "Brand"
+    },
+    "8245583a3f7d5a300d5eebe04b779d39116c4fc6": {
+      "path": "assets\\design\\svg\\backgrounds\\concentric_circles.svg",
+      "tags": [
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#4E9F3D",
+        "#F6BE00",
+        "#D62828",
+        "#FFFFFF"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "8245583a3f7d5a300d5eebe04b779d39116c4fc6",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.680167Z",
+      "license": "Brand"
+    },
+    "dcfd83c064f8e8fc595dacb02bb7fd9fe325c06c": {
+      "path": "assets\\design\\svg\\backgrounds\\geometric_pattern.svg",
+      "tags": [
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#F6BE00",
+        "#F8F1E5",
+        "#D62828"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "dcfd83c064f8e8fc595dacb02bb7fd9fe325c06c",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.680666Z",
+      "license": "Brand"
+    },
+    "b447f2326cf0c8a98a943afe42e0c8f7038ee02d": {
+      "path": "assets\\design\\svg\\backgrounds\\organic_cutouts.svg",
+      "tags": [
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#4E9F3D",
+        "#008080",
+        "#FFFFFF",
+        "#FF6F91"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "b447f2326cf0c8a98a943afe42e0c8f7038ee02d",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.681166Z",
+      "license": "Brand"
+    },
+    "6c15197fddc85a8b2c970de72e3438ebe9e272b3": {
+      "path": "assets\\design\\svg\\backgrounds\\paper_grain_overlay.svg",
+      "tags": [
+        "background",
         "brand"
       ],
       "palette": [
         "#1C4FA1",
         "#1A1A1A",
-        "#8B5E3C"
+        "#F8F1E5",
+        "#8B5E3C",
+        "#D62828",
+        "url(#paperGrain)"
       ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "121219f6c9e42e60a3999efa85f5dde1294aa3ba",
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "6c15197fddc85a8b2c970de72e3438ebe9e272b3",
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "url(#paperGrain)",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 999.0,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.681666Z",
+      "license": "Brand"
     },
-    "14d5340623623db925914dcd618769b2120fa418": {
-      "path": "assets/design/svg/objects/eames_molded_chair.svg",
+    "4a0e26d964a9988a2fca03c8a36b453beec96e1a": {
+      "path": "assets\\design\\svg\\backgrounds\\rounded_rectangles.svg",
       "tags": [
-        "object",
+        "background",
         "brand"
       ],
       "palette": [
         "#1C4FA1",
+        "#4E9F3D",
+        "#F6BE00",
+        "#FF6F91",
+        "#F8F1E5",
+        "#D62828",
+        "#008080",
+        "#F28C28"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "4a0e26d964a9988a2fca03c8a36b453beec96e1a",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.681666Z",
+      "license": "Brand"
+    },
+    "6b21731682c51535b0ba797c7fb731c82502954a": {
+      "path": "assets\\design\\svg\\backgrounds\\solid_accent_cream.svg",
+      "tags": [
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#F8F1E5"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "6b21731682c51535b0ba797c7fb731c82502954a",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.682166Z",
+      "license": "Brand"
+    },
+    "8ec15168ab1ad0731b8aa32a06be4a1db53b0874": {
+      "path": "assets\\design\\svg\\backgrounds\\solid_primary_blue.svg",
+      "tags": [
+        "background",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1"
+      ],
+      "w": 1920.0,
+      "h": 1080.0,
+      "viewBox": "0 0 1920 1080",
+      "hash": "8ec15168ab1ad0731b8aa32a06be4a1db53b0874",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.682667Z",
+      "license": "Brand"
+    },
+    "5758dfc0e635547a2069257074f9700f696cbd6e": {
+      "path": "assets\\design\\svg\\characters\\adult_female_neutral.svg",
+      "tags": [
+        "character",
+        "brand"
+      ],
+      "palette": [
         "#1A1A1A",
-        "#8B5E3C"
+        "#F8F1E5",
+        "#8B5E3C",
+        "#FF6F91"
       ],
       "w": 200.0,
       "h": 200.0,
       "viewBox": "0 0 200 200",
-      "hash": "14d5340623623db925914dcd618769b2120fa418",
+      "hash": "5758dfc0e635547a2069257074f9700f696cbd6e",
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.683167Z",
+      "license": "Brand"
     },
-    "aa4905ee6a951d67d461942e77e6309e44ae679b": {
-      "path": "assets/design/svg/objects/midcentury_sofa.svg",
+    "a03b07584cc6e22ebaa9d5baba01cfbf6a6579c8": {
+      "path": "assets\\design\\svg\\characters\\adult_male_neutral.svg",
       "tags": [
-        "object",
+        "character",
         "brand"
       ],
       "palette": [
+        "#1A1A1A",
         "#1C4FA1",
         "#F8F1E5",
         "#8B5E3C"
@@ -63,40 +316,22 @@
       "w": 200.0,
       "h": 200.0,
       "viewBox": "0 0 200 200",
-      "hash": "aa4905ee6a951d67d461942e77e6309e44ae679b",
+      "hash": "a03b07584cc6e22ebaa9d5baba01cfbf6a6579c8",
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
-    },
-    "ed9e68a97361491a8078271f32dc1098a63f18fd": {
-      "path": "assets/design/svg/objects/eames_lounge_chair.svg",
-      "tags": [
-        "object",
-        "brand"
-      ],
-      "palette": [
-        "#1C4FA1",
-        "#1A1A1A",
-        "#8B5E3C"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "ed9e68a97361491a8078271f32dc1098a63f18fd",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.683667Z",
+      "license": "Brand"
     },
     "378925418d35adcf32f1550bee11760ba6217099": {
-      "path": "assets/design/svg/objects/atomic_star.svg",
+      "path": "assets\\design\\svg\\objects\\atomic_star.svg",
       "tags": [
         "object",
         "brand"
@@ -113,72 +348,27 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
-    },
-    "b4041f290613a3004563b8fcfe20efb683c0092b": {
-      "path": "assets/design/svg/objects/nelson_eye_clock.svg",
-      "tags": [
-        "object",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5",
-        "#1A1A1A",
-        "#FFFFFF",
-        "#D62828",
-        "#1C4FA1"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "b4041f290613a3004563b8fcfe20efb683c0092b",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "d3e8e4370bfaf56ce22f3963d64ac82cb77cfe5d": {
-      "path": "assets/design/svg/objects/nelson_tripod_clock.svg",
-      "tags": [
-        "object",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5",
-        "#1A1A1A",
-        "#FFFFFF",
-        "#1C4FA1",
-        "#8B5E3C"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "d3e8e4370bfaf56ce22f3963d64ac82cb77cfe5d",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.684668Z",
+      "license": "Brand"
     },
     "7cc550f659d6a723ed9978b964efd604b9028be6": {
-      "path": "assets/design/svg/objects/boomerang_shape.svg",
+      "path": "assets\\design\\svg\\objects\\boomerang_shape.svg",
       "tags": [
         "object",
         "brand"
       ],
       "palette": [
-        "#1C4FA1",
         "#1A1A1A",
-        "#FFFFFF",
-        "#D62828"
+        "#1C4FA1",
+        "#D62828",
+        "#FFFFFF"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -187,68 +377,27 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
-    },
-    "2082a140157d10699668ed6ba49d417f044f50bd": {
-      "path": "assets/design/svg/objects/nelson_desk.svg",
-      "tags": [
-        "object",
-        "brand"
-      ],
-      "palette": [
-        "#1C4FA1",
-        "#F8F1E5",
-        "#1A1A1A",
-        "#8B5E3C"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "2082a140157d10699668ed6ba49d417f044f50bd",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "2a15c856a2ffd18d0dad5792311f532c01348b59": {
-      "path": "assets/design/svg/objects/matisse_leaf_1.svg",
-      "tags": [
-        "object",
-        "brand"
-      ],
-      "palette": [
-        "#4E9F3D",
-        "#1A1A1A"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "2a15c856a2ffd18d0dad5792311f532c01348b59",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.685168Z",
+      "license": "Brand"
     },
     "6fc4d78dd25b9fa57d750888f588b506232fbccd": {
-      "path": "assets/design/svg/objects/coffee_mug.svg",
+      "path": "assets\\design\\svg\\objects\\coffee_mug.svg",
       "tags": [
         "object",
         "brand"
       ],
       "palette": [
-        "#F8F1E5",
         "#1A1A1A",
-        "#FFFFFF",
-        "#8B5E3C"
+        "#F8F1E5",
+        "#8B5E3C",
+        "#FFFFFF"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -257,44 +406,128 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.685168Z",
+      "license": "Brand"
     },
-    "ad5d0f50f600bdec3e6fc150aa0d167eba1f4cd3": {
-      "path": "assets/design/svg/objects/nelson_ball_clock.svg",
+    "ed9e68a97361491a8078271f32dc1098a63f18fd": {
+      "path": "assets\\design\\svg\\objects\\eames_lounge_chair.svg",
       "tags": [
         "object",
         "brand"
       ],
       "palette": [
-        "#F8F1E5",
-        "#F28C28",
-        "#4E9F3D",
-        "#FF6F91",
         "#1A1A1A",
-        "#FFFFFF",
-        "#008080",
-        "#D62828",
         "#1C4FA1",
-        "#F6BE00",
         "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
       "viewBox": "0 0 200 200",
-      "hash": "ad5d0f50f600bdec3e6fc150aa0d167eba1f4cd3",
+      "hash": "ed9e68a97361491a8078271f32dc1098a63f18fd",
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.685668Z",
+      "license": "Brand"
+    },
+    "14d5340623623db925914dcd618769b2120fa418": {
+      "path": "assets\\design\\svg\\objects\\eames_molded_chair.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1A1A1A",
+        "#1C4FA1",
+        "#8B5E3C"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "14d5340623623db925914dcd618769b2120fa418",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.686168Z",
+      "license": "Brand"
+    },
+    "e303f4cbd1534e5242c157ddaa35e0f3370f178b": {
+      "path": "assets\\design\\svg\\objects\\matisse_coral.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1A1A1A",
+        "#FF6F91"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "e303f4cbd1534e5242c157ddaa35e0f3370f178b",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.686667Z",
+      "license": "Brand"
+    },
+    "2a15c856a2ffd18d0dad5792311f532c01348b59": {
+      "path": "assets\\design\\svg\\objects\\matisse_leaf_1.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1A1A1A",
+        "#4E9F3D"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "2a15c856a2ffd18d0dad5792311f532c01348b59",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.687167Z",
+      "license": "Brand"
     },
     "c371d638952ea7d5f58d3426f4083542a63f89a8": {
-      "path": "assets/design/svg/objects/matisse_leaf_2.svg",
+      "path": "assets\\design\\svg\\objects\\matisse_leaf_2.svg",
       "tags": [
         "object",
         "brand"
@@ -310,45 +543,179 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.687167Z",
+      "license": "Brand"
     },
-    "e303f4cbd1534e5242c157ddaa35e0f3370f178b": {
-      "path": "assets/design/svg/objects/matisse_coral.svg",
+    "aa4905ee6a951d67d461942e77e6309e44ae679b": {
+      "path": "assets\\design\\svg\\objects\\midcentury_sofa.svg",
       "tags": [
         "object",
         "brand"
       ],
       "palette": [
-        "#FF6F91",
-        "#1A1A1A"
+        "#1C4FA1",
+        "#F8F1E5",
+        "#8B5E3C"
       ],
       "w": 200.0,
       "h": 200.0,
       "viewBox": "0 0 200 200",
-      "hash": "e303f4cbd1534e5242c157ddaa35e0f3370f178b",
+      "hash": "aa4905ee6a951d67d461942e77e6309e44ae679b",
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.687667Z",
+      "license": "Brand"
     },
-    "ec7c1fb558988ac3d669b0b0859ffa0569b3f9a3": {
-      "path": "assets/design/svg/objects/nelson_kite_clock.svg",
+    "ad5d0f50f600bdec3e6fc150aa0d167eba1f4cd3": {
+      "path": "assets\\design\\svg\\objects\\nelson_ball_clock.svg",
       "tags": [
         "object",
         "brand"
       ],
       "palette": [
+        "#1C4FA1",
+        "#4E9F3D",
+        "#F6BE00",
+        "#F28C28",
+        "#FF6F91",
+        "#1A1A1A",
         "#F8F1E5",
+        "#D62828",
+        "#8B5E3C",
+        "#008080",
+        "#FFFFFF"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "ad5d0f50f600bdec3e6fc150aa0d167eba1f4cd3",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.688167Z",
+      "license": "Brand"
+    },
+    "121219f6c9e42e60a3999efa85f5dde1294aa3ba": {
+      "path": "assets\\design\\svg\\objects\\nelson_bench.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1A1A1A",
+        "#1C4FA1",
+        "#8B5E3C"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "121219f6c9e42e60a3999efa85f5dde1294aa3ba",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.688167Z",
+      "license": "Brand"
+    },
+    "2082a140157d10699668ed6ba49d417f044f50bd": {
+      "path": "assets\\design\\svg\\objects\\nelson_desk.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1A1A1A",
+        "#1C4FA1",
+        "#F8F1E5",
+        "#8B5E3C"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "2082a140157d10699668ed6ba49d417f044f50bd",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.688668Z",
+      "license": "Brand"
+    },
+    "b4041f290613a3004563b8fcfe20efb683c0092b": {
+      "path": "assets\\design\\svg\\objects\\nelson_eye_clock.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#1A1A1A",
+        "#F8F1E5",
+        "#D62828",
+        "#FFFFFF"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "b4041f290613a3004563b8fcfe20efb683c0092b",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.689167Z",
+      "license": "Brand"
+    },
+    "ec7c1fb558988ac3d669b0b0859ffa0569b3f9a3": {
+      "path": "assets\\design\\svg\\objects\\nelson_kite_clock.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1C4FA1",
         "#F28C28",
         "#1A1A1A",
-        "#FFFFFF",
-        "#1C4FA1"
+        "#F8F1E5",
+        "#FFFFFF"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -357,38 +724,18 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
-    },
-    "be7aad62663a67506f7192dc9f61a03da77a366b": {
-      "path": "assets/design/svg/objects/rotary_phone.svg",
-      "tags": [
-        "object",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5",
-        "#1A1A1A",
-        "#FFFFFF",
-        "#1C4FA1",
-        "#8B5E3C"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "be7aad62663a67506f7192dc9f61a03da77a366b",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.689668Z",
+      "license": "Brand"
     },
     "1711edd73e11a262e8e6871b7d1d84738239c034": {
-      "path": "assets/design/svg/objects/nelson_sunburst_clock.svg",
+      "path": "assets\\design\\svg\\objects\\nelson_sunburst_clock.svg",
       "tags": [
         "object",
         "brand"
@@ -406,22 +753,57 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.690167Z",
+      "license": "Brand"
     },
-    "766b4ffb59ca22385ab15c68b4f9d5728f0d7429": {
-      "path": "assets/design/svg/objects/notebook.svg",
+    "d3e8e4370bfaf56ce22f3963d64ac82cb77cfe5d": {
+      "path": "assets\\design\\svg\\objects\\nelson_tripod_clock.svg",
       "tags": [
         "object",
         "brand"
       ],
       "palette": [
-        "#F8F1E5",
+        "#1C4FA1",
         "#1A1A1A",
-        "#FFFFFF",
-        "#8B5E3C"
+        "#F8F1E5",
+        "#8B5E3C",
+        "#FFFFFF"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": "0 0 200 200",
+      "hash": "d3e8e4370bfaf56ce22f3963d64ac82cb77cfe5d",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.690668Z",
+      "license": "Brand"
+    },
+    "766b4ffb59ca22385ab15c68b4f9d5728f0d7429": {
+      "path": "assets\\design\\svg\\objects\\notebook.svg",
+      "tags": [
+        "object",
+        "brand"
+      ],
+      "palette": [
+        "#1A1A1A",
+        "#F8F1E5",
+        "#8B5E3C",
+        "#FFFFFF"
       ],
       "w": 200.0,
       "h": 200.0,
@@ -430,323 +812,48 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.691169Z",
+      "license": "Brand"
     },
-    "e66624e16c8cddd5a8ac6137326e682a5b74bd00": {
-      "path": "assets/design/svg/backgrounds/boomerang_forms.svg",
+    "be7aad62663a67506f7192dc9f61a03da77a366b": {
+      "path": "assets\\design\\svg\\objects\\rotary_phone.svg",
       "tags": [
-        "background",
+        "object",
         "brand"
       ],
       "palette": [
-        "#1C4FA1",
-        "#F6BE00",
-        "#FFFFFF",
-        "#D62828"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "e66624e16c8cddd5a8ac6137326e682a5b74bd00",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "8245583a3f7d5a300d5eebe04b779d39116c4fc6": {
-      "path": "assets/design/svg/backgrounds/concentric_circles.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#4E9F3D",
-        "#FFFFFF",
-        "#D62828",
-        "#1C4FA1",
-        "#F6BE00"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "8245583a3f7d5a300d5eebe04b779d39116c4fc6",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "8ec15168ab1ad0731b8aa32a06be4a1db53b0874": {
-      "path": "assets/design/svg/backgrounds/solid_primary_blue.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#1C4FA1"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "8ec15168ab1ad0731b8aa32a06be4a1db53b0874",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "4a0e26d964a9988a2fca03c8a36b453beec96e1a": {
-      "path": "assets/design/svg/backgrounds/rounded_rectangles.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5",
-        "#F28C28",
-        "#4E9F3D",
-        "#FF6F91",
-        "#008080",
-        "#D62828",
-        "#1C4FA1",
-        "#F6BE00"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "4a0e26d964a9988a2fca03c8a36b453beec96e1a",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "dcfd83c064f8e8fc595dacb02bb7fd9fe325c06c": {
-      "path": "assets/design/svg/backgrounds/geometric_pattern.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#1C4FA1",
-        "#F8F1E5",
-        "#F6BE00",
-        "#D62828"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "dcfd83c064f8e8fc595dacb02bb7fd9fe325c06c",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "6c15197fddc85a8b2c970de72e3438ebe9e272b3": {
-      "path": "assets/design/svg/backgrounds/paper_grain_overlay.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5",
         "#1C4FA1",
         "#1A1A1A",
-        "#D62828",
-        "url(#paperGrain)",
-        "#8B5E3C"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "6c15197fddc85a8b2c970de72e3438ebe9e272b3",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "4f4cd8177ea4194b2c33d0cf0802e35f6c28444b": {
-      "path": "assets/design/svg/backgrounds/atomic_starburst.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#1C4FA1",
         "#F8F1E5",
-        "#F6BE00",
-        "#D62828"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "4f4cd8177ea4194b2c33d0cf0802e35f6c28444b",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "6b21731682c51535b0ba797c7fb731c82502954a": {
-      "path": "assets/design/svg/backgrounds/solid_accent_cream.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "6b21731682c51535b0ba797c7fb731c82502954a",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "b447f2326cf0c8a98a943afe42e0c8f7038ee02d": {
-      "path": "assets/design/svg/backgrounds/organic_cutouts.svg",
-      "tags": [
-        "background",
-        "brand"
-      ],
-      "palette": [
-        "#4E9F3D",
-        "#FF6F91",
-        "#FFFFFF",
-        "#008080"
-      ],
-      "w": 1920.0,
-      "h": 1080.0,
-      "viewBox": "0 0 1920 1080",
-      "hash": "b447f2326cf0c8a98a943afe42e0c8f7038ee02d",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "5758dfc0e635547a2069257074f9700f696cbd6e": {
-      "path": "assets/design/svg/characters/adult_female_neutral.svg",
-      "tags": [
-        "character",
-        "brand"
-      ],
-      "palette": [
-        "#F8F1E5",
-        "#FF6F91",
-        "#1A1A1A",
-        "#8B5E3C"
+        "#8B5E3C",
+        "#FFFFFF"
       ],
       "w": 200.0,
       "h": 200.0,
       "viewBox": "0 0 200 200",
-      "hash": "5758dfc0e635547a2069257074f9700f696cbd6e",
+      "hash": "be7aad62663a67506f7192dc9f61a03da77a366b",
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
-    },
-    "a03b07584cc6e22ebaa9d5baba01cfbf6a6579c8": {
-      "path": "assets/design/svg/characters/adult_male_neutral.svg",
-      "tags": [
-        "character",
-        "brand"
-      ],
-      "palette": [
-        "#1C4FA1",
-        "#F8F1E5",
-        "#1A1A1A",
-        "#8B5E3C"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": "0 0 200 200",
-      "hash": "a03b07584cc6e22ebaa9d5baba01cfbf6a6579c8",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "ee4d9dd516bce70378d1b616da7d2e769bbcba00": {
-      "path": "assets/brand/props/phone.svg",
-      "tags": [
-        "prop",
-        "brand"
-      ],
-      "palette": [
-        "#f59e0b",
-        "#10b981",
-        "#7c3aed",
-        "#ef4444"
-      ],
-      "w": 120.0,
-      "h": 200.0,
-      "viewBox": "0 0 120 200",
-      "hash": "ee4d9dd516bce70378d1b616da7d2e769bbcba00",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "f577300b80fd68794aa569641bc4e58928d66efb": {
-      "path": "assets/brand/props/blanket.svg",
-      "tags": [
-        "prop",
-        "brand"
-      ],
-      "palette": [
-        "#f59e0b"
-      ],
-      "w": 200.0,
-      "h": 150.0,
-      "viewBox": "0 0 200 150",
-      "hash": "f577300b80fd68794aa569641bc4e58928d66efb",
-      "provenance": {
-        "source": "brand",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.691169Z",
+      "license": "Brand"
     },
     "41c60c9bb8a1d132a002abdde5953dd223434160": {
-      "path": "assets/brand/backgrounds/gradient1.svg",
+      "path": "assets\\brand\\backgrounds\\gradient1.svg",
       "tags": [
         "background",
         "brand"
@@ -762,22 +869,34 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "url(#gradient1)",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 999.0,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.668664Z",
+      "license": "Brand"
     },
     "92c82b9ba86fdfff350310ca3106a5fa03c00fee": {
-      "path": "assets/brand/characters/narrator.svg",
+      "path": "assets\\brand\\characters\\narrator.svg",
       "tags": [
         "character",
         "brand"
       ],
       "palette": [
-        "#f59e0b",
         "#ef4444",
         "#374151",
-        "#000000"
+        "#000000",
+        "#f59e0b"
       ],
       "w": 200.0,
       "h": 300.0,
@@ -786,22 +905,46 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#ef4444",
+          "closest_palette": "#D62828",
+          "delta_e": 9.673807183319107,
+          "threshold": 4.0
+        },
+        {
+          "color": "#374151",
+          "closest_palette": "#1A1A1A",
+          "delta_e": 21.07911715473495,
+          "threshold": 4.0
+        },
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.669664Z",
+      "license": "Brand"
     },
     "1097b10ff7fa17d071d1673dd914db0c6b692ffd": {
-      "path": "assets/brand/characters/parent.svg",
+      "path": "assets\\brand\\characters\\parent.svg",
       "tags": [
         "character",
         "brand"
       ],
       "palette": [
-        "#f59e0b",
-        "#ffffff",
         "#ef4444",
-        "#000000"
+        "#000000",
+        "#f59e0b",
+        "#ffffff"
       ],
       "w": 200.0,
       "h": 300.0,
@@ -810,146 +953,178 @@
       "provenance": {
         "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#ef4444",
+          "closest_palette": "#D62828",
+          "delta_e": 9.673807183319107,
+          "threshold": 4.0
+        },
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.670165Z",
+      "license": "Brand"
     },
-    "831eef3891412db5f48f878f6a213870cc616d55": {
-      "path": "assets/generated/prop_missing_prop_1755012590_1542.svg",
+    "f577300b80fd68794aa569641bc4e58928d66efb": {
+      "path": "assets\\brand\\props\\blanket.svg",
       "tags": [
-        "procedural",
-        "placeholder",
-        "prop"
+        "prop",
+        "brand"
       ],
       "palette": [
+        "#f59e0b"
+      ],
+      "w": 200.0,
+      "h": 150.0,
+      "viewBox": "0 0 200 150",
+      "hash": "f577300b80fd68794aa569641bc4e58928d66efb",
+      "provenance": {
+        "source": "brand",
+        "seed": null,
+        "generator_params": {},
+        "generator": null
+      },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        }
+      ],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.670665Z",
+      "license": "Brand"
+    },
+    "ee4d9dd516bce70378d1b616da7d2e769bbcba00": {
+      "path": "assets\\brand\\props\\phone.svg",
+      "tags": [
+        "prop",
+        "brand"
+      ],
+      "palette": [
+        "#10b981",
         "#7c3aed",
-        "#2563eb"
+        "#f59e0b",
+        "#ef4444"
       ],
-      "w": 200.0,
+      "w": 120.0,
       "h": 200.0,
-      "viewBox": null,
-      "hash": "831eef3891412db5f48f878f6a213870cc616d55",
+      "viewBox": "0 0 120 200",
+      "hash": "ee4d9dd516bce70378d1b616da7d2e769bbcba00",
       "provenance": {
-        "source": "generated",
-        "seed": 1755012590,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "13b575579c9ea679f66801325c38294bf7117ea1": {
-      "path": "assets/generated/prop_nonexistent_style_bfa2e57a.svg",
-      "tags": [
-        "procedural",
-        "prop"
-      ],
-      "palette": [
-        "#1C4FA1",
-        "#D62828"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": null,
-      "hash": "13b575579c9ea679f66801325c38294bf7117ea1",
-      "provenance": {
-        "source": "generated",
+        "source": "brand",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": null
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#10b981",
+          "closest_palette": "#4E9F3D",
+          "delta_e": 27.554000227596713,
+          "threshold": 4.0
+        },
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        },
+        {
+          "color": "#ef4444",
+          "closest_palette": "#D62828",
+          "delta_e": 9.673807183319107,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.671165Z",
+      "license": "Brand"
     },
-    "d8047c43d5590724b53378e616248cd52cf5fb4b": {
-      "path": "assets/generated/prop_nonexistent_style_0184e67b.svg",
+    "47ced6c61367d941e4c96ed4ab3fc0af7245fc01": {
+      "path": "assets\\generated\\background_starburst_01155a59.svg",
       "tags": [
-        "procedural",
-        "prop"
+        "procedural"
       ],
       "palette": [
+        "url(#grid)",
         "#D62828",
-        "#4E9F3D"
+        "#F28C28"
       ],
-      "w": 200.0,
-      "h": 200.0,
+      "w": 1920.0,
+      "h": 1080.0,
       "viewBox": null,
-      "hash": "d8047c43d5590724b53378e616248cd52cf5fb4b",
+      "hash": "47ced6c61367d941e4c96ed4ab3fc0af7245fc01",
       "provenance": {
         "source": "generated",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "url(#grid)",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 999.0,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-15T01:44:46.537113Z",
+      "license": "MIT"
     },
-    "c198f1367430e6b0e442cb5a6af1a1250bd70bcd": {
-      "path": "assets/generated/prop_nelson_sunburst_43da2a46.svg",
+    "a51077a2b0bf4bac79ad7ed036a4cd8c7402ffc4": {
+      "path": "assets\\generated\\background_starburst_1c28591c.svg",
       "tags": [
-        "procedural",
-        "prop"
+        "procedural"
       ],
       "palette": [
         "#1C4FA1",
-        "#D62828"
+        "#F6BE00"
       ],
-      "w": 328.0,
-      "h": 328.0,
-      "viewBox": "0 0 328 328",
-      "hash": "c198f1367430e6b0e442cb5a6af1a1250bd70bcd",
+      "w": 2048.0,
+      "h": 1208.0,
+      "viewBox": "0 0 2048 1208",
+      "hash": "a51077a2b0bf4bac79ad7ed036a4cd8c7402ffc4",
       "provenance": {
         "source": "generated",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
-    },
-    "b0c873ccc9fea9a81a10decb1fa0a3f032b71811": {
-      "path": "assets/generated/char_missing_character_1755012429_4693.svg",
-      "tags": [
-        "procedural",
-        "placeholder",
-        "character"
-      ],
-      "palette": [
-        "#2563eb"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": null,
-      "hash": "b0c873ccc9fea9a81a10decb1fa0a3f032b71811",
-      "provenance": {
-        "source": "generated",
-        "seed": 1755012429,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
-    },
-    "9e5fd9da46df5d83a354c6d44083e19f7d49de59": {
-      "path": "assets/generated/prop_nelson_sunburst_f0d243c9.svg",
-      "tags": [
-        "procedural",
-        "prop"
-      ],
-      "palette": [
-        "#1C4FA1",
-        "#D62828"
-      ],
-      "w": 200.0,
-      "h": 200.0,
-      "viewBox": null,
-      "hash": "9e5fd9da46df5d83a354c6d44083e19f7d49de59",
-      "provenance": {
-        "source": "generated",
-        "seed": null,
-        "generator_params": {}
-      },
-      "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.694669Z",
+      "license": "MIT"
     },
     "7853f0735d911841b353641e2173a58a6a40d51b": {
-      "path": "assets/generated/bg_missing_background_1755012590_1542.svg",
+      "path": "assets\\generated\\bg_missing_background_1755012590_1542.svg",
       "tags": [
         "procedural",
         "placeholder",
@@ -966,13 +1141,31 @@
       "provenance": {
         "source": "generated",
         "seed": 1755012590,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.695168Z",
+      "license": "MIT"
     },
     "79e5ad1342d5abf42dd5014121245f8be61b96d6": {
-      "path": "assets/generated/bg_missing_bg_1755012480_6327.svg",
+      "path": "assets\\generated\\bg_missing_bg_1755012480_6327.svg",
       "tags": [
         "procedural",
         "placeholder",
@@ -989,13 +1182,31 @@
       "provenance": {
         "source": "generated",
         "seed": 1755012480,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.695168Z",
+      "license": "MIT"
     },
     "c688e5f5c03861cffccb01ef62f9cd034b82a59a": {
-      "path": "assets/generated/bg_paper_1755012480_3609.svg",
+      "path": "assets\\generated\\bg_paper_1755012480_3609.svg",
       "tags": [
         "procedural",
         "background"
@@ -1011,42 +1222,249 @@
       "provenance": {
         "source": "generated",
         "seed": 1755012480,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
+      ],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.695669Z",
+      "license": "MIT"
     },
-    "a51077a2b0bf4bac79ad7ed036a4cd8c7402ffc4": {
-      "path": "assets/generated/background_starburst_1c28591c.svg",
+    "b0c873ccc9fea9a81a10decb1fa0a3f032b71811": {
+      "path": "assets\\generated\\char_missing_character_1755012429_4693.svg",
       "tags": [
-        "procedural"
+        "procedural",
+        "placeholder",
+        "character"
+      ],
+      "palette": [
+        "#2563eb"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": null,
+      "hash": "b0c873ccc9fea9a81a10decb1fa0a3f032b71811",
+      "provenance": {
+        "source": "generated",
+        "seed": 1755012429,
+        "generator_params": {},
+        "generator": "asset_generator.py"
+      },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
+      ],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.696169Z",
+      "license": "MIT"
+    },
+    "831eef3891412db5f48f878f6a213870cc616d55": {
+      "path": "assets\\generated\\prop_missing_prop_1755012590_1542.svg",
+      "tags": [
+        "procedural",
+        "placeholder",
+        "prop"
+      ],
+      "palette": [
+        "#7c3aed",
+        "#2563eb"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": null,
+      "hash": "831eef3891412db5f48f878f6a213870cc616d55",
+      "provenance": {
+        "source": "generated",
+        "seed": 1755012590,
+        "generator_params": {},
+        "generator": "asset_generator.py"
+      },
+      "palette_ok": false,
+      "delta_e_violations": [
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
+      ],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.696670Z",
+      "license": "MIT"
+    },
+    "3b76a3ccd7f43ae121c831b5b97915ab172319df": {
+      "path": "assets\\generated\\prop_nelson_sunburst_2668cd67.svg",
+      "tags": [
+        "procedural",
+        "prop"
       ],
       "palette": [
         "#1C4FA1",
         "#F6BE00"
       ],
-      "w": 2048.0,
-      "h": 1208.0,
-      "viewBox": "0 0 2048 1208",
-      "hash": "a51077a2b0bf4bac79ad7ed036a4cd8c7402ffc4",
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": null,
+      "hash": "3b76a3ccd7f43ae121c831b5b97915ab172319df",
       "provenance": {
         "source": "generated",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-15T01:44:46.490606Z",
+      "license": "MIT"
+    },
+    "c198f1367430e6b0e442cb5a6af1a1250bd70bcd": {
+      "path": "assets\\generated\\prop_nelson_sunburst_43da2a46.svg",
+      "tags": [
+        "procedural",
+        "prop"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#D62828"
+      ],
+      "w": 328.0,
+      "h": 328.0,
+      "viewBox": "0 0 328 328",
+      "hash": "c198f1367430e6b0e442cb5a6af1a1250bd70bcd",
+      "provenance": {
+        "source": "generated",
+        "seed": null,
+        "generator_params": {},
+        "generator": "asset_generator.py"
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.697169Z",
+      "license": "MIT"
+    },
+    "9e5fd9da46df5d83a354c6d44083e19f7d49de59": {
+      "path": "assets\\generated\\prop_nelson_sunburst_f0d243c9.svg",
+      "tags": [
+        "procedural",
+        "prop"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#D62828"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": null,
+      "hash": "9e5fd9da46df5d83a354c6d44083e19f7d49de59",
+      "provenance": {
+        "source": "generated",
+        "seed": null,
+        "generator_params": {},
+        "generator": "asset_generator.py"
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.697668Z",
+      "license": "MIT"
+    },
+    "d8047c43d5590724b53378e616248cd52cf5fb4b": {
+      "path": "assets\\generated\\prop_nonexistent_style_0184e67b.svg",
+      "tags": [
+        "procedural",
+        "prop"
+      ],
+      "palette": [
+        "#4E9F3D",
+        "#D62828"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": null,
+      "hash": "d8047c43d5590724b53378e616248cd52cf5fb4b",
+      "provenance": {
+        "source": "generated",
+        "seed": null,
+        "generator_params": {},
+        "generator": "asset_generator.py"
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.698169Z",
+      "license": "MIT"
+    },
+    "13b575579c9ea679f66801325c38294bf7117ea1": {
+      "path": "assets\\generated\\prop_nonexistent_style_bfa2e57a.svg",
+      "tags": [
+        "procedural",
+        "prop"
+      ],
+      "palette": [
+        "#1C4FA1",
+        "#D62828"
+      ],
+      "w": 200.0,
+      "h": 200.0,
+      "viewBox": null,
+      "hash": "13b575579c9ea679f66801325c38294bf7117ea1",
+      "provenance": {
+        "source": "generated",
+        "seed": null,
+        "generator_params": {},
+        "generator": "asset_generator.py"
+      },
+      "palette_ok": true,
+      "delta_e_violations": [],
+      "usage_count": 0,
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.698670Z",
+      "license": "MIT"
     },
     "dd8ab687d69b5b32330882fee9ef336016eddef5": {
-      "path": "assets/generated/svg/morph_test.svg",
+      "path": "assets\\generated\\svg\\morph_test.svg",
       "tags": [
         "procedural"
       ],
       "palette": [
         "#1C4FA1",
+        "#D62828",
         "#4E9F3D",
-        "#000",
-        "#D62828"
+        "#000"
       ],
       "w": 200.0,
       "h": 150.0,
@@ -1055,13 +1473,18 @@
       "provenance": {
         "source": "generated",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.699170Z",
+      "license": "MIT"
     },
     "9a4fd7675232765a9309851e15640b2598a8610c": {
-      "path": "assets/generated/svg/test_icon.svg",
+      "path": "assets\\generated\\svg\\test_icon.svg",
       "tags": [
         "procedural"
       ],
@@ -1077,106 +1500,227 @@
       "provenance": {
         "source": "generated",
         "seed": null,
-        "generator_params": {}
+        "generator_params": {},
+        "generator": "asset_generator.py"
       },
+      "palette_ok": true,
+      "delta_e_violations": [],
       "usage_count": 0,
-      "last_used": null
+      "last_used": null,
+      "created_at": "2025-08-13T23:22:40.699670Z",
+      "license": "MIT"
     }
   },
   "violations": [
     {
-      "asset": "assets/design/svg/backgrounds/paper_grain_overlay.svg",
+      "asset": "assets\\design\\svg\\backgrounds\\paper_grain_overlay.svg",
       "violations": [
-        "url(#paperGrain)"
+        {
+          "color": "url(#paperGrain)",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 999.0,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/brand/props/phone.svg",
+      "asset": "assets\\brand\\backgrounds\\gradient1.svg",
       "violations": [
-        "#f59e0b",
-        "#10b981",
-        "#7c3aed",
-        "#ef4444"
+        {
+          "color": "url(#gradient1)",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 999.0,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/brand/props/blanket.svg",
+      "asset": "assets\\brand\\characters\\narrator.svg",
       "violations": [
-        "#f59e0b"
+        {
+          "color": "#ef4444",
+          "closest_palette": "#D62828",
+          "delta_e": 9.673807183319107,
+          "threshold": 4.0
+        },
+        {
+          "color": "#374151",
+          "closest_palette": "#1A1A1A",
+          "delta_e": 21.07911715473495,
+          "threshold": 4.0
+        },
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/brand/backgrounds/gradient1.svg",
+      "asset": "assets\\brand\\characters\\parent.svg",
       "violations": [
-        "url(#gradient1)",
-        "#ffffff"
+        {
+          "color": "#ef4444",
+          "closest_palette": "#D62828",
+          "delta_e": 9.673807183319107,
+          "threshold": 4.0
+        },
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/brand/characters/narrator.svg",
+      "asset": "assets\\brand\\props\\blanket.svg",
       "violations": [
-        "#f59e0b",
-        "#ef4444",
-        "#374151"
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/brand/characters/parent.svg",
+      "asset": "assets\\brand\\props\\phone.svg",
       "violations": [
-        "#f59e0b",
-        "#ffffff",
-        "#ef4444"
+        {
+          "color": "#10b981",
+          "closest_palette": "#4E9F3D",
+          "delta_e": 27.554000227596713,
+          "threshold": 4.0
+        },
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#f59e0b",
+          "closest_palette": "#F28C28",
+          "delta_e": 14.060419538213784,
+          "threshold": 4.0
+        },
+        {
+          "color": "#ef4444",
+          "closest_palette": "#D62828",
+          "delta_e": 9.673807183319107,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/generated/prop_missing_prop_1755012590_1542.svg",
+      "asset": "assets\\generated\\background_starburst_01155a59.svg",
       "violations": [
-        "#7c3aed",
-        "#2563eb"
+        {
+          "color": "url(#grid)",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 999.0,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/generated/char_missing_character_1755012429_4693.svg",
+      "asset": "assets\\generated\\bg_missing_background_1755012590_1542.svg",
       "violations": [
-        "#2563eb"
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/generated/bg_missing_background_1755012590_1542.svg",
+      "asset": "assets\\generated\\bg_missing_bg_1755012480_6327.svg",
       "violations": [
-        "#7c3aed",
-        "#2563eb"
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/generated/bg_missing_bg_1755012480_6327.svg",
+      "asset": "assets\\generated\\bg_paper_1755012480_3609.svg",
       "violations": [
-        "#7c3aed",
-        "#2563eb"
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     },
     {
-      "asset": "assets/generated/bg_paper_1755012480_3609.svg",
+      "asset": "assets\\generated\\char_missing_character_1755012429_4693.svg",
       "violations": [
-        "#7c3aed",
-        "#2563eb"
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
+      ],
+      "type": "palette_violation"
+    },
+    {
+      "asset": "assets\\generated\\prop_missing_prop_1755012590_1542.svg",
+      "violations": [
+        {
+          "color": "#7c3aed",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 59.053364685041046,
+          "threshold": 4.0
+        },
+        {
+          "color": "#2563eb",
+          "closest_palette": "#1C4FA1",
+          "delta_e": 31.655888428249664,
+          "threshold": 4.0
+        }
       ],
       "type": "palette_violation"
     }
   ],
   "palette_stats": {
-    "total_colors": 158,
-    "compliant_colors": 128,
-    "violation_count": 23
+    "total_colors": 163,
+    "compliant_colors": 130,
+    "violation_count": 22,
+    "delta_e_violations": 22
   }
 }

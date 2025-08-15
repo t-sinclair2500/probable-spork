@@ -8,6 +8,7 @@ import time
 import asyncio
 from datetime import datetime, timezone
 from collections import defaultdict, deque
+from pathlib import Path
 
 from .models import (
     Job, JobCreate, JobUpdate, GateAction, 
@@ -16,6 +17,7 @@ from .models import (
 from .db import db
 from .security import get_current_operator
 from .config import operator_config
+from .events import event_logger
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +207,6 @@ async def create_job(
         # Save to database
         if db.create_job(job):
             # Add initial event using event logger
-            from .events import event_logger
             event_logger.job_created(job_id, job_create.slug, current_operator)
             
             logger.info(f"Job {job_id} created successfully by {current_operator}")
@@ -302,7 +303,6 @@ async def approve_gate(
                     db.store_gate_decision_file(job_id, stage, decision_data)
                     
                     # Add event using event logger
-                    from .events import event_logger
                     event_logger.gate_approved(job_id, stage, current_operator, gate_action.notes)
                     
                     # Update job status if needed
@@ -376,7 +376,6 @@ async def reject_gate(
                     db.store_gate_decision_file(job_id, stage, decision_data)
                     
                     # Add event using event logger
-                    from .events import event_logger
                     event_logger.gate_rejected(job_id, stage, current_operator, gate_action.notes)
                     
                     # Update job status to paused
@@ -481,8 +480,6 @@ async def resume_job(
 async def apply_patch_to_artifact(job_id: str, stage: Stage, patch: Dict[str, Any]):
     """Apply a patch to an artifact for a specific stage"""
     try:
-        from pathlib import Path
-        
         # Get the artifact path for this stage
         job = db.get_job(job_id)
         if not job:
@@ -512,8 +509,6 @@ async def apply_patch_to_artifact(job_id: str, stage: Stage, patch: Dict[str, An
 async def apply_script_patch(job_id: str, artifacts: List[Artifact], patch: Dict[str, Any]):
     """Apply patch to script artifacts"""
     try:
-        from pathlib import Path
-        
         # Find script file
         script_artifact = next((a for a in artifacts if a.kind == "script"), None)
         if not script_artifact:
@@ -560,9 +555,6 @@ async def apply_script_patch(job_id: str, artifacts: List[Artifact], patch: Dict
 async def apply_storyboard_patch(job_id: str, artifacts: List[Artifact], patch: Dict[str, Any]):
     """Apply patch to storyboard artifacts"""
     try:
-        from pathlib import Path
-        import json
-        
         # Find storyboard file
         storyboard_artifact = next((a for a in artifacts if a.kind == "storyboard"), None)
         if not storyboard_artifact:
@@ -608,9 +600,6 @@ async def apply_storyboard_patch(job_id: str, artifacts: List[Artifact], patch: 
 async def apply_audio_patch(job_id: str, artifacts: List[Artifact], patch: Dict[str, Any]):
     """Apply patch to audio artifacts"""
     try:
-        from pathlib import Path
-        import json
-        
         # Find audio metadata file
         audio_artifact = next((a for a in artifacts if a.kind == "audio"), None)
         if not audio_artifact:
@@ -655,7 +644,6 @@ async def cancel_job(
         # Cancel job
         if db.update_job_status(job_id, JobStatus.CANCELED):
             # Add event using event logger
-            from .events import event_logger
             event_logger.job_canceled(job_id, current_operator)
             
             logger.info(f"Job {job_id} canceled by {current_operator}")
@@ -701,16 +689,46 @@ async def get_job_events(
 ):
     """Get events for a specific job (polling endpoint)"""
     try:
-        events = db.get_job_events(job_id, limit=limit, since=since)
+        # Parse since timestamp if provided
+        since_dt = None
+        if since:
+            try:
+                since_dt = datetime.fromisoformat(since.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid 'since' timestamp format. Use ISO 8601 format."
+                )
+        
+        # Get events from JSONL file via event logger
+        events = event_logger.get_job_events(job_id, limit=limit, since=since_dt)
+        
+        # Convert to response format
+        event_responses = []
+        for event in events:
+            event_responses.append({
+                "timestamp": event.ts.isoformat(),
+                "event_type": event.type,
+                "stage": event.stage.value if event.stage else None,
+                "status": event.status,
+                "message": event.message,
+                "payload": event.payload,
+                "job_id": event.job_id
+            })
+        
         return {
             "job_id": job_id,
-            "events": events,
-            "count": len(events),
+            "events": event_responses,
+            "total": len(event_responses),
+            "has_more": len(event_responses) >= limit,
+            "last_event_time": event_responses[-1]["timestamp"] if event_responses else None,
             "since": since,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to get events for job {job_id}: {e}")
+        logger.error(f"[api] Failed to get events for job {job_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve job events"
@@ -722,7 +740,7 @@ async def stream_job_events(
     job_id: str,
     current_operator: str = Depends(get_current_operator)
 ):
-    """Stream job events via Server-Sent Events (SSE)"""
+    """Stream job events via Server-Sent Events (SSE) with heartbeat"""
     try:
         # Verify job exists
         job = db.get_job(job_id)
@@ -733,14 +751,15 @@ async def stream_job_events(
             )
         
         async def event_stream():
-            """Stream events for the job"""
+            """Stream events for the job with 5-second heartbeat"""
             try:
                 # Create a queue for this client
-                from .events import event_logger
                 queue = asyncio.Queue()
                 
                 # Subscribe to events
                 await event_logger.stream_manager.subscribe(job_id, queue)
+                
+                logger.info(f"[api] SSE stream started for job {job_id} by {current_operator}")
                 
                 # Send initial connection event
                 initial_event = {
@@ -766,8 +785,8 @@ async def stream_job_events(
                             "type": "heartbeat",
                             "stage": None,
                             "status": None,
-                            "message": "",
-                            "payload": {}
+                            "message": "Server alive",
+                            "payload": {"timestamp": datetime.now(timezone.utc).isoformat()}
                         }
                         yield f"data: {json.dumps(heartbeat_event)}\n\n"
                         last_heartbeat = current_time
@@ -783,12 +802,12 @@ async def stream_job_events(
                     
             except asyncio.CancelledError:
                 # Client disconnected
-                logger.info(f"SSE stream ended for job {job_id}")
+                logger.info(f"[api] SSE stream ended for job {job_id}")
                 # Unsubscribe from events
                 await event_logger.stream_manager.unsubscribe(job_id, queue)
                 return
             except Exception as e:
-                logger.error(f"Error in SSE stream for job {job_id}: {e}")
+                logger.error(f"[api] Error in SSE stream for job {job_id}: {e}")
                 error_event = {
                     "ts": datetime.now(timezone.utc).isoformat(),
                     "type": "error",
@@ -798,9 +817,12 @@ async def stream_job_events(
                     "payload": {"error": str(e)}
                 }
                 yield f"data: {json.dumps(error_event)}\n\n"
-                # Unsubscribe from events
-                await event_logger.stream_manager.unsubscribe(job_id, queue)
-                return
+            finally:
+                # Ensure cleanup
+                try:
+                    await event_logger.stream_manager.unsubscribe(job_id, queue)
+                except Exception as cleanup_error:
+                    logger.warning(f"[api] Cleanup error in SSE stream: {cleanup_error}")
         
         return StreamingResponse(
             event_stream(),
@@ -816,10 +838,10 @@ async def stream_job_events(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to start SSE stream for job {job_id}: {e}")
+        logger.error(f"[api] Failed to start SSE stream for job {job_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Event streaming failed: {str(e)}"
+            detail="Failed to start event stream"
         )
 
 
@@ -918,7 +940,6 @@ async def apply_patch_direct(
         await apply_patch_to_artifact(job_id, stage, patch)
         
         # Record the patch application using event logger
-        from .events import event_logger
         event_logger.emit_event(
             job_id=job_id,
             event_type="patch_applied_direct",
@@ -1071,3 +1092,60 @@ async def get_patch_types(
         },
         "usage": "Send patches in the 'patch' field when approving/rejecting gates, or use the direct patch application endpoint"
     }
+
+
+@router.get("/healthz")
+async def health_check():
+    """Health check endpoint (no authentication required)"""
+    try:
+        # Check database connectivity
+        db_healthy = False
+        try:
+            db.list_jobs(limit=1)
+            db_healthy = True
+        except Exception as e:
+            logger.warning(f"[api] Database health check failed: {e}")
+        
+        # Check storage paths
+        storage_healthy = True
+        runs_dir = Path("runs")
+        if not runs_dir.exists():
+            try:
+                runs_dir.mkdir(exist_ok=True)
+            except Exception as e:
+                logger.warning(f"[api] Failed to create runs directory: {e}")
+                storage_healthy = False
+        
+        # Check configuration
+        config_healthy = True
+        try:
+            operator_config.reload()
+        except Exception as e:
+            logger.warning(f"[api] Configuration health check failed: {e}")
+            config_healthy = False
+        
+        overall_healthy = db_healthy and storage_healthy and config_healthy
+        
+        return HealthResponse(
+            ok=overall_healthy,
+            timestamp=datetime.now(timezone.utc),
+            version="0.1.0",
+            services={
+                "database": db_healthy,
+                "storage": storage_healthy,
+                "configuration": config_healthy
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"[api] Health check failed: {e}")
+        return HealthResponse(
+            ok=False,
+            timestamp=datetime.now(timezone.utc),
+            version="0.1.0",
+            services={
+                "database": False,
+                "storage": False,
+                "configuration": False
+            }
+        )

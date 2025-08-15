@@ -1,0 +1,83 @@
+# Hardware-Optimized Configuration for AMD Ryzen 9 3900X + RTX 3080 + 32GB RAM
+# This configuration is optimized for high-performance desktop hardware
+
+hardware:
+  # CPU Configuration (12 cores, 24 threads)
+  cpu_cores: 12
+  cpu_threads: 24
+  cpu_type: "AMD Ryzen 9 3900X"
+  
+  # Memory Configuration
+  total_ram_gb: 32
+  available_ram_gb: 28  # Reserve 4GB for system
+  
+  # GPU Configuration
+  gpu_type: "NVIDIA RTX 3080"
+  gpu_vram_gb: 10
+  cuda_enabled: true
+  
+  # Storage
+  storage_type: "NVMe SSD"
+  storage_speed: "high"
+
+# Ollama Configuration (Optimized for Desktop Hardware)
+ollama:
+  # Model Management
+  models:
+    primary: "phi3:mini"           # 3.8B parameters - fast inference
+    secondary: "llama3.2:8b-instruct-q4_K_M"  # 8B parameters - better quality
+    coding: "codellama:7b-instruct-q4_K_M"    # 7B parameters - coding tasks
+  
+  # Performance Settings (Desktop-optimized)
+  num_parallel: 3        # Can run multiple models simultaneously
+  timeout_seconds: 60    # Faster timeouts for better hardware
+  max_concurrent: 2      # Process multiple requests concurrently
+  
+  # Memory Management
+  model_memory_gb: 8     # Reserve 8GB for models
+  system_memory_gb: 4    # Reserve 4GB for system
+  
+  # GPU Acceleration
+  gpu_layers: 35         # Use GPU for most layers
+  cpu_layers: 5          # Keep some layers on CPU for stability
+
+# Pipeline Configuration
+pipeline:
+  # Parallel Processing
+  max_workers: 4         # Multiple FastAPI workers
+  batch_size: 8          # Larger batch processing
+  
+  # Video Processing
+  video_quality: "high"  # Use RTX 3080 for video encoding
+  gpu_acceleration: true # Enable GPU acceleration
+  
+  # Asset Processing
+  concurrent_downloads: 6  # Multiple concurrent asset downloads
+  cache_size_gb: 4         # Larger asset cache
+
+# Service Configuration
+services:
+  fastapi:
+    workers: 4           # Multiple workers for your 12-core CPU
+    max_requests: 1000   # Higher request limits
+    timeout: 30          # Faster timeouts
+  
+  gradio:
+    max_threads: 8       # Multiple UI threads
+    queue_size: 20       # Larger request queue
+  
+  ollama:
+    server_url: "http://localhost:11434"
+    health_check_interval: 10  # More frequent health checks
+
+# Performance Monitoring
+monitoring:
+  enable_metrics: true
+  log_level: "info"
+  performance_tracking: true
+  
+# Development Settings
+development:
+  hot_reload: true       # Enable hot reloading
+  debug_mode: false      # Disable debug for production performance
+  profiling: true        # Enable performance profiling

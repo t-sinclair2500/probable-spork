@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-15T03:57:54.310659Z",
+  "timestamp": "2025-08-15T06:15:58.334461Z",
   "pipeline": "acceptance_harness",
   "overall_status": "FAIL",
   "lanes": {
@@ -39,11 +39,12 @@
           "legibility_issues": [],
           "scene_coverage": 1.0,
           "coverage_pass": true,
-          "qa_gates_pass": true,
-          "qa_gates_fails": [],
+          "qa_gates_pass": false,
+          "qa_gates_fails": [
+            "Text element 'scene_000_main' has insufficient contrast: 2.68:1 (required: 4.5:1)"
+          ],
           "qa_gates_warnings": [
-            "Mapped background identifier 'gradient1' to color #f9fafb",
-            "Element 'scene_000_main' using default text color #111827",
+            "Mapped background identifier 'gradient1' to color #1C4FA1",
             "Only one color used - consider adding variety"
           ],
           "qa_gates_details": {
@@ -51,10 +52,11 @@
               "contrast_checks": [
                 {
                   "element_id": "scene_000_main",
-                  "text_color": "#111827",
-                  "background_color": "#f9fafb",
-                  "contrast_ratio": 16.98,
-                  "wcag_aa_pass": true
+                  "text_color": "#000000",
+                  "background_color": "#1C4FA1",
+                  "contrast_ratio": 2.6824099561523984,
+                  "min_required": 4.5,
+                  "passes": false
                 }
               ]
             },
@@ -97,7 +99,7 @@
             "total_duration_ms": 90000,
             "target_duration_ms": 90000,
             "deviation_pct": 0.0,
-            "tolerance_pct": 5,
+            "tolerance_pct": 5.0,
             "within_tolerance": true,
             "scene_bounds_pass": true,
             "min_scene_ms": 2500,
@@ -106,7 +108,7 @@
             "vo_details": {}
           },
           "duration_issues": [],
-          "metadata_path": "/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.metadata.json",
+          "metadata_path": "C:\\Users\\sincl\\Documents\\GitHub\\probable-spork\\videos\\eames.metadata.json",
           "layout_pass": true,
           "layout_issues": [],
           "layout_details": {
@@ -116,111 +118,9 @@
             "scenes_with_positions": 5,
             "animatics_only": true
           },
-          "overall_pass": true
+          "overall_pass": false
         },
-        "procedural_seed": 42,
-        "procedural_placement": {
-          "min_spacing_px": 64,
-          "safe_margin_px": 40
-        },
-        "procedural_motion": {
-          "jitter_ms": 80
-        },
-        "warning": "Missing thumbnail PNG",
-        "script_words": 491,
-        "broll_markers": 11,
-        "script_score": 85,
-        "asset_count": 5,
-        "visual_coverage": 100.0,
-        "audio": {
-          "voiceover": {
-            "valid": true,
-            "lufs_valid": true,
-            "peak_valid": true,
-            "lufs_target": -16.0,
-            "lufs_actual": -15.95,
-            "lufs_tolerance": 2.0,
-            "peak_target": -1.0,
-            "peak_actual": -12.0,
-            "can_normalize": false,
-            "metrics": {
-              "duration_seconds": 10.032,
-              "sample_rate": 48000,
-              "lufs_integrated": -15.95,
-              "lufs_range": 0.0,
-              "true_peak_db": -12.0,
-              "format": "mp3"
-            },
-            "final_metrics": {
-              "duration_seconds": 10.032,
-              "sample_rate": 48000,
-              "lufs_integrated": -15.95,
-              "lufs_range": 0.0,
-              "true_peak_db": -12.0,
-              "format": "mp3"
-            },
-            "final_validation": "original"
-          },
-          "mixed_audio": {
-            "valid": false,
-            "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_3qlm6qu_/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
-          },
-          "valid": false,
-          "error": "Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_3qlm6qu_/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254.",
-          "targets": {
-            "vo_lufs": -16.0,
-            "music_lufs": -23.0,
-            "true_peak_max": -1.0,
-            "ducking_min_db": 6.0
-          }
-        },
-        "assets": {
-          "status": "PASS",
-          "coverage": {
-            "gaps": [],
-            "gaps_count": 0,
-            "status": "pass"
-          },
-          "reuse_ratio": {
-            "value": 1.0,
-            "total_library_assets": 46,
-            "status": "exempt"
-          },
-          "palette_compliance": {
-            "status": "pass",
-            "violations": [],
-            "approved_colors": [
-              "#1C4FA1",
-              "#D62828",
-              "#F6BE00",
-              "#F28C28",
-              "#4E9F3D",
-              "#008080",
-              "#8B5E3C",
-              "#1A1A1A",
-              "#FFFFFF",
-              "#F8F1E5",
-              "#FF6F91"
-            ],
-            "total_assets": 0
-          },
-          "qa_results": {
-            "status": "pass",
-            "collisions": [],
-            "safe_margin_violations": [],
-            "contrast_issues": [],
-            "overall_status": "pass",
-            "errors": [],
-            "total_scenes": 5,
-            "failed_scenes": 0
-          },
-          "provenance": [],
-          "errors": [],
-          "warnings": [
-            "Library has only 46 assets, reuse ratio not enforced"
-          ]
-        },
-        "error": "Audio validation failed: Audio extraction failed: Command '['ffmpeg', '-i', '/Users/tylersinclair/Documents/GitHub/probable-spork/videos/eames.mp4', '-vn', '-acodec', 'mp3', '-y', '/var/folders/7n/12g718js38nc2qrpypj81lnw0000gn/T/acceptance_3qlm6qu_/temp_audio_eames.mp4.mp3']' returned non-zero exit status 254."
+        "error": "QA gates failed: Text element 'scene_000_main' has insufficient contrast: 2.68:1 (required: 4.5:1)"
       }
     },
     "blog": {
@@ -241,55 +141,17 @@
   "quality_thresholds": {
     "script_score_min": 50,
     "seo_lint_pass": true,
-    "visual_coverage_min": 85,
+    "visual_coverage_min": 85.0,
     "min_assets": 10,
     "min_script_words": 350
   },
   "assets": {
-    "status": "PASS",
-    "coverage": {
-      "gaps": [],
-      "gaps_count": 0,
-      "status": "pass"
-    },
-    "reuse_ratio": {
-      "value": 1.0,
-      "total_library_assets": 46,
-      "status": "exempt"
-    },
-    "palette_compliance": {
-      "status": "pass",
-      "violations": [],
-      "approved_colors": [
-        "#1C4FA1",
-        "#D62828",
-        "#F6BE00",
-        "#F28C28",
-        "#4E9F3D",
-        "#008080",
-        "#8B5E3C",
-        "#1A1A1A",
-        "#FFFFFF",
-        "#F8F1E5",
-        "#FF6F91"
-      ],
-      "total_assets": 0
-    },
-    "qa_results": {
-      "status": "pass",
-      "collisions": [],
-      "safe_margin_violations": [],
-      "contrast_issues": [],
-      "overall_status": "pass",
-      "errors": [],
-      "total_scenes": 5,
-      "failed_scenes": 0
-    },
-    "provenance": [],
-    "errors": [],
-    "warnings": [
-      "Library has only 46 assets, reuse ratio not enforced"
-    ]
+    "status": "PENDING",
+    "coverage": {},
+    "reuse_ratio": {},
+    "palette_compliance": {},
+    "qa_results": {},
+    "provenance": []
   },
   "visual_polish": {
     "status": "PENDING",
@@ -318,7 +180,7 @@
     },
     "policy_checks": {
       "min_citations_per_intent": "PENDING",
-      "whitelist_compliance": "PENDING",
+      "whitelist_compliance": "PASS",
       "non_whitelisted_warnings": []
     },
     "fact_guard_summary": {
@@ -328,29 +190,164 @@
       "strict_mode_fail": false
     },
     "errors": [],
-    "warnings": [
-      "Domain whitelist validation not yet implemented"
-    ]
+    "warnings": []
   },
   "pacing": {
-    "status": "PASS",
+    "status": "WARN",
     "enabled": true,
-    "kpi_metrics": {},
-    "comparison": {},
-    "verdict": "PASS",
+    "kpi_metrics": {
+      "words_per_sec": 26.17,
+      "cuts_per_min": 3.3,
+      "avg_scene_s": 18.0,
+      "speech_music_ratio": 0.27,
+      "scenes": [
+        {
+          "id": "scene_000",
+          "duration_ms": 15000
+        },
+        {
+          "id": "scene_001",
+          "duration_ms": 20000
+        },
+        {
+          "id": "scene_002",
+          "duration_ms": 20000
+        },
+        {
+          "id": "scene_003",
+          "duration_ms": 20000
+        },
+        {
+          "id": "scene_004",
+          "duration_ms": 15000
+        }
+      ],
+      "source": "vo",
+      "metadata": {
+        "script_words": 502,
+        "video_duration_ms": 90000,
+        "speech_duration_ms": 19184.0,
+        "scene_count": 5,
+        "computed_at": "2025-08-15T06:15:49.883170Z"
+      }
+    },
+    "comparison": {
+      "flags": {
+        "words_per_sec": "fast",
+        "cuts_per_min": "slow",
+        "avg_scene_s": "fast",
+        "speech_music_ratio": "ok"
+      },
+      "overall_status": "fast",
+      "profile_used": {
+        "words_per_sec": [
+          2.5,
+          3.5
+        ],
+        "cuts_per_min": [
+          10,
+          20
+        ],
+        "avg_scene_s": [
+          4.5,
+          7.5
+        ],
+        "speech_ratio_default": 0.8
+      },
+      "tolerance_applied": true,
+      "compared_at": "2025-08-15T06:15:44.936424Z"
+    },
+    "verdict": "WARN",
     "adjusted": false,
     "errors": [],
-    "warnings": [],
-    "metrics_table": {}
+    "warnings": [
+      "Metrics out of band (non-strict mode): words_per_sec, cuts_per_min, avg_scene_s"
+    ],
+    "metrics_table": {
+      "words_per_sec": {
+        "current": 26.17,
+        "bands": [
+          2.5,
+          3.5
+        ],
+        "flag": "fast",
+        "in_band": false
+      },
+      "cuts_per_min": {
+        "current": 3.3,
+        "bands": [
+          10,
+          20
+        ],
+        "flag": "slow",
+        "in_band": false
+      },
+      "avg_scene_s": {
+        "current": 18.0,
+        "bands": [
+          4.5,
+          7.5
+        ],
+        "flag": "fast",
+        "in_band": false
+      }
+    }
+  },
+  "acceptance_config": {
+    "duration_tolerance_pct": 5.0,
+    "audio_validation_required": true,
+    "caption_validation_required": true,
+    "legibility_validation_required": true,
+    "wcag_aa_threshold": 4.5
   },
   "summary": {
     "youtube_lane": "FAIL",
     "blog_lane": "FAIL",
     "evidence_lane": "PASS",
-    "pacing_lane": "PASS",
+    "pacing_lane": "FAIL",
     "total_artifacts": {
       "youtube": 9,
       "blog": 0
     }
+  },
+  "determinism": {
+    "status": "FAIL",
+    "deterministic": false,
+    "differences": [
+      {
+        "metric": "pacing_status",
+        "current": "WARN",
+        "previous": "FAIL"
+      }
+    ],
+    "srt_consistency": {
+      "consistent": true,
+      "reason": "No caption data to compare"
+    },
+    "current_metrics": {
+      "overall_status": "FAIL",
+      "youtube_lane_status": "FAIL",
+      "blog_lane_status": "FAIL",
+      "evidence_status": "PASS",
+      "pacing_status": "WARN",
+      "duration_tolerance_pct": 5.0,
+      "wcag_aa_threshold": 4.5
+    },
+    "previous_metrics": {
+      "overall_status": "FAIL",
+      "youtube_lane_status": "FAIL",
+      "blog_lane_status": "FAIL",
+      "evidence_status": "PASS",
+      "pacing_status": "FAIL",
+      "duration_tolerance_pct": 5.0,
+      "wcag_aa_threshold": 4.5
+    }
+  },
+  "acceptance_config_summary": {
+    "duration_tolerance_pct": 5.0,
+    "audio_validation_required": true,
+    "caption_validation_required": true,
+    "legibility_validation_required": true,
+    "wcag_aa_threshold": 4.5
   }
 }

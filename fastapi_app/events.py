@@ -6,29 +6,62 @@ Handles structured logging and event emission for the orchestrator.
 import logging
 import json
 import asyncio
+import os
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Set
+from typing import Dict, Any, Optional, Set, List
 from pathlib import Path
+import threading
+import time
 
-from .models import Event, Stage, JobStatus
+from .models import Event, Stage, JobStatus, EventStreamResponse
 from .db import db
 
 logger = logging.getLogger(__name__)
 
 
 class EventStreamManager:
-    """Manages real-time event streaming to SSE clients"""
+    """Manages real-time event streaming to SSE clients with heartbeat"""
     
     def __init__(self):
         self.active_streams: Dict[str, Set[asyncio.Queue]] = {}
         self.log = logging.getLogger("event_stream")
+        self.heartbeat_task: Optional[asyncio.Task] = None
+        self._start_heartbeat()
+    
+    def _start_heartbeat(self):
+        """Start heartbeat task for SSE clients"""
+        async def heartbeat_loop():
+            while True:
+                try:
+                    await asyncio.sleep(5)  # Heartbeat every 5 seconds
+                    await self._send_heartbeat()
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    self.log.error(f"Heartbeat error: {e}")
+                    await asyncio.sleep(1)
+        
+        self.heartbeat_task = asyncio.create_task(heartbeat_loop())
+    
+    async def _send_heartbeat(self):
+        """Send heartbeat to all active SSE clients"""
+        heartbeat_data = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "type": "heartbeat",
+            "message": "Server alive",
+            "payload": {"timestamp": datetime.now(timezone.utc).isoformat()}
+        }
+        
+        # Send to all active streams
+        for job_id in list(self.active_streams.keys()):
+            await self.broadcast_event(job_id, Event(**heartbeat_data, job_id=job_id))
     
     async def subscribe(self, job_id: str, queue: asyncio.Queue):
         """Subscribe to events for a specific job"""
         if job_id not in self.active_streams:
             self.active_streams[job_id] = set()
         self.active_streams[job_id].add(queue)
-        self.log.info(f"Client subscribed to job {job_id} events")
+        self.log.info(f"[events] Client subscribed to job {job_id} events")
     
     async def unsubscribe(self, job_id: str, queue: asyncio.Queue):
         """Unsubscribe from events for a specific job"""
@@ -36,7 +69,7 @@ class EventStreamManager:
             self.active_streams[job_id].discard(queue)
             if not self.active_streams[job_id]:
                 del self.active_streams[job_id]
-        self.log.info(f"Client unsubscribed from job {job_id} events")
+        self.log.info(f"[events] Client unsubscribed from job {job_id} events")
     
     async def broadcast_event(self, job_id: str, event: Event):
         """Broadcast an event to all subscribed clients for a job"""
@@ -59,7 +92,7 @@ class EventStreamManager:
             try:
                 await queue.put(event_data)
             except Exception as e:
-                self.log.warning(f"Failed to send event to client: {e}")
+                self.log.warning(f"[events] Failed to send event to client: {e}")
                 disconnected_queues.add(queue)
         
         # Clean up disconnected clients
@@ -67,16 +100,22 @@ class EventStreamManager:
             await self.unsubscribe(job_id, queue)
         
         if self.active_streams[job_id]:
-            self.log.debug(f"Broadcasted event {event.type} to {len(self.active_streams[job_id])} clients for job {job_id}")
+            self.log.debug(f"[events] Broadcasted event {event.type} to {len(self.active_streams[job_id])} clients for job {job_id}")
+    
+    def stop(self):
+        """Stop the event stream manager"""
+        if self.heartbeat_task:
+            self.heartbeat_task.cancel()
 
 
 class EventLogger:
-    """Structured logger that mirrors events to console and database"""
+    """Structured logger that mirrors events to console, database, and JSONL files"""
     
     def __init__(self):
         self.log = logging.getLogger("events")
         self.stream_manager = EventStreamManager()
         self._setup_logging()
+        self._ensure_runs_dir()
     
     def _setup_logging(self):
         """Setup structured logging with proper formatting"""
@@ -92,21 +131,60 @@ class EventLogger:
             self.log.addHandler(handler)
             self.log.setLevel(logging.INFO)
     
+    def _ensure_runs_dir(self):
+        """Ensure runs directory exists"""
+        runs_dir = Path("runs")
+        runs_dir.mkdir(exist_ok=True)
+    
+    def _write_event_to_jsonl(self, job_id: str, event: Event):
+        """Write event to JSONL file in runs/<id>/events.jsonl"""
+        try:
+            # Ensure job run directory exists
+            run_dir = Path("runs") / job_id
+            run_dir.mkdir(exist_ok=True)
+            
+            # Write to events.jsonl
+            events_file = run_dir / "events.jsonl"
+            
+            # Convert event to dict for JSON serialization
+            event_dict = {
+                "timestamp": event.ts.isoformat(),
+                "event_type": event.type,
+                "stage": event.stage.value if event.stage else None,
+                "status": event.status,
+                "message": event.message,
+                "payload": event.payload,
+                "job_id": event.job_id
+            }
+            
+            # Append to JSONL file
+            with open(events_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(event_dict, ensure_ascii=False) + "\n")
+                
+            self.log.debug(f"[events] Wrote event {event.type} to {events_file}")
+            
+        except Exception as e:
+            self.log.error(f"[events] Failed to write event to JSONL: {e}")
+    
     async def emit_event(self, job_id: str, event_type: str, stage: Optional[Stage] = None, 
                    status: Optional[str] = None, message: str = "", payload: Optional[Dict[str, Any]] = None):
-        """Emit an event and log it to console and database, then broadcast to SSE clients"""
+        """Emit an event and log it to console, database, JSONL, then broadcast to SSE clients"""
         try:
-            # Create event
+            # Create event with validation
             event = Event(
                 ts=datetime.now(timezone.utc),
                 type=event_type,
                 stage=stage,
                 status=status,
                 message=message,
-                payload=payload or {}
+                payload=payload or {},
+                job_id=job_id
             )
             
-            # Add to database and JSONL
+            # Write to JSONL file
+            self._write_event_to_jsonl(job_id, event)
+            
+            # Add to database
             if db.add_event(job_id, event):
                 # Log to console with [events] tag
                 self._log_event_to_console(job_id, event)
@@ -116,38 +194,42 @@ class EventLogger:
                 
                 return event
             else:
-                self.log.error(f"Failed to add event to database: {event_type}")
+                self.log.error(f"[events] Failed to add event to database: {event_type}")
                 return None
                 
         except Exception as e:
-            self.log.error(f"Failed to emit event {event_type}: {e}")
+            self.log.error(f"[events] Failed to emit event {event_type}: {e}")
             return None
     
     def emit_event_sync(self, job_id: str, event_type: str, stage: Optional[Stage] = None, 
                    status: Optional[str] = None, message: str = "", payload: Optional[Dict[str, Any]] = None):
         """Synchronous version of emit_event for use in non-async contexts"""
         try:
-            # Create event
+            # Create event with validation
             event = Event(
                 ts=datetime.now(timezone.utc),
                 type=event_type,
                 stage=stage,
                 status=status,
                 message=message,
-                payload=payload or {}
+                payload=payload or {},
+                job_id=job_id
             )
             
-            # Add to database and JSONL
+            # Write to JSONL file
+            self._write_event_to_jsonl(job_id, event)
+            
+            # Add to database
             if db.add_event(job_id, event):
                 # Log to console with [events] tag
                 self._log_event_to_console(job_id, event)
                 return event
             else:
-                self.log.error(f"Failed to add event to database: {event_type}")
+                self.log.error(f"[events] Failed to add event to database: {event_type}")
                 return None
                 
         except Exception as e:
-            self.log.error(f"Failed to emit event {event_type}: {e}")
+            self.log.error(f"[events] Failed to emit event {event_type}: {e}")
             return None
     
     def _log_event_to_console(self, job_id: str, event: Event):
@@ -194,7 +276,51 @@ class EventLogger:
                 self.log.info(log_message)
                 
         except Exception as e:
-            self.log.error(f"Failed to log event to console: {e}")
+            self.log.error(f"[events] Failed to log event to console: {e}")
+    
+    def get_job_events(self, job_id: str, limit: int = 100, since: Optional[datetime] = None) -> List[Event]:
+        """Get events for a job from JSONL file with optional filtering"""
+        try:
+            events_file = Path("runs") / job_id / "events.jsonl"
+            if not events_file.exists():
+                return []
+            
+            events = []
+            with open(events_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if len(events) >= limit:
+                        break
+                    
+                    try:
+                        event_data = json.loads(line.strip())
+                        
+                        # Filter by timestamp if since is provided
+                        if since:
+                            event_time = datetime.fromisoformat(event_data["timestamp"])
+                            if event_time <= since:
+                                continue
+                        
+                        # Convert to Event model
+                        event = Event(
+                            ts=datetime.fromisoformat(event_data["timestamp"]),
+                            type=event_data["event_type"],
+                            stage=Stage(event_data["stage"]) if event_data.get("stage") else None,
+                            status=event_data.get("status"),
+                            message=event_data.get("message", ""),
+                            payload=event_data.get("payload", {}),
+                            job_id=event_data.get("job_id", job_id)
+                        )
+                        events.append(event)
+                        
+                    except (json.JSONDecodeError, KeyError) as e:
+                        self.log.warning(f"[events] Skipping malformed event line: {e}")
+                        continue
+            
+            return events
+            
+        except Exception as e:
+            self.log.error(f"[events] Failed to read events from JSONL: {e}")
+            return []
     
     # Convenience methods for common events
     def job_created(self, job_id: str, slug: str, operator: str):
@@ -269,36 +395,44 @@ class EventLogger:
             payload=payload
         )
     
-    def gate_approved(self, job_id: str, stage: Stage, operator: str, notes: Optional[str] = None):
+    def gate_approved(self, job_id: str, stage: Stage, operator: str, notes: Optional[str] = None, patch: Optional[Dict[str, Any]] = None):
         """Log gate approval event"""
+        payload = {
+            "stage": stage.value,
+            "status": "approved",
+            "operator": operator,
+            "notes": notes
+        }
+        if patch:
+            payload["patch"] = patch
+        
         return self.emit_event_sync(
             job_id=job_id,
             event_type="gate_approved",
             stage=stage,
             status="approved",
             message=f"Gate {stage.value} approved by {operator}",
-            payload={
-                "stage": stage.value,
-                "status": "approved",
-                "operator": operator,
-                "notes": notes
-            }
+            payload=payload
         )
     
-    def gate_rejected(self, job_id: str, stage: Stage, operator: str, notes: Optional[str] = None):
+    def gate_rejected(self, job_id: str, stage: Stage, operator: str, notes: Optional[str] = None, patch: Optional[Dict[str, Any]] = None):
         """Log gate rejection event"""
+        payload = {
+            "stage": stage.value,
+            "status": "rejected",
+            "operator": operator,
+            "notes": notes
+        }
+        if patch:
+            payload["patch"] = patch
+        
         return self.emit_event_sync(
             job_id=job_id,
             event_type="gate_rejected",
             stage=stage,
             status="rejected",
             message=f"Gate {stage.value} rejected by {operator}",
-            payload={
-                "stage": stage.value,
-                "status": "rejected",
-                "operator": operator,
-                "notes": notes
-            }
+            payload=payload
         )
     
     def gate_auto_approved(self, job_id: str, stage: Stage, reason: str):
@@ -370,6 +504,10 @@ class EventLogger:
                 "path": path
             }
         )
+    
+    def stop(self):
+        """Stop the event logger and stream manager"""
+        self.stream_manager.stop()
 
 
 # Global event logger instance

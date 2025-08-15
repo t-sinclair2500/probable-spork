@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- METADATA: {"generator": "asset_generator.py", "seed": 12346, "category": "background", "style": "starburst", "palette": ["#D62828", "#F28C28"], "generator_params": {"fallback_type": "background", "width": 1920, "height": 1080}, "notes": "Test background for gap filling", "created_at": "2025-08-15T05:44:46.536613Z", "license": "MIT", "palette_compliant": true} -->
+
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#D62828" stroke-width="1" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="#F28C28"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <circle cx="960" cy="540" r="50" fill="#D62828" opacity="0.7"/>
+</svg>

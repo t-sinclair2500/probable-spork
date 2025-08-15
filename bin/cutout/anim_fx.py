@@ -17,12 +17,57 @@ from typing import List, Literal, Optional, Union
 
 from bin.core import get_logger
 
-from moviepy.editor import (
-    ColorClip,
-    CompositeVideoClip,
-    ImageClip,
-    VideoClip,
-)
+# Try to import moviepy.editor, fallback gracefully if not available
+try:
+    from moviepy.editor import (
+        ColorClip,
+        CompositeVideoClip,
+        ImageClip,
+        VideoClip,
+    )
+    MOVIEPY_AVAILABLE = True
+except ImportError:
+    # Create dummy classes for compatibility
+    class ColorClip:
+        def __init__(self, size, color, duration):
+            self.size = size
+            self.color = color
+            self.duration = duration
+        
+        def set_position(self, pos):
+            return self
+        
+        def set_duration(self, duration):
+            return self
+    
+    class CompositeVideoClip:
+        def __init__(self, clips):
+            self.clips = clips
+        
+        def set_duration(self, duration):
+            return self
+    
+    class ImageClip:
+        def __init__(self, img_path):
+            self.img_path = img_path
+        
+        def resize(self, height):
+            return self
+        
+        def set_position(self, pos):
+            return self
+        
+        def set_duration(self, duration):
+            return self
+    
+    class VideoClip:
+        def __init__(self):
+            pass
+        
+        def set_duration(self, duration):
+            return self
+    
+    MOVIEPY_AVAILABLE = False
 
 from .sdk import (
     AnimType,
@@ -35,6 +80,10 @@ from .sdk import (
 )
 
 log = get_logger("anim_fx")
+
+# Log warning if moviepy is not available
+if not MOVIEPY_AVAILABLE:
+    log.warning("moviepy.editor not available - using dummy classes for compatibility")
 
 
 def _ms_to_seconds(ms: int) -> float:

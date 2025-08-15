@@ -86,6 +86,11 @@ def load_intent_template(intent: str) -> Dict[str, Any]:
         if key not in template:
             template[key] = default_value
     
+    # Ensure beats have defaults for needs_citations
+    for beat in template.get('beats', []):
+        if 'needs_citations' not in beat:
+            beat['needs_citations'] = defaults.get('needs_citations', True)
+    
     log.info(f"Loaded intent template: {intent}")
     return template
 
@@ -151,13 +156,57 @@ def get_intent_beats(intent: str) -> list:
         intent: Name of the intent template
         
     Returns:
-        List of beat dictionaries with id, label, and target_ms
+        List of beat dictionaries with id, label, target_ms, and needs_citations
         
     Raises:
         KeyError: If the specified intent doesn't exist
     """
     template = load_intent_template(intent)
     return template.get('beats', [])
+
+
+def get_beats_needing_citations(intent: str) -> list:
+    """
+    Get beats that require citations for the specified intent.
+    
+    Args:
+        intent: Name of the intent template
+        
+    Returns:
+        List of beat dictionaries that need citations
+        
+    Raises:
+        KeyError: If the specified intent doesn't exist
+    """
+    beats = get_intent_beats(intent)
+    return [beat for beat in beats if beat.get('needs_citations', True)]
+
+
+def get_citation_requirements(intent: str) -> Dict[str, Any]:
+    """
+    Get citation requirements for the specified intent.
+    
+    Args:
+        intent: Name of the intent template
+        
+    Returns:
+        Dictionary with citation requirements and statistics
+        
+    Raises:
+        KeyError: If the specified intent doesn't exist
+    """
+    beats = get_intent_beats(intent)
+    beats_needing_citations = get_beats_needing_citations(intent)
+    
+    total_beats = len(beats)
+    beats_with_citations = len(beats_needing_citations)
+    
+    return {
+        'total_beats': total_beats,
+        'beats_needing_citations': beats_with_citations,
+        'coverage_percentage': (beats_with_citations / total_beats * 100) if total_beats > 0 else 0,
+        'beats': beats_needing_citations
+    }
 
 
 def list_available_intents() -> list:
@@ -198,15 +247,46 @@ def validate_intent(intent: str) -> bool:
             return False
         
         for beat in beats:
-            if not all(key in beat for key in ['id', 'label', 'target_ms']):
-                log.warning(f"Intent '{intent}' has invalid beat structure")
+            # Check required beat fields
+            if 'id' not in beat or 'label' not in beat:
+                log.warning(f"Beat in intent '{intent}' missing required fields: {beat}")
+                return False
+            
+            # Check if needs_citations is defined (should be boolean)
+            if 'needs_citations' in beat and not isinstance(beat['needs_citations'], bool):
+                log.warning(f"Beat '{beat['id']}' in intent '{intent}' has invalid needs_citations value: {beat['needs_citations']}")
                 return False
         
+        log.info(f"Intent '{intent}' validation passed")
         return True
         
     except Exception as e:
-        log.error(f"Failed to validate intent '{intent}': {e}")
+        log.error(f"Intent '{intent}' validation failed: {e}")
         return False
+
+
+def get_intent_summary() -> Dict[str, Any]:
+    """
+    Get a summary of all intent templates with their key characteristics.
+    
+    Returns:
+        Dictionary containing summary information for all intents
+    """
+    templates = load_intent_templates()
+    intents = templates.get('intents', {})
+    
+    summary = {}
+    for intent_name, intent_data in intents.items():
+        summary[intent_name] = {
+            'cta_policy': intent_data.get('cta_policy', 'unknown'),
+            'evidence_load': intent_data.get('evidence_load', 'unknown'),
+            'tone': intent_data.get('tone', 'unknown'),
+            'beat_count': len(intent_data.get('beats', [])),
+            'beats_needing_citations': len([b for b in intent_data.get('beats', []) if b.get('needs_citations', True)]),
+            'description': intent_data.get('description', 'No description available')
+        }
+    
+    return summary
 
 
 if __name__ == "__main__":

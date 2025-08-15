@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Union
+from pydantic import BaseModel, Field, validator
 
 
 class JobStatus(str, Enum):
@@ -63,6 +63,7 @@ class Gate(BaseModel):
     notes: Optional[str] = None
     patch: Optional[Dict[str, Any]] = None  # Applied patch if any
     auto_approved: bool = False  # Whether this was auto-approved by timeout
+    timeout_seconds: Optional[int] = None  # Auto-approve timeout
 
 
 class Artifact(BaseModel):
@@ -71,6 +72,9 @@ class Artifact(BaseModel):
     kind: str
     path: str
     meta: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    size_bytes: Optional[int] = None
+    checksum: Optional[str] = None
 
 
 class JobCreate(BaseModel):
@@ -92,6 +96,7 @@ class Job(BaseModel):
     artifacts: List[Artifact] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    operator: Optional[str] = None  # Who created the job
 
 
 class JobUpdate(BaseModel):
@@ -102,22 +107,57 @@ class JobUpdate(BaseModel):
 
 
 class GateAction(BaseModel):
-    """Gate approval/rejection action"""
+    """Gate approval/rejection action with JSON patch support"""
     decision: GateDecision
-    stage: Optional[Stage] = None
+    stage: Stage
     notes: Optional[str] = None
     operator: str
     patch: Optional[Dict[str, Any]] = None  # JSON patch for artifact modification
+    
+    @validator('patch')
+    def validate_patch(cls, v):
+        """Validate JSON patch structure"""
+        if v is not None:
+            # Basic patch validation - should have 'op', 'path', 'value' structure
+            if not isinstance(v, dict):
+                raise ValueError("Patch must be a dictionary")
+            if 'op' not in v or 'path' not in v:
+                raise ValueError("Patch must have 'op' and 'path' fields")
+            if v['op'] not in ['add', 'remove', 'replace', 'copy', 'move', 'test']:
+                raise ValueError("Invalid patch operation")
+        return v
 
 
 class Event(BaseModel):
-    """Job event for logging and SSE"""
+    """Job event for logging and SSE with validation"""
     ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="timestamp")
     type: str = Field(alias="event_type")
     stage: Optional[Stage] = None
     status: Optional[str] = None
     message: str = ""
     payload: Optional[Dict[str, Any]] = Field(default_factory=dict, alias="metadata")
+    job_id: str  # Required job ID for event routing
+    
+    @validator('type')
+    def validate_event_type(cls, v):
+        """Validate event type is not empty"""
+        if not v or not v.strip():
+            raise ValueError("Event type cannot be empty")
+        return v.strip()
+    
+    @validator('message')
+    def validate_message(cls, v):
+        """Ensure message is not None"""
+        return v or ""
+    
+    @validator('payload')
+    def validate_payload(cls, v):
+        """Ensure payload is a valid dict"""
+        if v is None:
+            return {}
+        if not isinstance(v, dict):
+            raise ValueError("Payload must be a dictionary")
+        return v
     
     class Config:
         allow_population_by_field_name = True
@@ -133,3 +173,21 @@ class HealthResponse(BaseModel):
     ok: bool = True
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     version: str = "0.1.0"
+    services: Dict[str, bool] = Field(default_factory=dict)
+
+
+class EventStreamResponse(BaseModel):
+    """SSE event response"""
+    data: str
+    event: Optional[str] = None
+    id: Optional[str] = None
+    retry: Optional[int] = None
+
+
+class JobEventsResponse(BaseModel):
+    """Job events response for polling"""
+    job_id: str
+    events: List[Event]
+    total: int
+    has_more: bool
+    last_event_time: Optional[datetime] = None

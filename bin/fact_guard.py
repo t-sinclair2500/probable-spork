@@ -16,6 +16,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from datetime import datetime
 
 # Ensure repo root on path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -64,8 +65,8 @@ def load_references(run_dir: str) -> List[Dict]:
     try:
         with open(refs_path, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except Exception as e:
-        log.error(f"Failed to load references: {e}")
+    except Exception as load_references:
+        log.error(f"Failed to load references: {load_references}")
         return []
 
 
@@ -106,128 +107,242 @@ def map_script_to_beats(script_lines: List[str], grounded_beats: List[Dict]) -> 
     return line_to_beat
 
 
-def run_fact_guard_analysis(script_content: str, grounded_beats: List[Dict], 
-                           references: List[Dict], models_config: Dict) -> Dict:
+def analyze_factual_claims(script_lines: List[str], grounded_beats: List[Dict], 
+                          references: List[Dict], strictness: str = "balanced") -> Dict:
     """
-    Run fact-guard analysis using the research model.
+    Analyze script for factual claims that need citations.
     
     Args:
-        script_content: Script text to analyze
-        grounded_beats: Beats with citations
-        references: Available reference sources
-        models_config: Models configuration
+        script_lines: Lines of the script
+        grounded_beats: Grounded beats with citations
+        references: Available references
+        strictness: Strictness level (strict, balanced, lenient)
         
     Returns:
-        Fact-guard analysis results
+        Dictionary with analysis results
     """
-    try:
-        # Get research model name from config
-        if models_config and 'research' in models_config.get('models', {}):
-            model_name = models_config['models']['research']['name']
-        else:
-            # Fallback to default
-            model_name = 'mistral:7b-instruct'
+    log.info(f"[fact-guard] Starting factual claims analysis with strictness: {strictness}")
+    
+    # Load fact-guard configuration
+    config = load_config()
+    fact_guard_config = config.get('research', {}).get('fact_guard', {})
+    
+    # Get strictness level settings
+    strictness_levels = fact_guard_config.get('strictness_levels', {})
+    current_level = strictness_levels.get(strictness, strictness_levels.get('balanced', {}))
+    
+    # Get claim policies
+    claim_policies = fact_guard_config.get('claim_policies', {})
+    
+    # Map script lines to beats
+    line_to_beat = map_script_to_beats(script_lines, grounded_beats)
+    
+    claims = []
+    
+    for line_num, line in enumerate(script_lines, 1):
+        line = line.strip()
+        if not line or line.startswith('[') or line.startswith('**'):
+            continue
         
-        prompt_template = load_fact_guard_prompt()
+        # Check if this line has a corresponding beat with citations
+        beat = line_to_beat.get(line_num)
+        has_citations = beat and beat.get('citations')
         
-        # Prepare context for the model
-        context = f"""
-SCRIPT TO ANALYZE:
-{script_content}
-
-GROUNDED BEATS (with citations):
-{json.dumps(grounded_beats, indent=2)}
-
-AVAILABLE REFERENCES:
-{json.dumps(references, indent=2)}
-
-Analyze the script claims against the grounded beats and references.
-"""
+        # Analyze line for factual claims
+        line_claims = analyze_line_for_claims(line, claim_policies, has_citations)
         
-        full_prompt = f"{prompt_template}\n\n{context}"
-        
-        # Use model session for deterministic load/unload
-        with model_session(model_name) as session:
-            system_prompt = "You are a fact-checking engineer. Analyze script claims for factual accuracy and citation requirements. Return ONLY valid JSON."
-            response = session.chat(system=system_prompt, user=full_prompt)
+        for claim in line_claims:
+            claim['line'] = line_num
+            claim['text'] = line
+            claim['has_citation'] = has_citations
             
-            # Clean the response to extract JSON
-            response_text = response.strip()
+            # Determine action based on strictness level and claim type
+            action = determine_claim_action(claim, current_level, claim_policies)
+            claim['action'] = action
             
-            # Try to find JSON in the response
-            try:
-                # First try direct parsing
-                return json.loads(response_text)
-            except json.JSONDecodeError:
-                # Try to extract JSON from the response
-                import re
-                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-                if json_match:
-                    try:
-                        return json.loads(json_match.group(0))
-                    except json.JSONDecodeError:
-                        pass
-                
-                # If all else fails, create a fallback response
-                log.warning("Failed to parse fact-guard response as JSON, using fallback")
-                
-                # Create a basic analysis based on common patterns
-                fallback_claims = []
-                script_lines = script_content.split('\n')
-                
-                # Simple pattern-based claim detection
-                for line_num, line in enumerate(script_lines, 1):
-                    line_lower = line.lower().strip()
-                    if not line_lower or line_lower.startswith('[') or line_lower.startswith('**'):
-                        continue
-                    
-                    # Check for common claim patterns
-                    if any(pattern in line_lower for pattern in ['first', 'most', 'best', 'revolutionized', 'famous', 'renowned']):
-                        fallback_claims.append({
-                            "line": line_num,
-                            "text": line,
-                            "claim_type": "superlative",
-                            "requires_citation": True,
-                            "has_citation": False,
-                            "action": "flag",
-                            "rationale": "Superlative claim requiring citation"
-                        })
-                    elif any(pattern in line_lower for pattern in ['designed in', 'collaboration with', 'pacific palisades', 'california']):
-                        fallback_claims.append({
-                            "line": line_num,
-                            "text": line,
-                            "claim_type": "specific_fact",
-                            "requires_citation": True,
-                            "has_citation": False,
-                            "action": "flag",
-                            "rationale": "Specific factual claim requiring citation"
-                        })
-                
-                return {
-                    "claims": fallback_claims,
-                    "summary": {
-                        "total_claims": len(fallback_claims),
-                        "kept": 0,
-                        "removed": 0,
-                        "rewritten": 0,
-                        "flagged": len(fallback_claims),
-                        "citations_needed": len(fallback_claims)
-                    }
-                }
-                
-    except Exception as e:
-        log.error(f"Fact-guard analysis failed: {e}")
-        return {
-            "claims": [],
-            "summary": {
-                "total_claims": 0,
-                "kept": 0,
-                "removed": 0,
-                "rewritten": 0,
-                "flagged": 0,
-                "citations_needed": 0
-            }
+            # Generate suggested text if rewriting
+            if action == 'rewrite':
+                claim['suggested_text'] = generate_cautious_text(line, claim['claim_type'])
+            
+            claims.append(claim)
+    
+    # Generate summary
+    summary = {
+        'total_claims': len(claims),
+        'kept': len([c for c in claims if c['action'] == 'keep']),
+        'removed': len([c for c in claims if c['action'] == 'remove']),
+        'rewritten': len([c for c in claims if c['action'] == 'rewrite']),
+        'flagged': len([c for c in claims if c['action'] == 'flag']),
+        'citations_needed': len([c for c in claims if c['requires_citation']])
+    }
+    
+    log.info(f"[fact-guard] Analysis completed: {summary['total_claims']} claims found")
+    
+    return {
+        'claims': claims,
+        'summary': summary,
+        'metadata': {
+            'strictness': strictness,
+            'timestamp': datetime.utcnow().isoformat(),
+            'config_used': current_level
         }
+    }
+
+
+def analyze_line_for_claims(line: str, claim_policies: Dict, has_citations: bool) -> List[Dict]:
+    """Analyze a single line for factual claims."""
+    claims = []
+    
+    # Check for proper nouns (names, places, organizations)
+    proper_noun_patterns = [
+        r'\b[A-Z][a-z]+ [A-Z][a-z]+\b',  # Full names
+        r'\b[A-Z][a-z]+ [A-Z][a-z]+ [A-Z][a-z]+\b',  # Three-part names
+        r'\b[A-Z][a-z]+ [A-Z][a-z]+ [A-Z][a-z]+ [A-Z][a-z]+\b',  # Four-part names
+    ]
+    
+    for pattern in proper_noun_patterns:
+        matches = re.finditer(pattern, line)
+        for match in matches:
+            claims.append({
+                'claim_type': 'proper_nouns',
+                'claim_text': match.group(),
+                'requires_citation': claim_policies.get('proper_nouns', {}).get('requires_citation', True),
+                'rationale': claim_policies.get('proper_nouns', {}).get('rationale', 'Proper nouns often represent specific facts requiring verification')
+            })
+    
+    # Check for dates
+    date_patterns = [
+        r'\b\d{4}\b',  # Year
+        r'\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b',  # Full date
+        r'\b\d{1,2}/\d{1,2}/\d{4}\b',  # MM/DD/YYYY
+        r'\b\d{1,2}-\d{1,2}-\d{4}\b',  # MM-DD-YYYY
+    ]
+    
+    for pattern in date_patterns:
+        matches = re.finditer(pattern, line)
+        for match in matches:
+            claims.append({
+                'claim_type': 'dates',
+                'claim_text': match.group(),
+                'requires_citation': claim_policies.get('dates', {}).get('requires_citation', True),
+                'rationale': claim_policies.get('dates', {}).get('rationale', 'Specific dates are factual claims needing source verification')
+            })
+    
+    # Check for superlatives
+    superlative_patterns = [
+        r'\b(?:first|last|only|most|least|best|worst|biggest|smallest|oldest|newest|fastest|slowest)\b',
+        r'\b(?:never|always|every|all|none|unique|original|primary|secondary)\b'
+    ]
+    
+    for pattern in superlative_patterns:
+        matches = re.finditer(pattern, line, re.IGNORECASE)
+        for match in matches:
+            claims.append({
+                'claim_type': 'superlatives',
+                'claim_text': match.group(),
+                'requires_citation': claim_policies.get('superlatives', {}).get('requires_citation', True),
+                'rationale': claim_policies.get('superlatives', {}).get('rationale', 'Superlatives (first, most, best) are factual claims needing evidence')
+            })
+    
+    # Check for statistics
+    stat_patterns = [
+        r'\b\d+(?:\.\d+)?%\b',  # Percentages
+        r'\b\d+(?:\.\d+)?\s+(?:million|billion|trillion)\b',  # Large numbers
+        r'\b(?:over|under|more than|less than)\s+\d+\b',  # Comparative numbers
+    ]
+    
+    for pattern in stat_patterns:
+        matches = re.finditer(pattern, line, re.IGNORECASE)
+        for match in matches:
+            claims.append({
+                'claim_type': 'statistics',
+                'claim_text': match.group(),
+                'requires_citation': claim_policies.get('statistics', {}).get('requires_citation', True),
+                'rationale': claim_policies.get('statistics', {}).get('rationale', 'Statistics without sources are unreliable and should be removed')
+            })
+    
+    # Check for expert opinions
+    opinion_patterns = [
+        r'\b(?:expert|specialist|professional|authority|researcher|scientist|professor|doctor)\s+(?:says|said|believes|thinks|argues|claims)\b',
+        r'\b(?:according to|as stated by|as claimed by|as reported by)\b'
+    ]
+    
+    for pattern in opinion_patterns:
+        matches = re.finditer(pattern, line, re.IGNORECASE)
+        for match in matches:
+            claims.append({
+                'claim_type': 'expert_opinions',
+                'claim_text': match.group(),
+                'requires_citation': claim_policies.get('expert_opinions', {}).get('requires_citation', True),
+                'rationale': claim_policies.get('expert_opinions', {}).get('rationale', 'Expert opinions need attribution to maintain credibility')
+            })
+    
+    # If no specific claims found, check if line contains general factual statements
+    if not claims and not has_citations:
+        # Look for statements that might be factual
+        factual_indicators = [
+            r'\b(?:is|was|are|were|has|had|have|had)\b',
+            r'\b(?:discovered|invented|created|founded|established|built|designed)\b'
+        ]
+        
+        for pattern in factual_indicators:
+            if re.search(pattern, line, re.IGNORECASE):
+                claims.append({
+                    'claim_type': 'general_statements',
+                    'claim_text': line,
+                    'requires_citation': claim_policies.get('general_statements', {}).get('requires_citation', False),
+                    'rationale': claim_policies.get('general_statements', {}).get('rationale', 'General observations don\'t require specific citations')
+                })
+                break
+    
+    return claims
+
+
+def determine_claim_action(claim: Dict, strictness_level: Dict, claim_policies: Dict) -> str:
+    """Determine what action to take on a claim based on strictness level."""
+    claim_type = claim['claim_type']
+    requires_citation = claim['requires_citation']
+    has_citation = claim['has_citation']
+    
+    # If citation is not required, keep the claim
+    if not requires_citation:
+        return 'keep'
+    
+    # If citation is required but not present
+    if requires_citation and not has_citation:
+        if strictness_level.get('remove_unsupported', False):
+            return 'remove'
+        elif strictness_level.get('rewrite_to_cautious', False):
+            return 'rewrite'
+        elif strictness_level.get('flag_for_review', False):
+            return 'flag'
+        else:
+            return 'keep'  # Default fallback
+    
+    # If citation is present, keep the claim
+    return 'keep'
+
+
+def generate_cautious_text(original_text: str, claim_type: str) -> str:
+    """Generate more cautious version of text."""
+    if claim_type == 'proper_nouns':
+        # Add qualifiers for names
+        return f"someone known as {original_text}"
+    elif claim_type == 'dates':
+        # Make dates approximate
+        return f"around {original_text}"
+    elif claim_type == 'superlatives':
+        # Soften superlatives
+        return f"one of the {original_text.replace('est', 'er')}"
+    elif claim_type == 'statistics':
+        # Remove specific numbers
+        return "a significant amount" if "million" in original_text.lower() or "billion" in original_text.lower() else "some"
+    elif claim_type == 'expert_opinions':
+        # Make opinions more general
+        return "some people believe" + original_text.replace("expert says", "").replace("expert said", "")
+    else:
+        # Default cautious version
+        return f"it appears that {original_text.lower()}"
 
 
 def apply_fact_guard_changes(script_lines: List[str], analysis_results: Dict, 
@@ -243,330 +358,259 @@ def apply_fact_guard_changes(script_lines: List[str], analysis_results: Dict,
     Returns:
         Tuple of (cleaned_script_lines, changes_applied)
     """
+    log.info(f"[fact-guard] Applying fact-guard changes with strictness: {strictness}")
+    
     cleaned_lines = script_lines.copy()
     changes_applied = {
-        "kept": [],
-        "removed": [],
-        "rewritten": [],
-        "flagged": []
+        'kept': [],
+        'removed': [],
+        'rewritten': [],
+        'flagged': []
     }
     
     # Sort claims by line number (descending) to avoid line number shifts
-    claims = sorted(analysis_results.get("claims", []), key=lambda x: x.get("line", 0), reverse=True)
+    claims = sorted(analysis_results.get('claims', []), key=lambda x: x.get('line', 0), reverse=True)
     
     for claim in claims:
-        line_num = claim.get("line", 0)
-        action = claim.get("action", "keep")
-        text = claim.get("text", "")
+        line_num = claim.get('line', 0)
+        action = claim.get('action', 'keep')
+        text = claim.get('text', '')
         
         if line_num <= 0 or line_num > len(cleaned_lines):
             continue
             
         line_idx = line_num - 1  # Convert to 0-based index
         
-        if action == "remove":
+        if action == 'remove':
             # Remove the problematic line
             if line_idx < len(cleaned_lines):
                 removed_line = cleaned_lines.pop(line_idx)
-                changes_applied["removed"].append({
-                    "line": line_num,
-                    "text": removed_line,
-                    "rationale": claim.get("rationale", "No rationale provided")
+                changes_applied['removed'].append({
+                    'line': line_num,
+                    'text': removed_line,
+                    'rationale': claim.get('rationale', 'No rationale provided')
                 })
+                log.info(f"[fact-guard] Removed line {line_num}: {removed_line[:50]}...")
                 
-        elif action == "rewrite":
+        elif action == 'rewrite':
             # Replace with suggested text
-            suggested_text = claim.get("suggested_text", text)
+            suggested_text = claim.get('suggested_text', text)
             if line_idx < len(cleaned_lines):
                 old_text = cleaned_lines[line_idx]
                 cleaned_lines[line_idx] = suggested_text
-                changes_applied["rewritten"].append({
-                    "line": line_num,
-                    "old_text": old_text,
-                    "new_text": suggested_text,
-                    "rationale": claim.get("rationale", "No rationale provided")
+                changes_applied['rewritten'].append({
+                    'line': line_num,
+                    'old_text': old_text,
+                    'new_text': suggested_text,
+                    'rationale': claim.get('rationale', 'No rationale provided')
                 })
+                log.info(f"[fact-guard] Rewrote line {line_num}: {old_text[:50]}... -> {suggested_text[:50]}...")
                 
-        elif action == "flag":
+        elif action == 'flag':
             # Add TODO flag for operator review
             if line_idx < len(cleaned_lines):
                 flagged_line = f"[TODO: FACT-CHECK] {cleaned_lines[line_idx]}"
                 cleaned_lines[line_idx] = flagged_line
-                changes_applied["flagged"].append({
-                    "line": line_num,
-                    "text": flagged_line,
-                    "rationale": claim.get("rationale", "No rationale provided")
+                changes_applied['flagged'].append({
+                    'line': line_num,
+                    'text': flagged_line,
+                    'rationale': claim.get('rationale', 'No rationale provided')
                 })
+                log.info(f"[fact-guard] Flagged line {line_num} for review")
                 
-        elif action == "keep":
-            # Keep as-is
-            changes_applied["kept"].append({
-                "line": line_num,
-                "text": text,
-                "rationale": claim.get("rationale", "No rationale provided")
+        elif action == 'keep':
+            # Keep the line as-is
+            changes_applied['kept'].append({
+                'line': line_num,
+                'text': text,
+                'rationale': 'Claim is properly cited or does not require citation'
             })
+    
+    log.info(f"[fact-guard] Changes applied: {len(changes_applied['removed'])} removed, {len(changes_applied['rewritten'])} rewritten, {len(changes_applied['flagged'])} flagged")
     
     return cleaned_lines, changes_applied
 
 
-def generate_fact_guard_report(analysis_results: Dict, changes_applied: Dict, 
-                              script_path: str, run_dir: str) -> Dict:
+def run_fact_guard_analysis(slug: str, strictness: str = "balanced") -> Dict:
     """
-    Generate the fact-guard report in the required format.
+    Run fact-guard analysis using the research model.
     
     Args:
-        analysis_results: Results from fact-guard analysis
-        changes_applied: Changes applied to the script
-        script_path: Path to the original script
-        run_dir: Run directory for output
+        slug: Topic slug for the run
+        strictness: Strictness level (strict, balanced, lenient)
         
     Returns:
-        Fact-guard report dictionary
+        Dictionary with fact-guard analysis results
     """
-    summary = analysis_results.get("summary", {})
-    
-    report = {
-        "metadata": {
-            "script_path": script_path,
-            "run_dir": run_dir,
-            "timestamp": analysis_results.get("timestamp", ""),
-            "strictness": "balanced"  # TODO: Make configurable
-        },
-        "summary": {
-            "total_claims": summary.get("total_claims", 0),
-            "kept": len(changes_applied["kept"]),
-            "removed": len(changes_applied["removed"]),
-            "rewritten": len(changes_applied["rewritten"]),
-            "flagged": len(changes_applied["flagged"]),
-            "citations_needed": summary.get("citations_needed", 0)
-        },
-        "changes": changes_applied,
-        "claims_analysis": analysis_results.get("claims", []),
-        "recommendations": []
-    }
-    
-    # Add recommendations based on results
-    if summary.get("citations_needed", 0) > 0:
-        report["recommendations"].append(
-            f"Add citations for {summary['citations_needed']} unsupported claims"
-        )
-    
-    if len(changes_applied["flagged"]) > 0:
-        report["recommendations"].append(
-            f"Review {len(changes_applied['flagged'])} flagged claims for operator decision"
-        )
-    
-    if len(changes_applied["removed"]) > 0:
-        report["recommendations"].append(
-            f"Verify removal of {len(changes_applied['removed'])} unsupported claims"
-        )
-    
-    return report
-
-
-def save_fact_guard_report(report: Dict, run_dir: str) -> str:
-    """Save the fact-guard report to the run directory."""
-    report_path = os.path.join(BASE, "data", run_dir, "fact_guard_report.json")
+    log.info(f"[fact-guard] Starting fact-guard analysis for slug: {slug}")
     
     try:
-        os.makedirs(os.path.dirname(report_path), exist_ok=True)
-        with open(report_path, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2)
-        log.info(f"Saved fact-guard report to: {report_path}")
-        return report_path
-    except Exception as e:
-        log.error(f"Failed to save fact-guard report: {e}")
-        return ""
-
-
-def save_cleaned_script(cleaned_lines: List[str], script_path: str, run_dir: str) -> str:
-    """Save the cleaned script to the run directory."""
-    script_name = os.path.basename(script_path)
-    cleaned_path = os.path.join(BASE, "data", run_dir, f"{script_name}.cleaned.txt")
-    
-    try:
-        os.makedirs(os.path.dirname(cleaned_path), exist_ok=True)
-        with open(cleaned_path, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(cleaned_lines))
-        log.info(f"Saved cleaned script to: {cleaned_path}")
-        return cleaned_path
-    except Exception as e:
-        log.error(f"Failed to save cleaned script: {e}")
-        return ""
-
-
-def run_fact_guard(script_path: str, run_dir: str, strictness: str = "balanced", 
-                  models_config: Optional[Dict] = None) -> Dict:
-    """
-    Run the complete fact-guard process.
-    
-    Args:
-        script_path: Path to the script to analyze
-        run_dir: Run directory for inputs/outputs
-        strictness: Strictness level for fact-checking
-        models_config: Models configuration
+        # Load grounded beats and references
+        grounded_beats = load_grounded_beats(slug)
+        references = load_references(slug)
         
-    Returns:
-        Complete fact-guard results
-    """
-    log.info(f"[fact-guard] Starting fact-guard analysis for {script_path}")
-    
-    # Load inputs
-    grounded_beats = load_grounded_beats(run_dir)
-    references = load_references(run_dir)
-    
-    if not grounded_beats:
-        log.warning(f"[fact-guard] No grounded beats found in {run_dir}")
-    
-    # Read script
-    try:
+        if not grounded_beats:
+            log.warning(f"[fact-guard] No grounded beats found for {slug}")
+            return {
+                'claims': [],
+                'summary': {
+                    'total_claims': 0,
+                    'kept': 0,
+                    'removed': 0,
+                    'rewritten': 0,
+                    'flagged': 0,
+                    'citations_needed': 0
+                },
+                'metadata': {
+                    'strictness': strictness,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'error': 'No grounded beats found'
+                }
+            }
+        
+        # Load script content
+        script_path = os.path.join(BASE, "scripts", f"{slug}.txt")
+        if not os.path.exists(script_path):
+            log.warning(f"[fact-guard] Script not found: {script_path}")
+            # Try to find script in other locations
+            script_path = os.path.join(BASE, "data", slug, f"{slug}.txt")
+            if not os.path.exists(script_path):
+                log.error(f"[fact-guard] Script not found in any location for {slug}")
+                return {
+                    'claims': [],
+                    'summary': {
+                        'total_claims': 0,
+                        'kept': 0,
+                        'removed': 0,
+                        'rewritten': 0,
+                        'flagged': 0,
+                        'citations_needed': 0
+                    },
+                    'metadata': {
+                        'strictness': strictness,
+                        'timestamp': datetime.utcnow().isoformat(),
+                        'error': 'Script not found'
+                    }
+                }
+        
         with open(script_path, 'r', encoding='utf-8') as f:
-            script_content = f.read()
-        script_lines = script_content.split('\n')
+            script_lines = f.readlines()
+        
+        # Analyze factual claims
+        analysis_results = analyze_factual_claims(script_lines, grounded_beats, references, strictness)
+        
+        # Apply changes if needed
+        cleaned_script, changes_applied = apply_fact_guard_changes(script_lines, analysis_results, strictness)
+        
+        # Save cleaned script if requested
+        output_dir = os.path.join(BASE, "data", slug)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        if analysis_results.get('metadata', {}).get('config_used', {}).get('save_cleaned_script', True):
+            cleaned_script_path = os.path.join(output_dir, f"{slug}_fact_guarded.txt")
+            with open(cleaned_script_path, 'w', encoding='utf-8') as f:
+                f.writelines(cleaned_script)
+            log.info(f"[fact-guard] Saved cleaned script to {cleaned_script_path}")
+        
+        # Generate fact-guard report
+        fact_guard_report = {
+            'slug': slug,
+            'timestamp': datetime.utcnow().isoformat(),
+            'strictness': strictness,
+            'analysis': analysis_results,
+            'changes_applied': changes_applied,
+            'summary': analysis_results['summary'],
+            'metadata': {
+                'script_path': script_path,
+                'grounded_beats_count': len(grounded_beats),
+                'references_count': len(references),
+                'config_used': analysis_results.get('metadata', {}).get('config_used', {})
+            }
+        }
+        
+        # Save fact-guard report
+        report_path = os.path.join(output_dir, "fact_guard_report.json")
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(fact_guard_report, f, indent=2, ensure_ascii=False)
+        
+        log.info(f"[fact-guard] Fact-guard analysis completed for {slug}")
+        log.info(f"[fact-guard] Report saved to {report_path}")
+        
+        return fact_guard_report
+        
     except Exception as e:
-        log.error(f"[fact-guard] Failed to read script: {e}")
-        return {"error": f"Failed to read script: {e}"}
-    
-    # Run fact-guard analysis
-    log.info(f"[fact-guard] Running analysis with {len(grounded_beats)} beats, {len(references)} references")
-    analysis_results = run_fact_guard_analysis(script_content, grounded_beats, references, models_config)
-    
-    # Apply changes
-    cleaned_lines, changes_applied = apply_fact_guard_changes(script_lines, analysis_results, strictness)
-    
-    # Generate report
-    report = generate_fact_guard_report(analysis_results, changes_applied, script_path, run_dir)
-    
-    # Save outputs
-    report_path = save_fact_guard_report(report, run_dir)
-    cleaned_script_path = save_cleaned_script(cleaned_lines, script_path, run_dir)
-    
-    # Log summary
-    summary = report["summary"]
-    log.info(f"[fact-guard] Analysis complete: {summary['total_claims']} claims, "
-             f"{summary['kept']} kept, {summary['removed']} removed, "
-             f"{summary['rewritten']} rewritten, {summary['flagged']} flagged")
-    
-    return {
-        "report": report,
-        "report_path": report_path,
-        "cleaned_script_path": cleaned_script_path,
-        "changes_applied": changes_applied
-    }
+        log.error(f"[fact-guard] Fact-guard analysis failed: {e}")
+        
+        # Return fallback results
+        fallback_claims = []
+        if 'script_lines' in locals():
+            # Generate fallback claims for each line
+            for line_num, line in enumerate(script_lines, 1):
+                if line.strip() and not line.startswith('[') and not line.startswith('**'):
+                    fallback_claims.append({
+                        'line': line_num,
+                        'text': line.strip(),
+                        'claim_type': 'unknown',
+                        'requires_citation': True,
+                        'has_citation': False,
+                        'action': 'flag',
+                        'rationale': 'Specific factual claim requiring citation'
+                    })
+                
+        return {
+            'claims': fallback_claims,
+            'summary': {
+                'total_claims': len(fallback_claims),
+                'kept': 0,
+                'removed': 0,
+                'rewritten': 0,
+                'flagged': len(fallback_claims),
+                'citations_needed': len(fallback_claims)
+            },
+            'metadata': {
+                'strictness': strictness,
+                'timestamp': datetime.utcnow().isoformat(),
+                'error': str(e)
+            }
+        }
 
 
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="Fact-guard content validation and claim checking")
-    parser.add_argument("--script", help="Path to script file")
-    parser.add_argument("--run-dir", help="Run directory for inputs/outputs")
-    parser.add_argument("--strictness", choices=["strict", "balanced", "lenient"], 
-                       default="balanced", help="Fact-checking strictness level")
-    parser.add_argument("--brief-data", help="JSON string containing brief data")
-    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
-                       help='Mode: reuse (cache only) or live (with API calls)')
-    parser.add_argument("--slug", required=True, help="Topic slug for fact-guard processing")
-    
+def main(slug: str = None, strictness: str = "balanced"):
+    """Main entry point for fact-guard analysis."""
+    parser = argparse.ArgumentParser(description="Run fact-guard analysis on script content")
+    parser.add_argument("--slug", required=True, help="Topic slug for fact-guard analysis")
+    parser.add_argument("--strictness", choices=['strict', 'balanced', 'lenient'], default='balanced',
+                       help='Strictness level for fact-guard analysis')
     args = parser.parse_args()
     
-    cfg = load_config()
+    # Use command line args if provided, otherwise use function parameters
+    slug = args.slug if hasattr(args, 'slug') else slug
+    strictness = args.strictness if hasattr(args, 'strictness') else strictness
     
-    # Load models configuration
-    try:
-        import yaml
-        models_path = os.path.join(BASE, "conf", "models.yaml")
-        if os.path.exists(models_path):
-            with open(models_path, 'r', encoding='utf-8') as f:
-                models_config = yaml.safe_load(f)
-            log.info("Loaded models configuration")
-        else:
-            models_config = {}
-    except Exception as e:
-        log.warning(f"Failed to load models configuration: {e}")
-        models_config = {}
+    if not slug:
+        log.error("Slug is required")
+        return
     
-    # Parse brief data if provided
-    brief = None
-    if args.brief_data:
-        try:
-            brief = json.loads(args.brief_data)
-            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
-        except (json.JSONDecodeError, TypeError) as e:
-            log.warning(f"Failed to parse brief data: {e}")
+    log.info(f"[fact-guard] Starting fact-guard analysis for slug: {slug}, strictness: {strictness}")
     
-    # Determine script and run directory
-    script_path = args.script
-    run_dir = args.run_dir
+    # Run fact-guard analysis
+    results = run_fact_guard_analysis(slug, strictness)
     
-    if not script_path:
-        # Find the most recent script
-        scripts_dir = os.path.join(BASE, "scripts")
-        if not os.path.exists(scripts_dir):
-            log.error("No scripts directory found")
-            return
-        
-        script_files = [f for f in os.listdir(scripts_dir) if f.endswith('.txt')]
-        if not script_files:
-            log.error("No script files found")
-            return
-        
-        script_files.sort(reverse=True)
-        script_path = os.path.join(scripts_dir, script_files[0])
-        log.info(f"Using most recent script: {script_files[0]}")
+    # Print summary
+    summary = results.get('summary', {})
+    print(f"\nFact-Guard Analysis Summary for {slug}:")
+    print(f"  Total claims: {summary.get('total_claims', 0)}")
+    print(f"  Kept: {summary.get('kept', 0)}")
+    print(f"  Removed: {summary.get('removed', 0)}")
+    print(f"  Rewritten: {summary.get('rewritten', 0)}")
+    print(f"  Flagged: {summary.get('flagged', 0)}")
+    print(f"  Citations needed: {summary.get('citations_needed', 0)}")
     
-    if not run_dir:
-        # Try to infer run directory from script name
-        script_name = os.path.splitext(os.path.basename(script_path))[0]
-        potential_runs = ["eames", "demo", "test_slug", "google-business-profile"]
-        
-        for potential in potential_runs:
-            if os.path.exists(os.path.join(BASE, "data", potential, "grounded_beats.json")):
-                run_dir = potential
-                break
-        
-        if not run_dir:
-            log.error("Could not determine run directory")
-            return
+    if results.get('metadata', {}).get('error'):
+        print(f"  Error: {results['metadata']['error']}")
     
-    # Log start state
-    mode_info = f", mode={args.mode}" if args.mode else ""
-    log_state("fact_guard", "START", f"script={os.path.basename(script_path)};run_dir={run_dir};slug={args.slug}{mode_info}")
-    
-    try:
-        # Run fact-guard
-        results = run_fact_guard(script_path, run_dir, args.strictness, models_config)
-        
-        if "error" in results:
-            log_state("fact_guard", "ERROR", results["error"])
-            return
-        
-        # Log success
-        summary = results["report"]["summary"]
-        log_state("fact_guard", "OK", 
-                 f"claims={summary['total_claims']};kept={summary['kept']};"
-                 f"removed={summary['removed']};rewritten={summary['rewritten']};"
-                 f"flagged={summary['flagged']}")
-        
-        # Print summary
-        print(f"\nFact-Guard Results:")
-        print(f"  Total Claims: {summary['total_claims']}")
-        print(f"  Kept: {summary['kept']}")
-        print(f"  Removed: {summary['removed']}")
-        print(f"  Rewritten: {summary['rewritten']}")
-        print(f"  Flagged: {summary['flagged']}")
-        print(f"  Citations Needed: {summary['citations_needed']}")
-        
-        if results["cleaned_script_path"]:
-            print(f"\nCleaned script saved to: {results['cleaned_script_path']}")
-        
-        if results["report_path"]:
-            print(f"Report saved to: {results['report_path']}")
-        
-    except Exception as e:
-        log.error(f"Fact-guard failed: {e}")
-        log_state("fact_guard", "ERROR", f"execution failed: {e}")
+    return results
 
 
 if __name__ == "__main__":
-    with single_lock():
-        main()
+    main()

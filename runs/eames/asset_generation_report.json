@@ -1,0 +1,53 @@
+{
+  "slug": "eames-test-gaps",
+  "generated_at": "2025-08-15T01:45:00.000000Z",
+  "total_gaps": 2,
+  "assets_generated": 2,
+  "generated_assets": [
+    {
+      "path": "assets\\generated\\prop_nelson_sunburst_2668cd67.svg",
+      "palette": [
+        "#1C4FA1",
+        "#F6BE00"
+      ],
+      "seed": 12345,
+      "generator_params": {
+        "fallback_type": "prop",
+        "width": 200,
+        "height": 200
+      },
+      "thumbnail": "",
+      "asset_hash": "3b76a3ccd7f43ae121c831b5b97915ab172319df",
+      "category": "prop",
+      "style": "nelson_sunburst",
+      "palette_compliant": true,
+      "palette_violations": [],
+      "element_id": "scene_001_prop"
+    },
+    {
+      "path": "assets\\generated\\background_starburst_01155a59.svg",
+      "palette": [
+        "#D62828",
+        "#F28C28"
+      ],
+      "seed": 12346,
+      "generator_params": {
+        "fallback_type": "background",
+        "width": 1920,
+        "height": 1080
+      },
+      "thumbnail": "",
+      "asset_hash": "47ced6c61367d941e4c96ed4ab3fc0af7245fc01",
+      "category": "background",
+      "style": "starburst",
+      "palette_compliant": true,
+      "palette_violations": [],
+      "element_id": "scene_002_bg"
+    }
+  ],
+  "generation_params": {
+    "seed": 12345,
+    "max_assets_per_run": 20,
+    "out_dir": "assets\\generated"
+  }
+}

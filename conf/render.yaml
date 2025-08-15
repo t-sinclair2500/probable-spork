@@ -1,0 +1,143 @@
+# Render configuration with acceptance pipeline settings
+
+# Video rendering settings
+video:
+  resolution: "1920x1080"
+  fps: 30
+  target_bitrate: "4000k"
+  codec: "h264_videotoolbox"  # Hardware acceleration
+  preset: "fast"  # Encoding speed vs quality trade-off
+  crf: 23  # Quality setting (18-28 range, lower = better quality)
+  threads: 0  # Auto-detect optimal thread count
+  use_hardware_acceleration: true  # Enable/disable hardware acceleration
+
+# Audio quality targets and validation
+audio:
+  # Voiceover targets
+  vo_lufs_target: -16.0      # Voiceover target LUFS
+  music_lufs_target: -23.0   # Music bed target LUFS  
+  true_peak_max: -1.0        # Maximum true peak in dBTP
+  ducking_min_db: 6.0        # Minimum ducking difference in dB
+  
+  # Processing settings
+  enable_auto_normalization: true  # Auto-normalize if out of spec
+  enable_ducking: true             # Enable sidechain ducking
+  fade_in_ms: 500                  # Fade-in duration in milliseconds
+  fade_out_ms: 500                 # Fade-out duration in milliseconds
+  
+  # Validation tolerances
+  lufs_tolerance: 2.0              # ±2 LUFS tolerance for acceptance
+  peak_tolerance: 0.5              # ±0.5 dB tolerance for true peak
+
+# Caption requirements and generation
+captions:
+  require: true                     # Captions are required for acceptance
+  format: "srt"                    # Preferred caption format
+  fallback_generation: true        # Generate captions if missing
+  
+  # Timing sources priority
+  timing_priority:
+    - "asr"                        # ASR word timings (preferred)
+    - "tts"                        # TTS word timings
+    - "heuristic"                  # Intent-based heuristic timing
+    - "pacing"                     # Pacing-based fallback timing
+  
+  # Heuristic timing settings
+  heuristic:
+    default_words_per_sec: 3.0     # Default words per second for timing
+    min_caption_duration: 1.0      # Minimum caption duration in seconds
+    max_words_per_caption: 8       # Maximum words per caption
+
+# Acceptance pipeline settings
+acceptance:
+  # Duration tolerance
+  tolerance_pct: 5.0               # ±5% tolerance for target duration
+  
+  # Scene duration bounds
+  min_scene_ms: 2500               # Minimum scene duration in milliseconds
+  max_scene_ms: 30000              # Maximum scene duration in milliseconds
+  
+  # Quality thresholds
+  min_script_score: 50             # Minimum script quality score
+  min_assets: 10                   # Minimum required assets
+  min_script_words: 350            # Minimum script word count
+  
+  # Visual coverage
+  min_coverage: 0.85               # Minimum visual coverage threshold
+  
+  # Audio validation
+  audio_validation_required: true  # Audio validation is required
+  audio_failure_blocks: true       # Audio failure blocks overall acceptance
+  
+  # Caption validation
+  caption_validation_required: true # Caption validation is required
+  caption_failure_blocks: false    # Caption failure doesn't block overall acceptance
+  
+  # Legibility validation
+  legibility_validation_required: true  # Legibility validation is required
+  wcag_aa_threshold: 4.5              # WCAG-AA contrast ratio threshold
+  auto_background_injection: true      # Auto-inject safe backgrounds
+  
+  # Determinism requirements
+  require_deterministic_runs: true     # Require identical results on re-runs
+  seed_validation: true                # Validate seed consistency
+
+# Texture and visual effects
+textures:
+  enable: true                     # Enable/disable texture overlay
+  grain_strength: 0.12            # Grain strength (0.0-1.0)
+  feather_px: 1.5                 # Edge feathering radius in pixels
+  
+  # Performance limits
+  max_render_time_increase: 15.0   # Maximum render time increase in percent
+  enable_performance_monitoring: true
+
+# Music bed settings
+music:
+  enabled: true                    # Enable/disable music bed functionality
+  library_path: "assets/music"     # Path to music library
+  auto_select: true                # Automatically select music based on content
+  require_music: false             # Whether music is required for all videos
+  
+  # Selection criteria
+  selection:
+    bpm_weight: 0.4                # Weight for BPM matching (0.0-1.0)
+    mood_weight: 0.4               # Weight for mood matching (0.0-1.0)
+    genre_weight: 0.2              # Weight for genre matching (0.0-1.0)
+
+# Transition and timing
+transitions:
+  xfade_ms: 250                    # Crossfade duration in milliseconds
+  enable_smooth_transitions: true  # Enable smooth scene transitions
+  
+  # Scene timing
+  scene_timing:
+    distribute_strategy: "weighted"  # uniform|weighted (by words per beat)
+    align_to_vo: true                # Align to voiceover cues if available
+    min_scene_duration: 2.5          # Minimum scene duration in seconds
+    max_scene_duration: 30.0         # Maximum scene duration in seconds
+
+# Output and export
+output:
+  format: "mp4"                    # Output video format
+  quality: "high"                  # Output quality level
+  enable_thumbnail: true           # Generate thumbnail image
+  enable_metadata: true            # Embed metadata in output
+  
+  # File naming
+  naming:
+    include_timestamp: false        # Include timestamp in filename
+    include_quality: true           # Include quality indicator in filename
+    use_slug: true                 # Use content slug in filename
+
+# Error handling and recovery
+error_handling:
+  max_retries: 3                   # Maximum retry attempts for failed operations
+  graceful_degradation: true       # Enable graceful degradation on failures
+  log_failures: true               # Log all failures for analysis
+  
+  # Recovery strategies
+  recovery:
+    audio_fallback: true            # Use fallback audio processing on failure
+    caption_fallback: true          # Generate captions if validation fails
+    background_injection: true      # Inject backgrounds if legibility fails

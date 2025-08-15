@@ -1,12 +1,53 @@
 # Research and trending topics configuration
 # This file controls API access, rate limits, and provider settings
 
+# Research mode: reuse (cache-first) or live (with API calls)
+mode: "reuse"  # Default to reuse mode for safety
+
 # API toggles - enable/disable live data sources
 apis:
   reddit: false          # Reddit API access
   youtube: false         # YouTube Data API v3
   google_trends: false   # Google Trends API (unofficial)
   twitter: false         # Twitter/X API (if available)
+
+# Domain allowlist and blacklist for research collection
+domains:
+  allowlist:
+    - "wikipedia.org"
+    - "en.wikipedia.org"
+    - "designmuseum.org"
+    - "moma.org"
+    - "tate.org.uk"
+    - "vam.ac.uk"
+    - "cooperhewitt.org"
+    - "metmuseum.org"
+    - "nga.gov"
+    - "si.edu"
+    - "britannica.com"
+    - "encyclopedia.com"
+    - "academic.oup.com"
+    - "jstor.org"
+    - "arxiv.org"
+    - "researchgate.net"
+    - "scholar.google.com"
+    - "ieee.org"
+    - "acm.org"
+    - "springer.com"
+  
+  blacklist:
+    - "facebook.com"
+    - "twitter.com"
+    - "instagram.com"
+    - "tiktok.com"
+    - "youtube.com"
+    - "reddit.com"
+    - "quora.com"
+    - "medium.com"
+    - "substack.com"
+    - "blogspot.com"
+    - "wordpress.com"
+    - "tumblr.com"
 
 # Rate limits and backoff settings
 rate_limits:
@@ -27,6 +68,13 @@ rate_limits:
     requests_per_hour: 100
     backoff_seconds: 120
     jitter: 0.15
+  
+  # General web scraping limits
+  web_scraping:
+    requests_per_minute: 30
+    requests_per_hour: 500
+    backoff_seconds: 60
+    jitter: 0.2
 
 # Provider-specific settings
 providers:
@@ -51,6 +99,38 @@ cache:
   ttl_hours: 24          # Time to live for cached data
   max_entries: 1000      # Maximum cached entries per provider
   storage: "database"    # database or json
+  disk_cache:
+    enabled: true
+    base_path: "data/research_cache"
+    max_size_mb: 1000
+    cleanup_interval_hours: 6
+
+# Research collection settings
+collection:
+  max_sources_per_topic: 15
+  min_content_length: 200
+  max_content_length: 50000
+  extract_methods:
+    - "trafilatura"      # Primary extraction method
+    - "beautifulsoup"    # Fallback method
+    - "regex"            # Last resort method
+  
+  # Source scoring weights
+  scoring_weights:
+    domain_quality: 0.4      # Domain reputation and authority
+    recency: 0.3             # How recent the content is
+    topical_overlap: 0.3     # Relevance to research topic
+
+# Grounding settings
+grounding:
+  min_citations_per_beat: 1
+  target_citations_per_beat: 2
+  min_beats_coverage_pct: 60.0
+  citation_format: "[S{num}]"  # Citation marker format
+  
+  # Quality thresholds
+  min_domain_quality_score: 0.6
+  min_content_relevance_score: 0.7
 
 # Scoring weights for topic prioritization
 scoring:

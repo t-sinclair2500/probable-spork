@@ -11,17 +11,7 @@
     "scene_bounds_pass": true,
     "vo_aligned": false
   },
-  "generated_at": "2025-08-15T03:57:55.799558Z",
-  "assets": {
-    "coverage_pct": 100.0,
-    "reuse_ratio": 1.0,
-    "total_generated": 0,
-    "manifest_version": "1.0",
-    "palette_names_used": [],
-    "validation_status": "PASS",
-    "last_validated": "2025-08-15T03:57:56.586175Z",
-    "provenance": []
-  },
+  "generated_at": "2025-08-15T06:15:59.112598Z",
   "citations": {
     "total_count": 0,
     "unique_domains": 0,
@@ -34,17 +24,19 @@
     },
     "policy_compliance": {
       "min_citations_per_intent": "PENDING",
-      "whitelist_compliance": "PENDING"
+      "whitelist_compliance": "PASS"
     },
     "validation_status": "PASS",
-    "last_validated": "2025-08-15T03:57:56.587723Z"
+    "last_validated": "2025-08-15T06:15:59.135602Z"
   },
   "pacing": {
-    "acceptance_status": "PASS",
-    "acceptance_verdict": "PASS",
+    "acceptance_status": "WARN",
+    "acceptance_verdict": "WARN",
     "acceptance_enabled": true,
     "acceptance_errors": [],
-    "acceptance_warnings": [],
-    "acceptance_validated_at": "2025-08-15T03:57:56.587876Z"
+    "acceptance_warnings": [
+      "Metrics out of band (non-strict mode): words_per_sec, cuts_per_min, avg_scene_s"
+    ],
+    "acceptance_validated_at": "2025-08-15T06:15:59.144103Z"
   }
 }

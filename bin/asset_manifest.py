@@ -19,6 +19,19 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Any
 import xml.etree.ElementTree as ET
 
+# Try to import Pillow for thumbnail generation fallback
+try:
+    from PIL import Image, ImageDraw
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
+
+try:
+    import cairosvg
+    CAIRO_AVAILABLE = True
+except (ImportError, OSError):
+    CAIRO_AVAILABLE = False
+
 # Simple logging setup for standalone operation
 def get_logger(name="asset_manifest"):
     logger = logging.getLogger(name)
@@ -53,6 +66,79 @@ ALLOWED_COLORS = set(DESIGN_COLORS.values()) | {
     "#000000", "#FFFFFF", "#000", "#FFF",  # Common variations
     "black", "white", "none", "transparent"  # Named colors
 }
+
+# Color distance threshold for ΔE calculation (CIEDE2000)
+PALETTE_THRESHOLD = 4.0
+
+
+def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
+    """Convert hex color to RGB tuple."""
+    hex_color = hex_color.lstrip('#')
+    if len(hex_color) == 3:
+        hex_color = ''.join([c + c for c in hex_color])
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+
+def rgb_to_lab(r: int, g: int, b: int) -> Tuple[float, float, float]:
+    """Convert RGB to CIE Lab color space."""
+    # Convert sRGB to linear RGB
+    def to_linear(c):
+        c = c / 255.0
+        if c <= 0.04045:
+            return c / 12.92
+        return ((c + 0.055) / 1.055) ** 2.4
+    
+    r_lin = to_linear(r)
+    g_lin = to_linear(g)
+    b_lin = to_linear(b)
+    
+    # Convert to XYZ (D65 illuminant)
+    x = r_lin * 0.4124 + g_lin * 0.3576 + b_lin * 0.1805
+    y = r_lin * 0.2126 + g_lin * 0.7152 + b_lin * 0.0722
+    z = r_lin * 0.0193 + g_lin * 0.1192 + b_lin * 0.9505
+    
+    # Convert to Lab
+    def xyz_to_lab(x, y, z):
+        # Normalize by D65 white point
+        x /= 0.95047
+        y /= 1.00000
+        z /= 1.08883
+        
+        def transform(c):
+            if c > 0.008856:
+                return c ** (1/3)
+            return (7.787 * c) + (16/116)
+        
+        l = (116 * transform(y)) - 16
+        a = 500 * (transform(x) - transform(y))
+        b = 200 * (transform(y) - transform(z))
+        
+        return l, a, b
+    
+    return xyz_to_lab(x, y, z)
+
+
+def calculate_color_distance(color1: str, color2: str) -> float:
+    """Calculate CIEDE2000 color distance between two hex colors."""
+    try:
+        rgb1 = hex_to_rgb(color1)
+        rgb2 = hex_to_rgb(color2)
+        
+        lab1 = rgb_to_lab(*rgb1)
+        lab2 = rgb_to_lab(*rgb2)
+        
+        # Simplified Euclidean distance in Lab space
+        # For production, consider using colormath library for CIEDE2000
+        delta_l = lab1[0] - lab2[0]
+        delta_a = lab1[1] - lab2[1]
+        delta_b = lab1[2] - lab2[2]
+        
+        distance = (delta_l**2 + delta_a**2 + delta_b**2)**0.5
+        return distance
+        
+    except Exception as e:
+        log.warning(f"Failed to calculate color distance between {color1} and {color2}: {e}")
+        return 999.0  # Return high distance on error
 
 
 class AssetManifest:
@@ -99,7 +185,8 @@ class AssetManifest:
             "palette_stats": {
                 "total_colors": 0,
                 "compliant_colors": 0,
-                "violation_count": 0
+                "violation_count": 0,
+                "delta_e_violations": 0
             }
         }
     
@@ -134,6 +221,9 @@ class AssetManifest:
             # Determine provenance
             provenance = self._determine_provenance(svg_path)
             
+            # Validate palette compliance with ΔE calculation
+            palette_ok, delta_e_violations = self._validate_palette_compliance_delta_e(colors)
+            
             return {
                 "path": str(svg_path.relative_to(self.base_dir)),
                 "tags": self._extract_tags(svg_path),
@@ -143,8 +233,12 @@ class AssetManifest:
                 "viewBox": viewbox,
                 "hash": content_hash,
                 "provenance": provenance,
+                "palette_ok": palette_ok,
+                "delta_e_violations": delta_e_violations,
                 "usage_count": 0,
-                "last_used": None
+                "last_used": None,
+                "created_at": self._get_file_timestamp(svg_path),
+                "license": self._determine_license(svg_path)
             }
             
         except Exception as e:
@@ -187,14 +281,33 @@ class AssetManifest:
             return {
                 "source": "generated",
                 "seed": seed,
-                "generator_params": {}
+                "generator_params": {},
+                "generator": "asset_generator.py"
             }
         else:
             return {
                 "source": "brand",
                 "seed": None,
-                "generator_params": {}
+                "generator_params": {},
+                "generator": None
             }
+    
+    def _determine_license(self, svg_path: Path) -> str:
+        """Determine the license for an asset."""
+        if "generated" in str(svg_path):
+            return "MIT"  # Generated assets use MIT license
+        else:
+            return "Brand"  # Brand assets are proprietary
+    
+    def _get_file_timestamp(self, svg_path: Path) -> str:
+        """Get file creation timestamp."""
+        try:
+            stat = svg_path.stat()
+            # Use modification time as creation time approximation
+            from datetime import datetime
+            return datetime.fromtimestamp(stat.st_mtime).isoformat() + "Z"
+        except Exception:
+            return self._get_timestamp()
     
     def _extract_tags(self, svg_path: Path) -> List[str]:
         """Extract tags based on file path and name."""
@@ -230,8 +343,38 @@ class AssetManifest:
         
         return tags
     
+    def _validate_palette_compliance_delta_e(self, colors: List[str]) -> Tuple[bool, List[Dict[str, Any]]]:
+        """Validate that colors are palette compliant using ΔE distance calculation."""
+        violations = []
+        compliant = True
+        
+        for color in colors:
+            if color in ALLOWED_COLORS:
+                continue  # Exact match
+            
+            # Check if color is close enough to any palette color
+            min_distance = float('inf')
+            closest_palette_color = None
+            
+            for palette_color in DESIGN_COLORS.values():
+                distance = calculate_color_distance(color, palette_color)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_palette_color = palette_color
+            
+            if min_distance > PALETTE_THRESHOLD:
+                violations.append({
+                    "color": color,
+                    "closest_palette": closest_palette_color,
+                    "delta_e": min_distance,
+                    "threshold": PALETTE_THRESHOLD
+                })
+                compliant = False
+        
+        return compliant, violations
+    
     def _validate_palette_compliance(self, colors: List[str]) -> Tuple[bool, List[str]]:
-        """Validate that colors are in the allowed palette."""
+        """Legacy palette validation method."""
         violations = []
         compliant = True
         
@@ -241,6 +384,48 @@ class AssetManifest:
                 compliant = False
         
         return compliant, violations
+    
+    def _generate_thumbnail_pillow(self, svg_path: Path, thumbnail_path: Path) -> bool:
+        """Generate PNG thumbnail using Pillow and CairoSVG fallback."""
+        try:
+            if CAIRO_AVAILABLE:
+                # Use CairoSVG for high-quality SVG rendering
+                import cairosvg
+                cairosvg.svg2png(
+                    url=str(svg_path),
+                    write_to=str(thumbnail_path),
+                    output_width=128,
+                    output_height=128
+                )
+                return True
+            elif PILLOW_AVAILABLE:
+                # Fallback to Pillow with basic SVG parsing
+                # This is a simplified approach - for production, consider using svglib
+                log.warning(f"Using basic Pillow fallback for {svg_path.name}")
+                
+                # Create a simple colored square as fallback
+                img = Image.new('RGBA', (128, 128), (255, 255, 255, 0))
+                draw = ImageDraw.Draw(img)
+                
+                # Draw a colored border to indicate it's a fallback
+                draw.rectangle([0, 0, 127, 127], outline=(100, 100, 100, 128), width=2)
+                
+                # Add text label
+                try:
+                    from PIL import ImageFont
+                    font = ImageFont.load_default()
+                    draw.text((64, 64), "SVG", fill=(100, 100, 100, 128), anchor="mm", font=font)
+                except:
+                    pass
+                
+                img.save(thumbnail_path, 'PNG')
+                return True
+            else:
+                return False
+                
+        except Exception as e:
+            log.warning(f"Pillow/Cairo thumbnail generation failed for {svg_path.name}: {e}")
+            return False
     
     def _generate_thumbnail(self, svg_path: Path) -> bool:
         """Generate PNG thumbnail for SVG asset."""
@@ -252,6 +437,12 @@ class AssetManifest:
                 svg_mtime = svg_path.stat().st_mtime
                 thumb_mtime = thumbnail_path.stat().st_mtime
                 if thumb_mtime > svg_mtime:
+                    return True
+            
+            # Try Pillow/CairoSVG first (no external dependencies)
+            if PILLOW_AVAILABLE or CAIRO_AVAILABLE:
+                if self._generate_thumbnail_pillow(svg_path, thumbnail_path):
+                    log.debug(f"Generated thumbnail with Pillow/Cairo for {svg_path.name}")
                     return True
             
             # Use rsvg-convert if available (better SVG rendering)
@@ -320,7 +511,8 @@ class AssetManifest:
         palette_stats = {
             "total_colors": 0,
             "compliant_colors": 0,
-            "violation_count": 0
+            "violation_count": 0,
+            "delta_e_violations": 0
         }
         
         # Process each SVG file
@@ -336,21 +528,22 @@ class AssetManifest:
             self._generate_thumbnail(svg_path)
             
             # Validate palette compliance
-            is_compliant, color_violations = self._validate_palette_compliance(metadata["palette"])
+            is_compliant, color_violations = self._validate_palette_compliance_delta_e(metadata["palette"])
             
             if not is_compliant:
                 violations.append({
                     "asset": metadata["path"],
-                    "violations": color_violations,
+                    "violations": metadata["delta_e_violations"],
                     "type": "palette_violation"
                 })
-                log.warning(f"Palette violations in {svg_path.name}: {color_violations}")
+                log.warning(f"Palette violations in {svg_path.name}: {len(metadata['delta_e_violations'])} violations")
             
             # Update palette stats
             palette_stats["total_colors"] += len(metadata["palette"])
             if is_compliant:
                 palette_stats["compliant_colors"] += len(metadata["palette"])
             palette_stats["violation_count"] += len(color_violations)
+            palette_stats["delta_e_violations"] += len(metadata["delta_e_violations"])
             
             # Use hash as key to avoid duplicates
             new_assets[metadata["hash"]] = metadata
@@ -403,12 +596,17 @@ class AssetManifest:
             for tag in asset.get("tags", []):
                 tag_counts[tag] = tag_counts.get(tag, 0) + 1
         
+        # Count palette compliance
+        palette_ok_count = sum(1 for a in assets.values() if a.get("palette_ok", False))
+        
         return {
             "total_assets": len(assets),
             "brand_assets": brand_count,
             "generated_count": generated_count,
             "tag_distribution": tag_counts,
             "palette_stats": self.manifest.get("palette_stats", {}),
+            "palette_ok_count": palette_ok_count,
+            "palette_violations": len(self.manifest.get("violations", [])),
             "violations": len(self.manifest.get("violations", []))
         }
 
@@ -439,7 +637,7 @@ def main():
             if violations:
                 print(f"\nPalette violations found: {len(violations)}")
                 for violation in violations[:5]:  # Show first 5
-                    print(f"  {violation['asset']}: {violation['violations']}")
+                    print(f"  {violation['asset']}: {len(violation['violations'])} violations")
                 if len(violations) > 5:
                     print(f"  ... and {len(violations) - 5} more")
             else:
@@ -451,7 +649,8 @@ def main():
         print(f"  Total assets: {summary['total_assets']}")
         print(f"  Brand assets: {summary['brand_assets']}")
         print(f"  Generated assets: {summary['generated_count']}")
-        print(f"  Palette violations: {summary['violations']}")
+        print(f"  Palette compliant: {summary['palette_ok_count']}")
+        print(f"  Palette violations: {summary['palette_violations']}")
         print(f"  Tag distribution: {dict(list(summary['tag_distribution'].items())[:5])}")
     
     if not args.rebuild and not args.summary:

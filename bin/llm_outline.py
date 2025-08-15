@@ -1,44 +1,33 @@
 #!/usr/bin/env python3
+"""
+LLM Outline Generator
+
+Generates video outlines using LLM models with research rigor and intent templates.
+"""
+
+import argparse
 import json
 import os
-import re
-import time
-
-import requests
 import sys
-import os
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+# Ensure repo root on path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from bin.core import BASE, load_config, log_state, single_lock, get_logger
 
+from bin.core import BASE, get_logger, load_config, log_state, single_lock
+from bin.model_runner import model_session
+from bin.intent_loader import (
+    load_intent_template, 
+    get_intent_metadata, 
+    get_intent_beats,
+    get_beats_needing_citations,
+    get_citation_requirements
+)
 
-def call_ollama(prompt, cfg, models_config=None):
-    """Call Ollama with specified model configuration."""
-    try:
-        # Use new model_runner system
-        from bin.model_runner import model_session
-        
-        # Get model name from config - use research model for outline generation
-        if models_config and 'research' in models_config.get('models', {}):
-            model_name = models_config['models']['research']['name']
-        else:
-            # Fallback to global config
-            model_name = cfg.llm.model
-        
-        # Use model session for deterministic load/unload
-        with model_session(model_name) as session:
-            system_prompt = "You are a helpful assistant for creating video outlines with research rigor."
-            return session.chat(system=system_prompt, user=prompt)
-            
-    except Exception as e:
-        # Fallback to legacy system
-        url = cfg.llm.endpoint
-        model = cfg.llm.model
-        payload = {"model": model, "prompt": prompt, "stream": False}
-        r = requests.post(url, json=payload, timeout=1200)
-        r.raise_for_status()
-        return r.json().get("response", "")
+log = get_logger("llm_outline")
 
 
 def get_intent_from_brief(brief):
@@ -56,262 +45,386 @@ def apply_intent_template_to_outline(outline_data, intent_template, target_len_s
     template_beats = get_intent_beats(intent_template)
     metadata = get_intent_metadata(intent_template)
     
-    # Convert target length to milliseconds
-    target_ms = int(target_len_sec * 1000)
+    # Calculate target duration per beat
+    total_target_ms = target_len_sec * 1000
+    total_template_ms = sum(beat.get('target_ms', 0) for beat in template_beats)
     
-    # Calculate total template duration
-    template_duration = sum(beat.get('target_ms', 0) for beat in template_beats)
-    
-    # Scale beats to match target duration
-    scale_factor = target_ms / template_duration if template_duration > 0 else 1
+    if total_template_ms > 0:
+        # Scale beats to match target duration
+        scale_factor = total_target_ms / total_template_ms
+        for beat in template_beats:
+            beat['target_ms'] = int(beat.get('target_ms', 0) * scale_factor)
     
     # Apply template structure
-    sections = []
-    for i, template_beat in enumerate(template_beats):
-        scaled_duration = int(template_beat['target_ms'] * scale_factor)
-        
+    outline_data['sections'] = []
+    for beat in template_beats:
         section = {
-            "id": i + 1,
-            "label": template_beat['label'],
-            "beats": [f"{template_beat['label']} beat {i + 1}"],
-            "broll": [f"visual_{i + 1}"],
-            "target_ms": scaled_duration,
-            "needs_citations": metadata['evidence_load'] in ['medium', 'high']
+            'id': beat['id'],
+            'title': beat['label'],
+            'target_duration_ms': beat['target_ms'],
+            'needs_citations': beat.get('needs_citations', True),
+            'content': f"[{beat['label']} content will be generated]",
+            'notes': f"Target duration: {beat['target_ms']}ms, Citations required: {beat.get('needs_citations', True)}"
         }
-        sections.append(section)
+        outline_data['sections'].append(section)
     
-    # Update outline with template structure
-    outline_data['sections'] = sections
+    # Add intent metadata
     outline_data['intent'] = intent_template
-    outline_data['tone'] = metadata['tone']
-    outline_data['evidence_load'] = metadata['evidence_load']
-    outline_data['cta_policy'] = metadata['cta_policy']
+    outline_data['tone'] = metadata.get('tone', 'conversational')
+    outline_data['evidence_load'] = metadata.get('evidence_load', 'medium')
+    outline_data['cta_policy'] = metadata.get('cta_policy', 'optional')
     
     return outline_data
 
 
-def main(brief=None, models_config=None):
-    cfg = load_config()
-    log = get_logger("llm_outline")
-    os.makedirs(os.path.join(BASE, "scripts"), exist_ok=True)
+def generate_outline(topic: str, target_len_sec: int = 60, brief: Dict = None, 
+                    models_config: Dict = None) -> Dict:
+    """
+    Generate a video outline using LLM.
+    
+    Args:
+        topic: Main topic for the video
+        target_len_sec: Target duration in seconds
+        brief: Brief configuration
+        models_config: Models configuration
+        
+    Returns:
+        Generated outline data
+    """
+    log.info(f"[outline] Generating outline for topic: {topic}")
     
     # Determine intent from brief
     intent = get_intent_from_brief(brief)
     log.info(f"[outline] Selected intent: {intent}")
     
-    # Log brief context if available
+    # Log start state
     if brief:
         brief_title = brief.get('title', 'Untitled')
         log_state("llm_outline", "START", f"brief={brief_title};intent={intent}")
     else:
         log_state("llm_outline", "START", f"brief=none;intent={intent}")
     
-    qpath = os.path.join(BASE, "data", "topics_queue.json")
-    topics = json.load(open(qpath, "r")) if os.path.exists(qpath) else []
-    
-    # Use brief settings if available, otherwise fall back to config defaults
-    if brief:
-        tone = brief.get('tone', cfg.pipeline.tone)
-        target_len_sec = brief.get('video', {}).get('target_length_max', cfg.pipeline.video_length_seconds)
-        
-        # Use brief title as primary topic
-        if brief and brief.get('title'):
-            topic = brief['title']
-            seed_keywords = brief.get('keywords_include', ['productivity', 'tips'])
-        elif topics:
-            topic = topics[0]["topic"]
-            seed_keywords = topics[0].get("keywords", brief.get('keywords_include', ['productivity', 'tips']) if brief else ['productivity', 'tips'])
-        else:
-            topic = brief.get('title', 'Productivity tips') if brief else 'Productivity tips'
-            seed_keywords = brief.get('keywords_include', ['productivity', 'tips']) if brief else ['productivity', 'tips']
-    else:
-        tone = cfg.pipeline.tone
-        target_len_sec = cfg.pipeline.video_length_seconds
-        topic = topics[0]["topic"] if topics else "Productivity tips that save time"
-        seed_keywords = topics[0].get("keywords") if topics else ["productivity", "tips"]
-    
-    # Load intent template
     try:
-        from bin.intent_loader import load_intent_template, get_intent_metadata
-        intent_template = load_intent_template(intent)
-        intent_metadata = get_intent_metadata(intent)
+        # Get model name from config - use research model for outline generation
+        if models_config and 'research' in models_config.get('models', {}):
+            model_name = models_config['models']['research']['name']
+        else:
+            # Fallback to default model
+            model_name = 'mistral:7b-instruct'
         
-        log.info(f"[outline] Loaded intent template: {intent} (evidence_load: {intent_metadata['evidence_load']}, CTA: {intent_metadata['cta_policy']})")
+        log.info(f"[outline] Using model: {model_name}")
         
-        # Use template tone if not specified in brief
-        if not brief or not brief.get('tone'):
-            tone = intent_metadata['tone']
-            
-    except Exception as e:
-        log.warning(f"[outline] Failed to load intent template '{intent}': {e}, using fallback")
+        # Load intent template
         intent_template = None
         intent_metadata = None
-    
-    with open(os.path.join(BASE, "prompts", "outline.txt"), "r", encoding="utf-8") as f:
-        template = f.read()
-    
-    # Enhance prompt with intent context
-    intent_context = ""
-    if intent_template:
-        intent_context = f"\nINTENT: {intent}\nTONE: {intent_metadata['tone']}\nEVIDENCE_LOAD: {intent_metadata['evidence_load']}\nCTA_POLICY: {intent_metadata['cta_policy']}"
-    
-    prompt = (
-        template.replace("{topic}", topic)
-        .replace("{seed_keywords}", ", ".join(seed_keywords))
-        .replace("{target_length_min}", str(target_len_sec))
-        .replace("{target_length_max}", str(target_len_sec))
-        + f"\nTone: {tone}. Target length (sec): {target_len_sec}."
-        + intent_context
-    )
-    
-    # Enhance prompt with brief context if available
-    if brief:
-        from bin.core import create_brief_context
-        brief_context = create_brief_context(brief)
-        prompt = brief_context + prompt
-    
-    try:
-        out = call_ollama(prompt, cfg, models_config)
-        data = json.loads(out)
+        try:
+            intent_template = load_intent_template(intent)
+            intent_metadata = get_intent_metadata(intent)
+            log.info(f"[outline] Loaded intent template: {intent} (evidence_load: {intent_metadata['evidence_load']}, CTA: {intent_metadata['cta_policy']})")
+        except Exception as e:
+            log.warning(f"[outline] Failed to load intent template '{intent}': {e}, using fallback")
+            intent_template = None
+            intent_metadata = None
+        
+        # Get citation requirements
+        citation_reqs = None
+        if intent_template:
+            try:
+                citation_reqs = get_citation_requirements(intent)
+                log.info(f"[outline] Citation requirements: {citation_reqs['beats_needing_citations']}/{citation_reqs['total_beats']} beats need citations ({citation_reqs['coverage_percentage']:.1f}% coverage)")
+            except Exception as e:
+                log.warning(f"[outline] Could not get citation requirements: {e}")
+        
+        # Set tone and evidence load
+        tone = intent_metadata['tone'] if intent_metadata else "conversational, informative"
+        evidence_load = intent_metadata['evidence_load'] if intent_metadata else "medium"
+        
+        # Enhance prompt with intent context
+        intent_context = ""
+        if intent_template:
+            intent_context = f"\nINTENT: {intent}\nTONE: {intent_metadata['tone']}\nEVIDENCE_LOAD: {intent_metadata['evidence_load']}\nCTA_POLICY: {intent_metadata['cta_policy']}"
+        
+        system_prompt = f"""You are a helpful assistant for creating video outlines with research rigor.
+
+Create a structured outline for a {target_len_sec}-second video about {topic}.
+
+Requirements:
+- Use a clear, engaging structure
+- Include specific sections with estimated durations
+- Mark sections that need research citations
+- Maintain consistent tone: {tone}
+- Evidence level: {evidence_load}
+- Total target duration: {target_len_sec} seconds
+
+{intent_context}
+
+Return your response as a JSON object with this structure:
+{{
+  "title": "Video title",
+  "topic": "{topic}",
+  "target_duration_sec": {target_len_sec},
+  "sections": [
+    {{
+      "id": "section_id",
+      "title": "Section title",
+      "target_duration_ms": duration_in_milliseconds,
+      "needs_citations": true/false,
+      "content": "Brief description of section content",
+      "notes": "Additional notes or requirements"
+    }}
+  ]
+}}"""
+
+        # Generate outline using LLM
+        with model_session(model_name) as session:
+            response = session.chat(
+                system=system_prompt,
+                user=f"Create a video outline for: {topic}",
+                temperature=0.3
+            )
+            
+            # Parse response
+            try:
+                data = json.loads(response.strip())
+            except json.JSONDecodeError:
+                log.error("Failed to parse LLM response as JSON")
+                # Create fallback outline
+                data = create_fallback_outline(topic, target_len_sec, intent)
         
         # Apply intent template structure if available
         if intent_template:
             data = apply_intent_template_to_outline(data, intent, target_len_sec)
             log.info(f"[outline] Applied intent template: {len(data['sections'])} sections, {sum(1 for s in data['sections'] if s.get('needs_citations', False))} beats need citations")
         
-    except Exception as e:
-        log.warning(f"[outline] LLM generation failed: {e}, using fallback outline")
-        # Fallback outline - use brief keywords if available
-        if brief and brief.get('keywords_include'):
-            fallback_keywords = brief['keywords_include'][:3]
-        else:
-            fallback_keywords = ["productivity", "tips"]
+        # Validate and enhance outline
+        data = validate_and_enhance_outline(data, target_len_sec)
         
         # Create fallback outline with intent template structure if available
-        if intent_template:
-            # Use intent template structure for fallback
-            template_beats = get_intent_beats(intent)
-            metadata = get_intent_metadata(intent)
-            
-            # Convert target length to milliseconds
-            target_ms = int(target_len_sec * 1000)
-            
-            # Calculate total template duration
-            template_duration = sum(beat.get('target_ms', 0) for beat in template_beats)
-            
-            # Scale beats to match target duration
-            scale_factor = target_ms / template_duration if template_duration > 0 else 1
-            
-            # Apply template structure
-            sections = []
-            for i, template_beat in enumerate(template_beats):
-                scaled_duration = int(template_beat['target_ms'] * scale_factor)
+        if not data.get('sections'):
+            if intent_template:
+                # Use intent template structure for fallback
+                template_beats = get_intent_beats(intent)
+                metadata = get_intent_metadata(intent)
                 
-                section = {
-                    "id": i + 1,
-                    "label": template_beat['label'],
-                    "beats": [f"{template_beat['label']} content"],
-                    "broll": [f"visual_{i + 1}"],
-                    "target_ms": scaled_duration,
-                    "needs_citations": metadata['evidence_load'] in ['medium', 'high']
+                data = {
+                    'title': f"{topic}: {intent.replace('_', ' ').title()}",
+                    'topic': topic,
+                    'target_duration_sec': target_len_sec,
+                    'intent': intent,
+                    'tone': metadata.get('tone', 'conversational'),
+                    'evidence_load': metadata.get('evidence_load', 'medium'),
+                    'cta_policy': metadata.get('cta_policy', 'optional'),
+                    'sections': []
                 }
-                sections.append(section)
+                
+                # Create sections from template beats
+                for beat in template_beats:
+                    section = {
+                        'id': beat['id'],
+                        'title': beat['label'],
+                        'target_duration_ms': beat.get('target_ms', 0),
+                        'needs_citations': beat.get('needs_citations', True),
+                        'content': f"[{beat['label']} content]",
+                        'notes': f"Template-based section, citations required: {beat.get('needs_citations', True)}"
+                    }
+                    data['sections'].append(section)
+                
+                log.info(f"[outline] Created fallback outline using intent template: {len(data['sections'])} sections")
+            else:
+                # Generic fallback if no intent template
+                data = {
+                    'title': f"{topic}: Video Outline",
+                    'topic': topic,
+                    'target_duration_sec': target_len_sec,
+                    'intent': intent,
+                    'sections': [
+                        {
+                            'id': 'intro',
+                            'title': 'Introduction',
+                            'target_duration_ms': 10000,
+                            'needs_citations': False,
+                            'content': 'Introduce the topic and set context',
+                            'notes': 'Hook the audience, no citations needed'
+                        },
+                        {
+                            'id': 'main',
+                            'title': 'Main Content',
+                            'target_duration_ms': (target_len_sec - 20) * 1000,
+                            'needs_citations': True,
+                            'content': 'Present main information and evidence',
+                            'notes': 'Research and citations required'
+                        },
+                        {
+                            'id': 'conclusion',
+                            'title': 'Conclusion',
+                            'target_duration_ms': 10000,
+                            'needs_citations': False,
+                            'content': 'Summarize and wrap up',
+                            'notes': 'No citations needed for conclusion'
+                        }
+                    ]
+                }
+        
+        # Add metadata
+        data['generated_at'] = str(Path.cwd())
+        data['model_used'] = model_name
+        data['intent'] = intent
+        
+        # Log final state with intent and beats info
+        beats_count = len(data.get('sections', []))
+        citations_count = sum(1 for s in data.get('sections', []) if s.get('needs_citations', False))
+        
+        log_state("llm_outline", "OK", f"{os.path.basename(topic)};intent={intent};beats={beats_count};citations={citations_count}")
+        
+        # Print summary
+        print(f"Generated outline for: {topic}")
+        print(f"Intent: {intent}, Beats: {beats_count}, Citations needed: {citations_count}")
+        
+        return data
+        
+    except Exception as e:
+        log.error(f"Outline generation failed: {e}")
+        log_state("llm_outline", "ERROR", f"generation failed: {e}")
+        raise
+
+
+def create_fallback_outline(topic: str, target_len_sec: int, intent: str) -> Dict:
+    """Create a fallback outline when LLM generation fails."""
+    log.warning(f"[outline] Creating fallback outline for {topic}")
+    
+    return {
+        'title': f"{topic}: {intent.replace('_', ' ').title()}",
+        'topic': topic,
+        'target_duration_sec': target_len_sec,
+        'intent': intent,
+        'sections': [
+            {
+                'id': 'intro',
+                'title': 'Introduction',
+                'target_duration_ms': 10000,
+                'needs_citations': False,
+                'content': 'Introduce the topic',
+                'notes': 'Fallback section'
+            },
+            {
+                'id': 'content',
+                'title': 'Main Content',
+                'target_duration_ms': (target_len_sec - 20) * 1000,
+                'needs_citations': True,
+                'content': 'Present main information',
+                'notes': 'Fallback section with citations required'
+            },
+            {
+                'id': 'conclusion',
+                'title': 'Conclusion',
+                'target_duration_ms': 10000,
+                'needs_citations': False,
+                'content': 'Wrap up',
+                'notes': 'Fallback section'
+            }
+        ]
+    }
+
+
+def validate_and_enhance_outline(data: Dict, target_len_sec: int) -> Dict:
+    """Validate and enhance the generated outline."""
+    if not isinstance(data, dict):
+        return create_fallback_outline(data.get('topic', 'Unknown'), target_len_sec, 'narrative_history')
+    
+    # Ensure required fields
+    if 'sections' not in data:
+        data['sections'] = []
+    
+    # Validate sections
+    valid_sections = []
+    total_duration = 0
+    
+    for section in data['sections']:
+        if isinstance(section, dict) and 'title' in section:
+            # Ensure section has required fields
+            section.setdefault('id', f"section_{len(valid_sections) + 1}")
+            section.setdefault('target_duration_ms', 10000)
+            section.setdefault('needs_citations', True)
+            section.setdefault('content', section.get('title', ''))
+            section.setdefault('notes', '')
             
-            data = {
-                "title_options": [f"{topic}: {intent.replace('_', ' ').title()}"],
-                "sections": sections,
-                "tags": fallback_keywords,
-                "tone": tone,
-                "target_len_sec": target_len_sec,
-                "intent": intent,
-                "cta_policy": metadata['cta_policy'],
-                "evidence_load": metadata['evidence_load']
-            }
+            # Validate duration
+            duration = section.get('target_duration_ms', 0)
+            if duration > 0:
+                total_duration += duration
+                valid_sections.append(section)
+    
+    data['sections'] = valid_sections
+    
+    # Adjust durations if needed
+    if total_duration > 0:
+        target_ms = target_len_sec * 1000
+        if abs(total_duration - target_ms) > 5000:  # More than 5 seconds off
+            scale_factor = target_ms / total_duration
+            for section in data['sections']:
+                section['target_duration_ms'] = int(section['target_duration_ms'] * scale_factor)
+    
+    return data
+
+
+def save_outline(data: Dict, output_path: str):
+    """Save outline to file."""
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        log.info(f"[outline] Saved outline to {output_path}")
+    except Exception as e:
+        log.error(f"Failed to save outline: {e}")
+        raise
+
+
+def main(brief=None, models_config=None):
+    """Main entry point."""
+    parser = argparse.ArgumentParser(description="Generate video outline using LLM")
+    parser.add_argument("--brief", help="Path to brief file")
+    parser.add_argument("--brief-data", help="JSON string containing brief data")
+    parser.add_argument("--topic", help="Topic for outline generation")
+    parser.add_argument("--duration", type=int, default=60, help="Target duration in seconds")
+    parser.add_argument("--output", help="Output file path")
+    parser.add_argument("--mode", choices=['reuse', 'live'], default='reuse',
+                       help='Mode: reuse (cache only) or live (with API calls)')
+    parser.add_argument("--slug", required=True, help="Topic slug for outline generation")
+    args = parser.parse_args()
+    
+    # Load brief data
+    if brief is None:
+        if args.brief:
+            with open(args.brief, 'r') as f:
+                brief = json.load(f)
+        elif args.brief_data:
+            brief = json.loads(args.brief_data)
         else:
-            # Generic fallback if no intent template
-            data = {
-                "title_options": [f"{topic}: 5 Quick Tips"],
-                "sections": [
-                    {
-                        "id": 1,
-                        "label": "Hook",
-                        "beats": ["Big promise", "Why watch"],
-                        "broll": ["typing", "clock"],
-                        "target_ms": 8000,
-                        "needs_citations": False
-                    },
-                    {"id": 2, "label": "Point 1", "beats": ["Tip 1"], "broll": ["keyboard"], "target_ms": 10000, "needs_citations": False},
-                    {"id": 3, "label": "Point 2", "beats": ["Tip 2"], "broll": ["monitor"], "target_ms": 10000, "needs_citations": False},
-                    {"id": 4, "label": "Point 3", "beats": ["Tip 3"], "broll": ["notebook"], "target_ms": 10000, "needs_citations": False},
-                    {"id": 5, "label": "Recap", "beats": ["Summary"], "broll": ["checklist"], "target_ms": 6000, "needs_citations": False},
-                    {"id": 6, "label": "CTA", "beats": ["Subscribe"], "broll": ["subscribe button"], "target_ms": 6000, "needs_citations": False},
-                ],
-                "tags": fallback_keywords,
-                "tone": tone,
-                "target_len_sec": target_len_sec,
-                "intent": intent,
-                "cta_policy": "optional"
-            }
+            brief = {"keywords_include": [args.slug]}
     
-    # Filter out any content that contains excluded keywords
-    if brief and brief.get('keywords_exclude'):
-        from bin.core import filter_content_by_brief
-        exclude_terms = brief['keywords_exclude']
-        
-        # Check title options
-        if 'title_options' in data:
-            filtered_titles = []
-            for title in data['title_options']:
-                if not any(exclude_term.lower() in title.lower() for exclude_term in exclude_terms):
-                    filtered_titles.append(title)
-                else:
-                    log_state("llm_outline", "FILTERED", f"Title filtered due to excluded keywords: {title}")
-            data['title_options'] = filtered_titles
-        
-        # Check tags
-        if 'tags' in data:
-            filtered_tags = []
-            for tag in data['tags']:
-                if not any(exclude_term.lower() in tag.lower() for exclude_term in exclude_terms):
-                    filtered_tags.append(tag)
-                else:
-                    log_state("llm_outline", "FILTERED", f"Tag filtered due to excluded keywords: {tag}")
-            data['tags'] = filtered_tags
+    # Determine topic
+    topic = args.topic or brief.get('topic') or args.slug
     
-    date_tag = time.strftime("%Y-%m-%d")
-    outline_path = os.path.join(
-        BASE, "scripts", f"{date_tag}_{re.sub(r'[^a-z0-9]+','-',topic.lower())}.outline.json"
-    )
-    with open(outline_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+    log.info(f"[outline] Starting outline generation for slug: {args.slug}, topic: {topic}, duration: {args.duration}s")
     
-    # Log final state with intent and beats info
-    beats_count = len(data.get('sections', []))
-    citations_count = sum(1 for s in data.get('sections', []) if s.get('needs_citations', False))
-    log_state("llm_outline", "OK", f"{os.path.basename(outline_path)};intent={intent};beats={beats_count};citations={citations_count}")
+    # Generate outline
+    outline_data = generate_outline(topic, args.duration, brief, models_config)
     
-    print(f"Wrote outline {outline_path}")
-    print(f"Intent: {intent}, Beats: {beats_count}, Citations needed: {citations_count}")
+    # Save outline
+    if args.output:
+        output_path = args.output
+    else:
+        output_path = os.path.join(BASE, "scripts", f"{args.slug}.outline.json")
+    
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    save_outline(outline_data, output_path)
+    
+    log.info(f"[outline] Outline generation completed for {args.slug}")
+    log.info(f"[outline] Output saved to {output_path}")
+    
+    return outline_data
 
 
 if __name__ == "__main__":
-    import argparse
-    import logging
-    log = logging.getLogger(__name__)
-    
-    parser = argparse.ArgumentParser(description="LLM outline generation")
-    parser.add_argument("--brief-data", help="JSON string containing brief data")
-    
-    args = parser.parse_args()
-    
-    # Parse brief data if provided
-    brief = None
-    if args.brief_data:
-        try:
-            brief = json.loads(args.brief_data)
-            log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
-        except (json.JSONDecodeError, TypeError) as e:
-            log.warning(f"Failed to parse brief data: {e}")
-    
-    with single_lock():
-        main(brief)
+    main()

@@ -92,19 +92,25 @@ def _apply_grain(img: "PIL.Image.Image", strength: float, seed: int) -> "PIL.Ima
     
     width, height = img.size
     
-    # Set seed for deterministic noise
-    if OPENIMPLEX_AVAILABLE:
-        noise_gen = opensimplex.OpenSimplex(seed=seed)
-        # Generate noise array
-        noise_array = np.zeros((height, width))
-        for y in range(height):
-            for x in range(width):
-                noise_array[y, x] = noise_gen.noise2(x * 0.01, y * 0.01)
-    else:
-        # Fallback to numpy with fixed seed
-        np.random.seed(seed)
-        noise_array = np.random.rand(height, width) * 2 - 1
-        log.warning("Using numpy fallback for noise - lower quality grain")
+    # Use fast numpy-based noise for performance
+    # This is much faster than OpenSimplex for real-time applications
+    np.random.seed(seed)
+    
+    # Generate noise with reduced frequency for better performance
+    # Use smaller noise tiles that are repeated
+    tile_size = min(64, min(width, height))  # Limit tile size for performance
+    noise_tile = np.random.rand(tile_size, tile_size) * 2 - 1
+    
+    # Repeat the tile to cover the full image
+    noise_array = np.tile(noise_tile, (height // tile_size + 1, width // tile_size + 1))
+    noise_array = noise_array[:height, :width]
+    
+    # Apply slight blur to smooth the tiling artifacts
+    if SKIMAGE_AVAILABLE:
+        from skimage.filters import gaussian
+        noise_array = gaussian(noise_array, sigma=0.5, preserve_range=True)
+    
+    log.debug(f"[texture-core] Generated fast noise array {width}x{height} in {tile_size}x{tile_size} tiles")
     
     # Normalize noise to 0-1 range
     noise_array = (noise_array + 1) / 2
@@ -257,6 +263,8 @@ def _apply_halftone(img: "PIL.Image.Image", cell_px: int, angle_deg: float, opac
     return Image.fromarray(img_array.astype(np.uint8))
 
 
+import time
+
 def apply_textures_to_frame(img: "PIL.Image.Image", cfg: dict, seed: int) -> "PIL.Image.Image":
     """
     Apply texture effects to a single frame.
@@ -272,6 +280,8 @@ def apply_textures_to_frame(img: "PIL.Image.Image", cfg: dict, seed: int) -> "PI
     if not cfg.get("enable", True):
         return img
     
+    # Start performance monitoring
+    start_time = time.time()
     log.debug(f"[texture-core] Applying textures with seed {seed}")
     
     # Apply grain effect
@@ -297,7 +307,19 @@ def apply_textures_to_frame(img: "PIL.Image.Image", cfg: dict, seed: int) -> "PI
         opacity = halftone_cfg.get("opacity", 0.12)
         img = _apply_halftone(img, cell_px, angle_deg, opacity)
     
-    log.debug(f"[texture-core] Textures applied successfully")
+    # End performance monitoring
+    end_time = time.time()
+    render_time_ms = (end_time - start_time) * 1000
+    
+    log.debug(f"[texture-core] Textures applied successfully in {render_time_ms:.2f}ms")
+    
+    # Store performance data in image metadata if possible
+    if hasattr(img, '_texture_performance'):
+        img._texture_performance = render_time_ms
+    else:
+        # Create a simple attribute to store performance data
+        img._texture_performance = render_time_ms
+    
     return img
 
 
