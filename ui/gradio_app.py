@@ -68,23 +68,25 @@ class APIClient:
         """Create new job"""
         return self._make_request("POST", "/jobs", job_data)
     
-    def approve_gate(self, job_id: str, stage: str, notes: str = "") -> Dict:
+    def approve_gate(self, job_id: str, stage: str, notes: str = "", patch: Optional[Dict] = None) -> Dict:
         """Approve gate for job stage"""
         data = {
             "decision": "approved",
             "stage": stage,
             "notes": notes,
-            "operator": "gradio_ui"
+            "operator": "gradio_ui",
+            "patch": patch
         }
         return self._make_request("POST", f"/jobs/{job_id}/approve", data)
     
-    def reject_gate(self, job_id: str, stage: str, notes: str = "") -> Dict:
+    def reject_gate(self, job_id: str, stage: str, notes: str = "", patch: Optional[Dict] = None) -> Dict:
         """Reject gate for job stage"""
         data = {
             "decision": "rejected",
             "stage": stage,
             "notes": notes,
-            "operator": "gradio_ui"
+            "operator": "gradio_ui",
+            "patch": patch
         }
         return self._make_request("POST", f"/jobs/{job_id}/reject", data)
     
@@ -179,11 +181,11 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
         try:
             result = client.validate_config()
             if "error" not in result:
-                return "✅ Configuration is valid", "success"
+                return "Configuration is valid", "success"
             else:
-                return f"❌ Configuration validation failed: {result['error']}", "error"
+                return f"Configuration validation failed: {result['error']}", "error"
         except Exception as e:
-            return f"❌ Validation error: {str(e)}", "error"
+            return f"Validation error: {str(e)}", "error"
     
     def create_job(slug, intent, target_len_sec, tone, testing_mode, notes):
         """Create a new job"""
@@ -193,7 +195,7 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
         
         try:
             if not slug or not intent:
-                return "❌ Slug and intent are required", "error"
+                return "Slug and intent are required", "error"
             
             # Prepare job data
             job_data = {
@@ -213,12 +215,12 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
             
             if "error" not in result:
                 job_id = result.get("id", "unknown")
-                return f"✅ Job created successfully! ID: {job_id}", "success"
+                return f"Job created successfully! ID: {job_id}", "success"
             else:
-                return f"❌ Failed to create job: {result['error']}", "error"
+                return f"Failed to create job: {result['error']}", "error"
                 
         except Exception as e:
-            return f"❌ Job creation error: {str(e)}", "error"
+            return f"Job creation error: {str(e)}", "error"
     
     with gr.Blocks(title="Config & Launch") as page:
         gr.Markdown("# Configuration & Job Launch")
@@ -233,13 +235,13 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
                     lines=20,
                     interactive=False
                 )
-                gr.Button("🔄 Refresh Config", value="Refresh").click(
+                gr.Button("Refresh Config", value="Refresh").click(
                     fn=load_current_config,
                     outputs=config_display
                 )
                 
                 gr.Markdown("## Configuration Validation")
-                validate_btn = gr.Button("🔍 Validate Config", variant="secondary")
+                validate_btn = gr.Button("Validate Config", variant="secondary")
                 validation_result = gr.Textbox(
                     label="Validation Result",
                     interactive=False,
@@ -288,7 +290,7 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
                     lines=3
                 )
                 
-                create_btn = gr.Button("🚀 Create Job", variant="primary")
+                create_btn = gr.Button("Create Job", variant="primary")
                 job_result = gr.Textbox(
                     label="Job Creation Result",
                     interactive=False,
@@ -395,13 +397,13 @@ def create_job_console_page(api_client: APIClient = None, event_streamer: EventS
                 if gate.get("stage") == stage:
                     if gate.get("approved") is True:
                         stage_status = "completed"
-                        gate_info = f"✅ Approved by {gate.get('by', 'unknown')}"
+                        gate_info = f"Approved by {gate.get('by', 'unknown')}"
                     elif gate.get("approved") is False:
                         stage_status = "rejected"
-                        gate_info = f"❌ Rejected by {gate.get('by', 'unknown')}"
+                        gate_info = f"Rejected by {gate.get('by', 'unknown')}"
                     elif gate.get("required", True):
                         stage_status = "waiting"
-                        gate_info = "⏳ Waiting for approval"
+                        gate_info = "Waiting for approval"
             
             cards.append(f"### {stage.title()}\n**Status:** {stage_status}\n{gate_info}")
         
@@ -443,59 +445,75 @@ def create_job_console_page(api_client: APIClient = None, event_streamer: EventS
         
         return "\n\n".join(artifact_list)
     
-    def approve_gate(job_id, stage, notes):
+    def approve_gate(job_id, stage, notes, patch_json):
         """Approve a gate"""
         if not job_id or not stage:
-            return "❌ Job ID and stage are required", "error"
+            return "Job ID and stage are required", "error"
         
         client = get_api_client()
         if not client:
-            return "❌ API client not initialized", "error"
+            return "API client not initialized", "error"
         
         try:
-            result = client.approve_gate(job_id, stage, notes)
+            # Parse patch if provided
+            patch = None
+            if patch_json and patch_json.strip():
+                try:
+                    patch = json.loads(patch_json)
+                except json.JSONDecodeError:
+                    return "Invalid JSON patch format", "error"
+            
+            result = client.approve_gate(job_id, stage, notes, patch)
             if "error" not in result:
-                return f"✅ Gate {stage} approved successfully!", "success"
+                return f"Gate {stage} approved successfully!", "success"
             else:
-                return f"❌ Failed to approve gate: {result['error']}", "error"
+                return f"Failed to approve gate: {result['error']}", "error"
         except Exception as e:
-            return f"❌ Approval error: {str(e)}", "error"
+            return f"Approval error: {str(e)}", "error"
     
-    def reject_gate(job_id, stage, notes):
+    def reject_gate(job_id, stage, notes, patch_json):
         """Reject a gate"""
         if not job_id or not stage:
-            return "❌ Job ID and stage are required", "error"
+            return "Job ID and stage are required", "error"
         
         client = get_api_client()
         if not client:
-            return "❌ API client not initialized", "error"
+            return "API client not initialized", "error"
         
         try:
-            result = client.reject_gate(job_id, stage, notes)
+            # Parse patch if provided
+            patch = None
+            if patch_json and patch_json.strip():
+                try:
+                    patch = json.loads(patch_json)
+                except json.JSONDecodeError:
+                    return "Invalid JSON patch format", "error"
+            
+            result = client.reject_gate(job_id, stage, notes, patch)
             if "error" not in result:
-                return f"✅ Gate {stage} rejected successfully!", "error"
+                return f"Gate {stage} rejected successfully!", "success"
             else:
-                return f"❌ Failed to reject gate: {result['error']}", "error"
+                return f"Failed to reject gate: {result['error']}", "error"
         except Exception as e:
-            return f"❌ Rejection error: {str(e)}", "error"
+            return f"Rejection error: {str(e)}", "error"
     
     def resume_job(job_id):
         """Resume a paused job"""
         if not job_id:
-            return "❌ Job ID is required", "error"
+            return "Job ID is required", "error"
         
         client = get_api_client()
         if not client:
-            return "❌ API client not initialized", "error"
+            return "API client not initialized", "error"
         
         try:
             result = client.resume_job(job_id)
             if "error" not in result:
-                return f"✅ Job resumed successfully!", "success"
+                return f"Job resumed successfully!", "success"
             else:
-                return f"❌ Failed to resume job: {result['error']}", "error"
+                return f"Failed to resume job: {result['error']}", "error"
         except Exception as e:
-            return f"❌ Resume error: {str(e)}", "error"
+            return f"Resume error: {str(e)}", "error"
     
     def update_events(events):
         """Update events display (called by event streamer)"""
@@ -514,13 +532,13 @@ def create_job_console_page(api_client: APIClient = None, event_streamer: EventS
         with gr.Row():
             with gr.Column(scale=1):
                 gr.Markdown("## Job Selection")
-                refresh_jobs_btn = gr.Button("🔄 Refresh Jobs", variant="secondary")
+                refresh_jobs_btn = gr.Button("Refresh Jobs", variant="secondary")
                 job_dropdown = gr.Dropdown(
                     label="Select Job",
                     choices=["Please initialize API client first"],
                     value=None
                 )
-                select_job_btn = gr.Button("📋 Load Job Details", variant="primary")
+                select_job_btn = gr.Button("Load Job Details", variant="primary")
                 
                 gr.Markdown("## Job Info")
                 job_info = gr.Markdown("Select a job to view details")
@@ -536,12 +554,18 @@ def create_job_console_page(api_client: APIClient = None, event_streamer: EventS
                     placeholder="Optional notes for gate decision",
                     lines=2
                 )
+                gate_patch_input = gr.Code(
+                    label="JSON Patch (optional)",
+                    language="json",
+                    lines=5,
+                    placeholder='{"op": "replace", "path": "/text", "value": "new text"}'
+                )
                 
                 with gr.Row():
-                    approve_btn = gr.Button("✅ Approve", variant="success")
-                    reject_btn = gr.Button("❌ Reject", variant="stop")
+                    approve_btn = gr.Button("Approve", variant="success")
+                    reject_btn = gr.Button("Reject", variant="stop")
                 
-                resume_btn = gr.Button("▶️ Resume Job", variant="secondary")
+                resume_btn = gr.Button("Resume Job", variant="secondary")
                 gate_result = gr.Textbox(
                     label="Gate Action Result",
                     interactive=False,
@@ -585,13 +609,13 @@ def create_job_console_page(api_client: APIClient = None, event_streamer: EventS
         
         approve_btn.click(
             fn=approve_gate,
-            inputs=[current_job_id, gate_stage_input, gate_notes_input],
+            inputs=[current_job_id, gate_stage_input, gate_notes_input, gate_patch_input],
             outputs=[gate_result, gate_result]
         )
         
         reject_btn.click(
             fn=reject_gate,
-            inputs=[current_job_id, gate_stage_input, gate_notes_input],
+            inputs=[current_job_id, gate_stage_input, gate_notes_input, gate_patch_input],
             outputs=[gate_result, gate_result]
         )
         
@@ -622,7 +646,7 @@ def create_ui() -> gr.Blocks:
                 type="password",
                 info="Set ADMIN_TOKEN env var or use default: default-admin-token-change-me"
             )
-            init_btn = gr.Button("🔐 Initialize", variant="primary")
+            init_btn = gr.Button("Initialize", variant="primary")
             auth_status = gr.Textbox(
                 label="Authentication Status",
                 value="Enter admin token and click Initialize",
@@ -649,9 +673,9 @@ def create_ui() -> gr.Blocks:
                 global api_client_instance, event_streamer_instance
                 api_client_instance = APIClient(token)
                 event_streamer_instance = EventStreamer(api_client_instance)
-                return "✅ API client initialized"
+                return "API client initialized"
             else:
-                return "❌ Admin token required"
+                return "Admin token required"
         
         init_btn.click(
             fn=init_api_client,
