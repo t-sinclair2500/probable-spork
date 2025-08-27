@@ -1,4 +1,13 @@
+{brief_context}
+
 Split this script into sequential beats with estimated duration seconds per beat (~160 wpm).
-Match each beat to the best [B-ROLL] tag.
+
+Requirements:
+- Analyze script content for natural break points
+- Estimate duration based on word count (~160 wpm)
+- Match each beat to appropriate B-ROLL suggestions
+- Ensure timing adds up to target duration
+- Return only valid JSON format
+
 Return JSON: [{"text":"...", "sec": 3.5, "broll":"query"}, ...]
 Only JSON; no prose.

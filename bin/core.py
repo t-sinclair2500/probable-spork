@@ -48,7 +48,7 @@ log = get_logger("pipeline", os.path.join(BASE, "logs", "pipeline.log"))
 
 class LLMCfg(BaseModel):
     provider: str = "ollama"
-    model: str = "phi3:mini"
+    model: str = "llama3.2:3b"
     endpoint: str = "http://127.0.0.1:11434/api/generate"
     temperature: float = 0.7
     max_tokens: int = 1200

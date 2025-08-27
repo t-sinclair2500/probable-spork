@@ -293,7 +293,7 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
                 
                 slug_input = gr.Textbox(
                     label="Topic Slug",
-                    placeholder="e.g., eames-design-history",
+                    placeholder="e.g., design-history, tech-review, how-to-guide",
                     info="Unique identifier for this job"
                 )
                 
@@ -422,7 +422,7 @@ def create_config_launch_page(api_client: APIClient = None, event_streamer: Even
                 gr.Markdown("""
                 **Duration & Type:**
                 - "3-4 min explainer on baby sleep regression"
-                - "90 second history of Ray and Charles Eames"
+                - "90 second history of modern design principles"
                 - "2 minute tutorial on Python decorators"
                 
                 **Tone & Style:**

@@ -1,4 +1,4 @@
-{{BRIEF_CONTEXT}}
+{brief_context}
 
 You are a video script writer. Convert this outline into a natural, conversational script.
 

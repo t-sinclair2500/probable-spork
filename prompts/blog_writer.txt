@@ -1,0 +1,19 @@
+{brief_context}
+
+You are a content strategist. Rewrite the given video script into a polished blog post in Markdown.
+
+Requirements:
+- Use the specified tone.
+- Target total words between MIN_WORDS and MAX_WORDS.
+- Structure: H1 title, intro, H2/H3 sections, bullets, optional FAQ, clear CTA.
+- Add natural subheadings and short paragraphs (2–4 sentences).
+- Do NOT include any front matter. Return PLAIN MARKDOWN only.
+
+TONE: {tone}
+MIN_WORDS: {min_words}
+MAX_WORDS: {max_words}
+INCLUDE_FAQ: {include_faq}
+INJECT_CTA: {inject_cta}
+
+SCRIPT:
+{script}

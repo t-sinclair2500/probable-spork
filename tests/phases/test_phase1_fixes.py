@@ -38,7 +38,7 @@ def test_ffmpeg_validation():
         print("✅ FFmpegValidator initialized successfully")
         
         # Test audio stream probing (use a test file if available)
-        test_video = os.path.join(ROOT, "videos", "eames.mp4")
+        test_video = os.path.join(ROOT, "videos", "test_video.mp4")
         if os.path.exists(test_video):
             try:
                 stream_info = validator.probe_audio_stream(test_video)
@@ -63,7 +63,7 @@ def test_srt_generation():
         from bin.srt_generate import generate_srt_for_acceptance
         
         # Test with a sample script
-        test_script = os.path.join(ROOT, "scripts", "2025-08-12_eames.txt")
+        test_script = os.path.join(ROOT, "scripts", "test_script.txt")
         if os.path.exists(test_script):
             # Create temporary output
             with tempfile.NamedTemporaryFile(suffix='.srt', delete=False) as tmp:

@@ -129,7 +129,7 @@ def test_fact_guard():
     
     try:
         # Test claim analysis
-        test_line = "Charles Eames was born in 1907 and revolutionized modern design."
+        test_line = "The topic was researched thoroughly with multiple credible sources."
         from bin.fact_guard import analyze_line_for_claims, determine_claim_action
         
         # Load config for claim policies

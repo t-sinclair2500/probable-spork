@@ -408,22 +408,19 @@ def _enhance_brief_with_llm(text: str, base_brief: Dict[str, Any]) -> Optional[D
         
         # Check if we have a suitable model
         models_result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-        if "llama3.2" not in models_result.stdout.lower() and "mistral" not in models_result.stdout.lower():
+        if "llama3.2:3b" not in models_result.stdout.lower():
             return None
         
-        # Create LLM prompt for brief enhancement
-        prompt = f"""
-        Parse this video brief and return ONLY a JSON object with these fields:
-        - intent: one of [narrative_history, how_to, product_demo, explainer, story]
-        - audience: list of target audience segments
-        - keywords_include: list of relevant keywords
-        - motion: one of [subtle, moderate, dynamic] (animation style)
-        - seed: random number 1-9999 for consistent generation
+        # Load brief enhancement prompt template
+        prompt_path = os.path.join(BASE, "prompts", "brief_enhancement.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
         
-        Brief: "{text}"
-        
-        Return only valid JSON:
-        """
+        # Format prompt with variables
+        prompt = template.format(
+            brief_context="",  # Brief enhancement doesn't use brief context
+            text=text
+        )
         
         # Call Ollama
         llm_result = subprocess.run(

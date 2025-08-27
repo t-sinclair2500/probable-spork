@@ -442,15 +442,15 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
     # Define execution batches by model type
     batches = [
         {
-            "name": "Llama 3.2 Batch (Cluster + Outline + Script)",
-            "model": models_config.get("models", {}).get("cluster", {}).get("name", "llama3.2:latest") if models_config else "llama3.2:latest",
+                    "name": "Llama 3.2 Batch (Cluster + Outline + Script)",
+        "model": models_config.get("models", {}).get("cluster", {}).get("name", "llama3.2:3b") if models_config else "llama3.2:3b",
             "steps": [
                 (step, True) for step in shared_steps[:4]  # First 4 steps are required
             ]
         },
         {
-            "name": "Mistral 7B Batch (Research + Fact-Check)",
-            "model": models_config.get("models", {}).get("research", {}).get("name", "mistral:7b-instruct") if models_config else "mistral:7b-instruct",
+            "name": "Llama 3.2 Batch (Research + Fact-Check)",
+            "model": models_config.get("models", {}).get("research", {}).get("name", "llama3.2:3b") if models_config else "llama3.2:3b",
             "steps": [
                 (step, False) for step in shared_steps[4:]  # Remaining steps are optional
             ]
@@ -491,6 +491,21 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
         else:
             log.warning(f"Unknown step '{from_step}', starting from beginning")
     
+    # Extract slug from the most recent script file for research steps
+    slug = None
+    import glob
+    script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
+    if script_files:
+        # Use the most recent script file
+        script_files.sort(reverse=True)
+        latest_script = script_files[0]
+        # Extract slug from filename (e.g., "2025-08-12_topic.txt" -> "topic")
+        script_basename = os.path.basename(latest_script)
+        slug = script_basename.split('_', 1)[1].replace('.txt', '')
+        log.info(f"Extracted slug '{slug}' from script: {latest_script}")
+    else:
+        log.warning("No script files found, research steps may fail")
+    
     # Execute batches sequentially with explicit model lifecycle management
     for batch_idx, batch in enumerate(batches):
         log.info(f"=== EXECUTING BATCH {batch_idx + 1}/{len(batches)}: {batch['name']} ===")
@@ -505,8 +520,8 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
                 # This would call the script refinement logic
                 continue
                 
-            # Special handling for research_ground - pass script path
-            if step_name == "research_ground":
+            # Special handling for research_ground - pass script path and slug
+            if step_name == "research_ground" and slug:
                 # Find the most recent script file
                 import glob
                 script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
@@ -515,27 +530,46 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
                     log_state(step_name, "SKIP", "no_script_files")
                     continue
                 else:
-                    # Use the most recent script file, prioritizing Eames if available
+                    # Use the most recent script file
                     script_files.sort(reverse=True)
-                    # Try to find Eames script first
-                    eames_scripts = [s for s in script_files if 'eames' in s.lower()]
-                    if eames_scripts:
-                        latest_script = eames_scripts[0]
-                        log.info(f"Found Eames script: {latest_script}")
-                    else:
-                        latest_script = script_files[0]
-                        log.info(f"Using most recent script: {latest_script}")
+                    latest_script = script_files[0]
+                    log.info(f"Using script for research_ground: {latest_script}")
                     
-                    script_basename = os.path.basename(latest_script)
-                    # Pass the script path as an argument
-                    step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=[latest_script])
+                    # Pass script path as first argument and slug as --slug
+                    step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=[latest_script, "--slug", slug])
                     if not step_success and required:
                         batch_success = False
                         log.error(f"Required step failed: {step_name}")
                         break
                     continue
             
-            step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
+            # Special handling for research_collect - pass slug parameter
+            if step_name == "research_collect" and slug:
+                step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=["--slug", slug])
+            # Special handling for fact_check - pass script path
+            elif step_name == "fact_check" and slug:
+                # Find the most recent script file
+                import glob
+                script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))
+                if not script_files:
+                    log.info("No script files found, skipping fact_check")
+                    log_state(step_name, "SKIP", "no_script_files")
+                    continue
+                else:
+                    # Use the most recent script file
+                    script_files.sort(reverse=True)
+                    latest_script = script_files[0]
+                    log.info(f"Using script for fact_check: {latest_script}")
+                    
+                    # Pass script path as first argument
+                    step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config, args=[latest_script])
+                    if not step_success and required:
+                        batch_success = False
+                        log.error(f"Required step failed: {step_name}")
+                        break
+                    continue
+            else:
+                step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
             if not step_success and required:
                 batch_success = False
                 log.error(f"Required step failed: {step_name}")
@@ -577,7 +611,7 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
                 # Use the most recent script file
                 script_files.sort(reverse=True)
                 latest_script = script_files[0]
-                # Extract slug from filename (e.g., "2025-08-12_eames.txt" -> "eames")
+                # Extract slug from filename (e.g., "2025-08-12_topic.txt" -> "topic")
                 script_basename = os.path.basename(latest_script)
                 slug = script_basename.split('_', 1)[1].replace('.txt', '')
                 log.info(f"Using script {latest_script} with slug: {slug}")
@@ -602,14 +636,12 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
             log.info("=== EXECUTING LEGACY STOCK ASSET PIPELINE ===")
             log.info(f"Pipeline mode: animatics_only={animatics_only}, enable_legacy_stock={enable_legacy}")
             
-            # Get legacy storyboard pipeline steps from configuration
-            legacy_steps = pipeline_cfg.get("execution", {}).get("storyboard_pipeline", {}).get("legacy_stock", ["fetch_assets", "storyboard_plan"])
+            # Get legacy storyboard pipeline steps from configuration (fetch_assets disabled)
+            legacy_steps = pipeline_cfg.get("execution", {}).get("storyboard_pipeline", {}).get("legacy_stock", ["storyboard_plan"])
             
             # Execute legacy pipeline steps
             for step_name in legacy_steps:
-                if step_name == "fetch_assets":
-                    step_success = run_step(step_name, required=True, brief_env=brief_env, brief_data=brief_data, models_config=models_config)
-                elif step_name == "storyboard_plan":
+                if step_name == "storyboard_plan":
                     # Extract slug for storyboard planning
                     import glob
                     script_files = glob.glob(os.path.join(BASE, "scripts", "*.txt"))

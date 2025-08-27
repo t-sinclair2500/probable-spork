@@ -340,7 +340,7 @@ def create_storyboard(
         target_min = brief['video'].get('target_length_min', 1.5)
         target_max = brief['video'].get('target_length_max', target_min)
     else:
-        # Default to 90 seconds (1.5 minutes) for Eames content
+        # Default to 90 seconds (1.5 minutes) for standard content
         target_min = 1.5
         target_max = 1.5
     

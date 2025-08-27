@@ -312,12 +312,12 @@ Each script is lock-aware and exits if another heavy step is in progress.
 
 For comprehensive documentation, see the organized structure in the `docs/` directory:
 
-- **[docs/README.md](docs/README.md)** - Complete documentation index
-- **Architecture**: `ARCHITECTURE.md` - System design and contracts
-- **Operations**: `docs/operational/` - Runbooks, checklists, and procedures
-- **Strategy**: `docs/strategy/` - Monetization and project goals
-- **Technical**: `docs/technical/` - Implementation details and optimizations
-- **Security**: `docs/security/` - Security assessments and compliance
+- **[docs/README.md](docs/README.md)** - Complete documentation index and navigation
+- **Architecture**: [docs/architecture/](docs/architecture/) - System design and design system
+- **Implementation**: [docs/implementation/](docs/implementation/) - Phase summaries and feature details
+- **Deployment**: [docs/deployment/](docs/deployment/) - Operations, runbooks, and procedures
+- **Development**: [docs/development/](docs/development/) - Workflow and best practices
+- **Technical**: [docs/technical/](docs/technical/) - Engine specs and technical deep-dives
 
 ## Configuration reference
 

@@ -226,47 +226,42 @@ def test_legacy_removal():
         print(f"✗ Legacy step removal test failed: {e}")
         return False
 
-def test_eames_prompt_integration():
-    """Test that the Eames prompt works with the integrated pipeline."""
-    print("\n=== Testing Eames Prompt Integration ===")
+def test_design_prompt_integration():
+    """Test that the design prompt works with the integrated pipeline."""
+    print("\n=== Testing Design Prompt Integration ===")
     
     try:
-        # Check if Eames script exists
-        eames_script = Path("scripts/2025-08-12_eames.txt")
-        if not eames_script.exists():
-            print("⚠ Eames script not found, skipping integration test")
-            return True
+        # Check if design script exists
+        design_script = Path("scripts/2025-08-12_design.txt")
+        if not design_script.exists():
+            print("⚠ Design script not found, skipping integration test")
+            return False
         
-        # Check if storyboard was generated
-        eames_storyboard = Path("scenescripts/eames.json")
-        if not eames_storyboard.exists():
-            print("⚠ Eames storyboard not found, may need to run storyboard planning")
-            return True
+        # Check if design storyboard exists
+        design_storyboard = Path("scenescripts/design.json")
+        if not design_storyboard.exists():
+            print("⚠ Design storyboard not found, may need to run storyboard planning")
         
-        # Check if animatics were generated
-        eames_animatics_dir = Path("assets/eames_animatics")
-        if not eames_animatics_dir.exists():
-            print("⚠ Eames animatics directory not found, may need to run animatics generation")
-            return True
+        # Check if design animatics directory exists
+        design_animatics_dir = Path("assets/design_animatics")
+        if not design_animatics_dir.exists():
+            print("⚠ Design animatics directory not found, may need to run animatics generation")
         
-        # Check asset coverage report
-        eames_coverage = Path("data/eames/asset_coverage_report.json")
-        if eames_coverage.exists():
-            with open(eames_coverage, 'r') as f:
+        # Check asset coverage
+        design_coverage = Path("data/design/asset_coverage_report.json")
+        if design_coverage.exists():
+            with open(design_coverage, 'r') as f:
                 coverage_data = json.load(f)
-                coverage_pct = coverage_data.get("coverage_percentage", 0)
-                if coverage_pct >= 95:
-                    print(f"✓ Eames asset coverage: {coverage_pct}%")
-                else:
-                    print(f"⚠ Eames asset coverage below threshold: {coverage_pct}%")
+            coverage_pct = coverage_data.get('coverage_percentage', 0)
+            print(f"✓ Design asset coverage: {coverage_pct}%")
         else:
-            print("⚠ Eames asset coverage report not found")
+            print(f"⚠ Design asset coverage report not found")
         
-        print("✓ Eames prompt integration validation passed")
+        print("✓ Design prompt integration validation passed")
         return True
         
     except Exception as e:
-        print(f"✗ Eames prompt integration test failed: {e}")
+        print(f"✗ Design prompt integration test failed: {e}")
         return False
 
 def main():
@@ -282,7 +277,7 @@ def main():
         test_music_bed_policy_integration,
         test_pipeline_execution_order,
         test_legacy_removal,
-        test_eames_prompt_integration
+        test_design_prompt_integration
     ]
     
     passed = 0

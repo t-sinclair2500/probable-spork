@@ -337,18 +337,41 @@ def main(brief=None):
         cta = getattr(getattr(cfg, "blog", object()), "inject_cta", "Thanks for reading.")
 
     import requests
+    
+    # Load prompt templates
+    def load_prompt_template(filename: str) -> str:
+        """Load a prompt template from the prompts directory."""
+        prompt_path = os.path.join(BASE, "prompts", filename)
+        if not os.path.exists(prompt_path):
+            raise FileNotFoundError(f"Prompt template not found: {prompt_path}")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    
     # Stage 1: Draft writer
-    writer_prompt = (
-        "You are a content strategist. Rewrite the given video script into a polished blog post in Markdown.\n\n"
-        "Requirements:\n"
-        "- Use the specified tone.\n"
-        "- Target total words between MIN_WORDS and MAX_WORDS.\n"
-        "- Structure: H1 title, intro, H2/H3 sections, bullets, optional FAQ, clear CTA.\n"
-        "- Add natural subheadings and short paragraphs (2–4 sentences).\n"
-        "- Do NOT include any front matter. Return PLAIN MARKDOWN only.\n\n"
-        f"TONE: {tone}\nMIN_WORDS: {mn}\nMAX_WORDS: {mx}\nINCLUDE_FAQ: {str(include_faq).lower()}\nINJECT_CTA: {cta}\n\n"
-        "SCRIPT:\n" + text
-    )
+    try:
+        writer_template = load_prompt_template("blog_writer.txt")
+        writer_prompt = writer_template.format(
+            brief_context="",
+            tone=tone,
+            min_words=mn,
+            max_words=mx,
+            include_faq=str(include_faq).lower(),
+            inject_cta=cta,
+            script=text
+        )
+    except Exception as e:
+        log.warning(f"Failed to load blog writer prompt template: {e}, using fallback")
+        writer_prompt = (
+            "You are a content strategist. Rewrite the given video script into a polished blog post in Markdown.\n\n"
+            "Requirements:\n"
+            "- Use the specified tone.\n"
+            "- Target total words between MIN_WORDS and MAX_WORDS.\n"
+            "- Structure: H1 title, intro, H2/H3 sections, bullets, optional FAQ, clear CTA.\n"
+            "- Add natural subheadings and short paragraphs (2–4 sentences).\n"
+            "- Do NOT include any front matter. Return PLAIN MARKDOWN only.\n\n"
+            f"TONE: {tone}\nMIN_WORDS: {mn}\nMAX_WORDS: {mx}\nINCLUDE_FAQ: {str(include_faq).lower()}\nINJECT_CTA: {cta}\n\n"
+            "SCRIPT:\n" + text
+        )
     
     # Enhance prompt with brief context if available
     if brief:
@@ -368,11 +391,16 @@ def main(brief=None):
     # Stage 2: Copyediting pass (grammar, flow, tone consistency)
     md2 = md1
     if md1:
-        ce_prompt = (
-            "You are a copyediting agent. Improve grammar, clarity, and flow. Keep the original structure and headings.\n"
-            "Return PLAIN MARKDOWN only.\n\n"
-            "ARTICLE:\n" + md1
-        )
+        try:
+            ce_template = load_prompt_template("blog_copyedit.txt")
+            ce_prompt = ce_template.format(article=md1)
+        except Exception as e:
+            log.warning(f"Failed to load blog copyedit prompt template: {e}, using fallback")
+            ce_prompt = (
+                "You are a copyediting agent. Improve grammar, clarity, and flow. Keep the original structure and headings.\n"
+                "Return PLAIN MARKDOWN only.\n\n"
+                "ARTICLE:\n" + md1
+            )
         try:
             r2 = requests.post(cfg.llm.endpoint, json={"model": cfg.llm.model, "prompt": ce_prompt, "stream": False}, timeout=600)
             if r2.ok:
@@ -383,12 +411,17 @@ def main(brief=None):
     # Stage 3: SEO polish (title length, meta description suggestion inline as comments)
     md3 = md2
     if md2:
-        seo_prompt = (
-            "You are an SEO copywriter. Tighten the title (≤65 chars) and ensure concise subheads.\n"
-            "Insert a one-line meta description suggestion as an HTML comment at the top.\n"
-            "Return PLAIN MARKDOWN only.\n\n"
-            "ARTICLE:\n" + md2
-        )
+        try:
+            seo_template = load_prompt_template("blog_seo.txt")
+            seo_prompt = seo_template.format(article=md2)
+        except Exception as e:
+            log.warning(f"Failed to load blog SEO prompt template: {e}, using fallback")
+            seo_prompt = (
+                "You are an SEO copywriter. Tighten the title (≤65 chars) and ensure concise subheads.\n"
+                "Insert a one-line meta description suggestion as an HTML comment at the top.\n"
+                "Return PLAIN MARKDOWN only.\n\n"
+                "ARTICLE:\n" + md2
+            )
         try:
             r3 = requests.post(cfg.llm.endpoint, json={"model": cfg.llm.model, "prompt": seo_prompt, "stream": False}, timeout=600)
             if r3.ok:

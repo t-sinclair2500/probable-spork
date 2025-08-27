@@ -35,8 +35,8 @@ def test_scene_duration_computation():
     """Test scene duration computation"""
     print("Testing scene duration computation...")
     
-    # Load the Eames SceneScript
-    scenescript_path = Path("scenescripts/eames.json")
+    # Load the test SceneScript
+    scenescript_path = Path("scenescripts/test_slug.json")
     if not scenescript_path.exists():
         print("SceneScript not found, skipping test")
         return
@@ -55,7 +55,7 @@ def test_scene_duration_computation():
     print(f"Brief target: {brief.get('video', {}).get('target_length_min', 'unknown')} minutes")
     
     # Load grounded beats
-    beats_path = Path("data/eames/grounded_beats.json")
+    beats_path = Path("data/test_slug/grounded_beats.json")
     if beats_path.exists():
         with open(beats_path, 'r') as f:
             beats = json.load(f)
@@ -66,7 +66,7 @@ def test_scene_duration_computation():
             print(f"  Beat {i}: {duration_ms}ms ({duration_ms/1000:.1f}s)")
         
         # Test duration computation
-        durations, strategy, rationale = compute_scene_durations(beats, brief, timing_config, "eames")
+        durations, strategy, rationale = compute_scene_durations(beats, brief, timing_config, "test_slug")
         print(f"\nComputed durations: {durations}")
         print(f"Strategy: {strategy}")
         print(f"Rationale: {rationale}")
@@ -89,8 +89,8 @@ def test_acceptance_duration_validation():
     """Test acceptance duration validation"""
     print("Testing acceptance duration validation...")
     
-    # Load the Eames SceneScript
-    scenescript_path = Path("scenescripts/eames.json")
+    # Load the test SceneScript
+    scenescript_path = Path("scenescripts/test_slug.json")
     if not scenescript_path.exists():
         print("SceneScript not found, skipping test")
         return

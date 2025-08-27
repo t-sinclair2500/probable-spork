@@ -1,0 +1,21 @@
+{brief_context}
+
+Parse this video brief and return ONLY a JSON object with these fields.
+
+Requirements:
+- Analyze the brief content for intent and audience
+- Extract relevant keywords and topics
+- Determine appropriate animation style
+- Generate consistent seed for reproducible results
+- Return only valid JSON format
+
+Fields to include:
+- intent: one of [narrative_history, how_to, product_demo, explainer, story]
+- audience: list of target audience segments
+- keywords_include: list of relevant keywords
+- motion: one of [subtle, moderate, dynamic] (animation style)
+- seed: random number 1-9999 for consistent generation
+
+Brief: "{brief_text}"
+
+Return only valid JSON:

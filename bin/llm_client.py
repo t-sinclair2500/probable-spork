@@ -151,14 +151,10 @@ def run_research_plan(topic: str) -> Dict:
     model_name = config.models.research.name
     
     with model_session(model_name) as session:
-        system_prompt = """You are a research planner. Generate a structured research plan for the given topic.
-        
-Return your response as JSON with the following structure:
-{
-  "queries": ["search query 1", "search query 2", ...],
-  "sources": ["source type 1", "source type 2", ...],
-  "focus_areas": ["area 1", "area 2", ...]
-}"""
+        # Load research planning prompt
+        prompt_path = ROOT / "prompts" / "research_planning.txt"
+        with open(prompt_path, 'r') as f:
+            system_prompt = f.read()
         
         response = session.chat(
             system=system_prompt,
@@ -186,20 +182,10 @@ def run_fact_guard(script: str) -> Dict:
     model_name = config.models.research.name
     
     with model_session(model_name) as session:
-        system_prompt = """You are a fact-checker. Review the given script for factual accuracy and suggest improvements.
-        
-Return your response as JSON with the following structure:
-{
-  "issues": [
-    {
-      "text": "problematic text",
-      "issue": "description of the issue",
-      "suggestion": "corrected version"
-    }
-  ],
-  "citations_needed": ["fact 1", "fact 2", ...],
-  "overall_score": 0.95
-}"""
+        # Load fact-checking prompt
+        prompt_path = ROOT / "prompts" / "fact_check.txt"
+        with open(prompt_path, 'r') as f:
+            system_prompt = f.read()
         
         response = session.chat(
             system=system_prompt,

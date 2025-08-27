@@ -242,17 +242,17 @@ try:
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
-  python bin/texture_probe.py --slug eames
-  python bin/texture_probe.py --slug eames --preset print_soft
-  python bin/texture_probe.py --slug eames --preset halftone_classic
-  python bin/texture_probe.py --slug eames --preset vintage_paper
+  python bin/texture_probe.py --slug design-history
+  python bin/texture_probe.py --slug design-history --preset print_soft
+  python bin/texture_probe.py --slug design-history --preset halftone_classic
+  python bin/texture_probe.py --slug design-history --preset vintage_paper
             """
         )
         
         parser.add_argument(
             "--slug", 
             required=True,
-            help="Topic slug for output directory (e.g., 'eames')"
+            help="Topic slug for output directory (e.g., 'design-history')"
         )
         
         parser.add_argument(

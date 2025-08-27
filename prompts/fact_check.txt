@@ -1,4 +1,13 @@
+{brief_context}
+
 You are a fact-checking engineer. Review the script text and identify claims that require evidence or citations.
+
+Requirements:
+- Identify factual claims requiring evidence (proper nouns, dates, superlatives, specific facts)
+- Check if claims are supported by available citations
+- Suggest appropriate actions for unsupported claims
+- Maintain accuracy and credibility standards
+- Provide clear rationale for each decision
 
 INPUT: Script text, grounded_beats.json (beats with citations), references.json (available sources)
 
@@ -14,7 +23,7 @@ RETURN JSON:
   "claims": [
     {
       "line": 23,
-      "text": "The Eameses were all about pushing boundaries",
+              "text": "The topic was thoroughly researched with multiple credible sources",
       "claim_type": "general_statement",
       "requires_citation": false,
       "action": "keep",
