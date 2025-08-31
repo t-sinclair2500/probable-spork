@@ -156,7 +156,7 @@ def main():
                 print(f"  - Shared ingestion steps: {len(execution.get('shared_ingestion', []))}")
                 print(f"  - Storyboard pipeline steps: {len(execution.get('storyboard_pipeline', {}).get('animatics_only', []))}")
                 print(f"  - Video production steps: {len(execution.get('video_production', []))}")
-                print(f"  - Blog generation steps: {len(execution.get('blog_generation', []))}")
+        
             else:
                 print("  - Execution configuration missing")
         else:
@@ -242,20 +242,7 @@ def main():
     run_safe("python bin/assemble_video.py", required=True)
     run_safe("python bin/upload_stage.py", required=True)
     
-    # Blog lane
-    print(f"\n=== Blog Lane ===")
-    run_safe("python bin/blog_pick_topics.py", required=True)
-    run_safe("python bin/blog_generate_post.py", required=True)
-    run_safe("python bin/blog_render_html.py", required=True)
-    
-    # WordPress posting - always dry run in tests
-    os.environ["BLOG_DRY_RUN"] = "true"
-    
-    # Asset fetching - default to reuse mode unless explicitly set to live
-    if not os.environ.get("TEST_ASSET_MODE"):
-        os.environ["TEST_ASSET_MODE"] = "reuse"
-    run_safe("python bin/blog_post_wp.py", required=True)
-    run_safe("python bin/blog_ping_search.py", required=True)
+
     
     # Test design prompt specifically (success criteria from integration prompt)
     print(f"\n=== Design Prompt Test ===")
@@ -283,7 +270,7 @@ def main():
     
     print(f"\n✓ E2E test complete!")
     print(f"  - Video pipeline: PASSED")
-    print(f"  - Blog pipeline: PASSED")
+
     print(f"  - Captions: {'PASSED' if has_whisper else 'SKIPPED (no whisper.cpp)'}")
     print(f"  - Feature integration: {'PASSED' if os.path.exists('conf/pipeline.yaml') else 'SKIPPED'}")
     

@@ -29,7 +29,7 @@ def check_env_file():
         print("   # Example .env contents:")
         print("   # PIXABAY_API_KEY=your_key_here")
         print("   # PEXELS_API_KEY=your_key_here")
-        print("   # BLOG_DRY_RUN=true")
+        print("")
         print("   # YOUTUBE_UPLOAD_DRY_RUN=true")
         return False
 
@@ -42,7 +42,7 @@ def create_local_directories():
         "logs",
         "temp",
         "exports",
-        "exports/blog",
+
         "runs",
         "assets",
         "videos",

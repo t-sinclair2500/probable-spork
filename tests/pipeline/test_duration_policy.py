@@ -99,11 +99,11 @@ def test_acceptance_duration_validation():
         scenescript_data = json.load(f)
     
     # Create a mock acceptance validator
-    from bin.core import load_config, load_blog_cfg
+    from bin.core import load_config
     cfg = load_config()
-    blog_cfg = load_blog_cfg()
+
     
-    validator = AcceptanceValidator(cfg, blog_cfg)
+    validator = AcceptanceValidator(cfg)
     
     # Test duration policy validation
     duration_result = validator._validate_duration_policy(scenescript_data)

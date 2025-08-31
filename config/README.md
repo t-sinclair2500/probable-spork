@@ -12,7 +12,7 @@ Environment-specific configuration files.
 
 ### Configuration Files
 - **global.yaml** - Main system configuration
-- **blog.yaml** - Blog-specific configuration
+
 - **brief.yaml** - Brief and content configuration
 - **render.yaml** - Rendering and output configuration
 - **sources.yaml** - Data source configuration

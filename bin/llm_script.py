@@ -161,11 +161,18 @@ def generate_script(outline_path: str, target_len_sec: int = 60, brief: Dict = N
             outline_data=json.dumps(outline_data, indent=2)
         )
 
+        # Load user prompt template
+        user_prompt_path = os.path.join(BASE, "prompts", "user_script.txt")
+        with open(user_prompt_path, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=outline_data.get('topic', 'the topic'))
+        
         # Generate script using LLM
         with model_session(model_name) as session:
             response = session.chat(
                 system=system_prompt,
-                user=f"Create a video script based on this outline for: {outline_data.get('topic', 'the topic')}",
+                user=user_prompt,
                 temperature=0.3
             )
             

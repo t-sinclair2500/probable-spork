@@ -521,11 +521,11 @@ class StageRunner:
             
             # Import pipeline modules
             from bin.acceptance import main as run_acceptance
-            from bin.core import load_config, load_blog_cfg
+            from bin.core import load_config
             
             # Load configuration
             cfg = load_config()
-            blog_cfg = load_blog_cfg()
+    
             
             # Run acceptance validation
             run_acceptance()

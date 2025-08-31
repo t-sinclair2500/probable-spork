@@ -159,11 +159,18 @@ def generate_outline(topic: str, target_len_sec: int = 60, brief: Dict = None,
             cta_policy=intent_metadata.get('cta_policy', 'optional') if intent_metadata else 'optional'
         )
 
+        # Load user prompt template
+        user_prompt_path = os.path.join(BASE, "prompts", "user_outline.txt")
+        with open(user_prompt_path, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=topic)
+        
         # Generate outline using LLM
         with model_session(model_name) as session:
             response = session.chat(
                 system=system_prompt,
-                user=f"Create a video outline for: {topic}",
+                user=user_prompt,
                 temperature=0.3
             )
             

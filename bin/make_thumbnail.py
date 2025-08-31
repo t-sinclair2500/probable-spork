@@ -21,7 +21,8 @@ log = get_logger("make_thumbnail")
 
 def safe_text(t, max_len=28):
     t = re.sub(r"\s+", " ", t).strip()
-    return (t[:max_len] + "…") if len(t) > max_len else t
+    # Use ASCII ellipsis for broader font compatibility
+    return (t[:max_len] + "...") if len(t) > max_len else t
 
 
 def main(brief=None):

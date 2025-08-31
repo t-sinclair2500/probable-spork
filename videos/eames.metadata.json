@@ -1,6 +1,6 @@
 {
   "slug": "eames",
-  "timestamp": "2025-08-15T07:09:50Z",
+  "timestamp": "2025-08-31T18:05:33Z",
   "coverage": {
     "visual_coverage_pct": 100.0,
     "beat_coverage_pct": 100.0,
@@ -8,8 +8,8 @@
     "transition_density": 0.0,
     "total_duration": 90.0,
     "black_fallback_duration": 0.0,
-    "asset_coverage_beats": 1,
-    "total_beats": 1,
+    "asset_coverage_beats": 22,
+    "total_beats": 22,
     "meets_coverage_threshold": true,
     "meets_transition_rule": true,
     "source": "animatics"

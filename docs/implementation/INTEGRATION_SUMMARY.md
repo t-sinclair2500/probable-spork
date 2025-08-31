@@ -18,7 +18,7 @@ Successfully integrated storyboard asset loop, texture/paper feel, SVG path oper
   - Shared ingestion (LLM-based content generation)
   - Storyboard pipeline (animatics vs legacy)
   - Video production
-  - Blog generation
+  
 - **Removed unused legacy code** and streamlined execution
 
 ### 3. Feature Integration
@@ -66,13 +66,7 @@ Successfully integrated storyboard asset loop, texture/paper feel, SVG path oper
 4. `make_thumbnail` - Generate thumbnail
 5. `upload_stage` - Stage for upload
 
-### Phase 4: Blog Generation
-1. `blog_pick_topics` - Select blog topics
-2. `blog_generate_post` - Generate blog content
-3. `blog_render_html` - Render HTML with SEO
-4. `blog_stage_local` - Stage locally
-5. `blog_post_wp` - Post to WordPress (optional)
-6. `blog_ping_search` - Ping search engines (optional)
+
 
 ## Feature Configuration
 
@@ -139,7 +133,7 @@ Successfully integrated storyboard asset loop, texture/paper feel, SVG path oper
 
 ### E2E Tests: ✅ PASSED
 - Video pipeline: PASSED
-- Blog pipeline: PASSED
+
 - Captions: PASSED
 - Feature integration: PASSED
 

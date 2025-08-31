@@ -42,7 +42,7 @@ class Brief(BaseModel):
     audience: List[str] = []
     tone: str = "informative"
     video: Dict[str, Any] = {"target_length_min": 5, "target_length_max": 7}
-    blog: Dict[str, Any] = {"words_min": 900, "words_max": 1300}
+
     keywords_include: List[str] = []
     keywords_exclude: List[str] = []
     sources_preferred: List[str] = []

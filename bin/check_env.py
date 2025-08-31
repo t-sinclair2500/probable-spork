@@ -217,12 +217,7 @@ def main():
     except Exception as e:
         issues.append(f"Failed to load render configuration: {e}")
 
-    # If blog lane used later, remind about WP app password
-    from pathlib import Path
 
-    blog_cfg = Path(os.path.join(os.path.dirname(__file__), "..", "conf", "blog.yaml"))
-    if blog_cfg.exists():
-        pass
 
     # Print results
     print("=== Environment Check Results ===")

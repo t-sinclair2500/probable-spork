@@ -32,11 +32,11 @@ That's it! The system will automatically detect your project type and start the 
 - `make serve-ui` - Start Gradio UI only (Python-based)
 - `make smoke-test` - Run API smoke tests (Python-based)
 - `make backup-repo` - Create repository backup
-- `make backup-wp` - Create WordPress backup
+
 
 ### Legacy Pipeline (Still Available)
 - `make run-once` - Run full YouTube pipeline
-- `make blog-once` - Run blog pipeline
+
 - `make health` - Start health server
 
 ## What Happens When You Run `make start`
@@ -67,7 +67,7 @@ probable-spork/
 │   ├── serve_ui.py          # Gradio UI starter (cross-platform)
 │   ├── smoke_op_console.py  # API smoke testing (cross-platform)
 │   ├── backup_repo.py       # Repository backup (cross-platform)
-│   ├── backup_wp.py         # WordPress backup (cross-platform)
+
 │   ├── serve_api.sh         # Legacy Unix FastAPI starter
 │   ├── serve_api.ps1        # Legacy Windows FastAPI starter
 │   ├── serve_ui.sh          # Legacy Unix Gradio starter
@@ -123,7 +123,7 @@ PIXABAY_API_KEY=your_key_here
 PEXELS_API_KEY=your_key_here
 
 # Pipeline Control (optional)
-BLOG_DRY_RUN=true
+
 YOUTUBE_UPLOAD_DRY_RUN=true
 
 # Server Configuration (optional)
@@ -168,7 +168,7 @@ The `.vscode/tasks.json` file provides VS Code tasks for common operations:
 - **Python: Serve UI** - Start Gradio UI directly
 - **Python: Smoke Test** - Run API smoke tests directly
 - **Python: Backup Repo** - Create repository backup directly
-- **Python: Backup WordPress** - Create WordPress backup directly
+
 
 ## Next Steps
 

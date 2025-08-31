@@ -174,7 +174,7 @@ def test_pipeline_execution_order():
         execution = pipeline_cfg["execution"]
         
         # Check that all required phases exist
-        required_phases = ["shared_ingestion", "storyboard_pipeline", "video_production", "blog_generation"]
+        required_phases = ["shared_ingestion", "storyboard_pipeline", "video_production"]
         for phase in required_phases:
             if phase not in execution:
                 print(f"✗ Missing required phase: {phase}")

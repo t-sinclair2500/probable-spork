@@ -32,14 +32,7 @@ execution:
     - make_thumbnail        # Generate thumbnail
     - upload_stage          # Stage for upload
   
-  # Phase 4: Blog generation (staged)
-  blog_generation:
-    - blog_pick_topics      # Select blog topics
-    - blog_generate_post    # Generate blog content
-    - blog_render_html      # Render HTML with SEO
-    - blog_stage_local      # Stage locally
-    - blog_post_wp          # Post to WordPress (optional)
-    - blog_ping_search      # Ping search engines (optional)
+  
 
 # Feature integration configuration
 features:

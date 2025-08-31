@@ -16,7 +16,7 @@ This document provides a comprehensive audit of Python syntax issues, indentatio
 **CRITICAL ISSUE:** Multiple files have else statements without corresponding if statements:
 
 #### Files with Malformed Else Statements:
-- `bin/blog_pick_topics.py`: **Lines 33, 67, 126** - Else statements without corresponding if
+
 - `bin/make_thumbnail.py`: **Lines 34, 101** - Else statements without corresponding if
 - `bin/research_ground.py`: **Lines 99, 323, 326, 333** - Else statements without corresponding if
 - `bin/fact_guard.py`: **Lines 80, 135, 190** - Else statements without corresponding if
@@ -35,7 +35,6 @@ This document provides a comprehensive audit of Python syntax issues, indentatio
 **MEDIUM ISSUE:** Many files have empty lines that contain indentation:
 
 #### Files with Empty Line Indentation:
-- `bin/blog_pick_topics.py`: **38 instances**
 - `bin/make_thumbnail.py`: **22 instances**
 - `bin/research_ground.py`: **126 instances**
 - `bin/fact_guard.py`: **66 instances**
@@ -47,7 +46,6 @@ This document provides a comprehensive audit of Python syntax issues, indentatio
 **LOW ISSUE:** Many files have trailing whitespace:
 
 #### Files with Trailing Whitespace:
-- `bin/blog_pick_topics.py`: **38 instances**
 - `bin/make_thumbnail.py`: **22 instances**
 - `bin/research_ground.py`: **126 instances**
 - `bin/fact_guard.py`: **66 instances**
@@ -59,7 +57,6 @@ This document provides a comprehensive audit of Python syntax issues, indentatio
 **LOW ISSUE:** Several files have lines exceeding 120 characters:
 
 #### Files with Long Lines:
-- `bin/blog_pick_topics.py`: **Line 125** - 127 characters
 - `bin/research_ground.py`: **Lines 206, 230** - 121, 126 characters
 - `bin/fact_guard.py`: **Lines 176, 191** - 124, 122 characters
 - `bin/generate_captions.py`: **Lines 35, 90** - 123, 141 characters

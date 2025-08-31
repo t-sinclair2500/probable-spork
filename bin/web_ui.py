@@ -397,11 +397,7 @@ def api_run():
         "captions": "bin/generate_captions.py",
         "assemble": "bin/assemble_video.py",
         "stage": "bin/upload_stage.py",
-        "blog_pick": "bin/blog_pick_topics.py",
-        "blog_gen": "bin/blog_generate_post.py",
-        "blog_render": "bin/blog_render_html.py",
-        "blog_post": "bin/blog_post_wp.py",
-        "blog_ping": "bin/blog_ping_search.py",
+
     }
     if step not in mapping:
         return jsonify({"error": "unknown step"}), 400
@@ -1394,11 +1390,7 @@ input{padding:8px;border:1px solid #ddd;border-radius:4px;margin:4px;}
       <button onclick="run('stage')">Stage Upload</button>
       
       <h4>Blog Publishing:</h4>
-      <button onclick="run('blog_pick')">Pick Topic</button>
-      <button onclick="run('blog_gen')">Generate Post</button>
-      <button onclick="run('blog_render')">Render HTML</button>
-      <button onclick="run('blog_post')">Post to WordPress</button>
-      <button onclick="run('blog_ping')">Ping Search</button>
+      
     </div>
   </div>
 </div>

@@ -52,9 +52,16 @@ def run_cluster(tasks: List[str]) -> List[Dict]:
         with open(prompt_path, 'r') as f:
             system_prompt = f.read()
         
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_cluster.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(task_text=task_text)
+        
         response = session.chat(
             system=system_prompt,
-            user=f"Cluster these topics:\n\n{task_text}",
+            user=user_prompt,
             temperature=0.2
         )
         
@@ -87,9 +94,16 @@ def run_outline(topic: str) -> str:
         with open(prompt_path, 'r') as f:
             system_prompt = f.read()
         
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_outline.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=topic)
+        
         return session.chat(
             system=system_prompt,
-            user=f"Generate an outline for: {topic}",
+            user=user_prompt,
             temperature=0.3
         )
 
@@ -122,14 +136,17 @@ def run_script(grounded_beats: List[Dict], brief: Dict) -> str:
             for i, beat in enumerate(grounded_beats)
         ])
         
-        user_prompt = f"""Brief: {brief.get('title', 'Untitled')}
-Tone: {brief.get('tone', 'informative')}
-Target Length: {brief.get('target_len_sec', 300)} seconds
-
-Grounded Beats:
-{beats_text}
-
-Generate a script following the brief and using the grounded beats."""
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_script_brief.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(
+            brief_title=brief.get('title', 'Untitled'),
+            tone=brief.get('tone', 'informative'),
+            target_length=brief.get('target_len_sec', 300),
+            beats_text=beats_text
+        )
         
         return session.chat(
             system=system_prompt,
@@ -156,9 +173,16 @@ def run_research_plan(topic: str) -> Dict:
         with open(prompt_path, 'r') as f:
             system_prompt = f.read()
         
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_research_plan.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=topic)
+        
         response = session.chat(
             system=system_prompt,
-            user=f"Create a research plan for: {topic}",
+            user=user_prompt,
             temperature=0.3
         )
         
@@ -187,9 +211,16 @@ def run_fact_guard(script: str) -> Dict:
         with open(prompt_path, 'r') as f:
             system_prompt = f.read()
         
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_fact_check.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(script=script)
+        
         response = session.chat(
             system=system_prompt,
-            user=f"Fact-check this script:\n\n{script}",
+            user=user_prompt,
             temperature=0.1
         )
         
@@ -465,7 +496,7 @@ if __name__ == "__main__":
     try:
         response = client.chat('cluster', 
                               "You are a helpful assistant.", 
-                              "Say hello!")
+                              "Hello!")
         print(f"Chat test response: {response}")
     except Exception as e:
         print(f"Chat test failed: {e}")

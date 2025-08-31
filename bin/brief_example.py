@@ -28,7 +28,7 @@ def main():
         print(f"   Audience: {', '.join(brief['audience'])}")
         print(f"   Tone: {brief['tone']}")
         print(f"   Video target: {brief['video']['target_length_min']}-{brief['video']['target_length_max']} minutes")
-        print(f"   Blog target: {brief['blog']['words_min']}-{brief['blog']['words_max']} words")
+
         print(f"   Keywords to include: {', '.join(brief['keywords_include'][:3])}...")
         print(f"   CTA: {brief['monetization']['cta_text']}")
         print()
@@ -66,12 +66,8 @@ def main():
         # Example: Content length planning
         video_min = brief['video']['target_length_min']
         video_max = brief['video']['target_length_max']
-        blog_min = brief['blog']['words_min']
-        blog_max = brief['blog']['words_max']
-        
         print(f"   Content Targets:")
         print(f"     Video: {video_min}-{video_max} minutes")
-        print(f"     Blog: {blog_min}-{blog_max} words")
         print()
         
         # Example: Notes and context

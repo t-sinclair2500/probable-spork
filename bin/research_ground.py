@@ -362,10 +362,17 @@ Enhanced Content:"""
             # Use model runner for deterministic load/unload
             model_name = self.research_config.get('models', {}).get('research', 'llama3.2:3b')
             
+            # Load user prompt template
+            user_prompt_path = os.path.join(BASE, "prompts", "user_research_ground.txt")
+            with open(user_prompt_path, "r", encoding="utf-8") as f:
+                user_prompt_template = f.read()
+            
+            user_prompt = user_prompt_template.strip()
+            
             with model_session(model_name) as session:
                 grounded_content = session.chat(
                     system=system_prompt,
-                    user="Please enhance this content with research-backed information while maintaining the original style.",
+                    user=user_prompt,
                     temperature=0.3
                 )
                 

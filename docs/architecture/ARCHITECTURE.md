@@ -13,7 +13,7 @@ This file remains for historical reference only.
 
 **Goal:** Implement a **shared, core pipeline** that powers multiple outputs from one Raspberry Pi 5:
 - **YouTube lane** (video scripts → VO → assets → render → stage/upload)
-- **Blog lane** (articles → images → SEO → publish to WordPress)
+
 - (Future lanes: newsletter, static site, data dashboard, digital products)
 
 **Constraints & Principles**
@@ -21,7 +21,7 @@ This file remains for historical reference only.
 - **One source of truth** for trends, topics, artifacts, and job state.
 - **Local-first** stack: Ollama (phi3:mini), whisper.cpp (ASR), Coqui TTS, FFmpeg, MoviePy, Python.
 - **Optional cloud fallbacks** are **OFF by default** and require explicit enabling and keys.
-- **Operator simplicity:** all knobs in `conf/global.yaml` (video/blog/tone/length/scheduling).
+- **Operator simplicity:** all knobs in `conf/global.yaml` (video/tone/length/scheduling).
 - **Idempotence:** all scripts safe to re-run; existing outputs short-circuit gracefully.
 - **Licensing:** all assets tracked; attributions are inserted when required.
 
@@ -39,7 +39,7 @@ This file remains for historical reference only.
   ├── data/
   │   ├── trending_topics.db                # SQLite: raw trend rows (yt/reddit/trends)
   │   ├── topics_queue.json                 # ranked topics
-  │   ├── upload_queue.json                 # items staged for upload (yt/blog)
+  │   ├── upload_queue.json                 # items staged for upload (yt)
   │   └── cache/                            # cached fetches, embeddings later
   ├── jobs/                                 # unified job control & audit
   │   ├── todo.jsonl
@@ -101,7 +101,7 @@ This file remains for historical reference only.
 ```json
 {
   "title": "Final chosen title",
-  "description": "Channel/blog appropriate description.",
+  "description": "Channel appropriate description.",
   "tags": ["...","..."],
   "slug": "final-chosen-title",
   "chapters": [
@@ -121,15 +121,15 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 ```json
 [
   {
-    "type": "video|blog",
+    "type": "video",
     "file": "/abs/path/to/output.mp4 or html",
     "title": "Title",
     "description": "Desc",
     "tags": ["a","b"],
     "thumbnail": "/abs/path/to/thumbnail.png",
-    "target": "youtube|wordpress",
+    "target": "youtube",
     "status": "staged|uploaded|failed",
-    "extra": {"wp_id": null, "yt_id": null}
+    "extra": {"yt_id": null}
   }
 ]
 ```
@@ -153,7 +153,7 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 
 ### 2.4 Lane Outputs
 - **YouTube lane:** `bin/tts_generate.py`, `bin/generate_captions.py`, `bin/assemble_video.py`, `bin/make_thumbnail.py`, `bin/upload_stage.py` (and optional `bin/youtube_upload.py`).
-- **Blog lane:** `bin/blog_pick_topics.py`, `bin/blog_generate_post.py`, `bin/blog_render_html.py`, `bin/blog_post_wp.py`, `bin/blog_ping_search.py`.
+
 
 ### 2.5 Reliability
 - `bin/healthcheck.py`: temp, disk, model, last step.
@@ -166,7 +166,7 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 ### Roles
 - **Agent A (Data/Integrations):** ingestion and asset providers.
 - **Agent B (LLM/Authoring):** prompts, clustering, outline, scripts, fact pass, beat timing.
-- **Agent C (Media/Blog):** TTS, ASR, MoviePy, WP REST, thumbnails.
+- **Agent C (Media):** TTS, ASR, MoviePy, thumbnails.
 - **Agent D (Reliability/Ops):** locks, retries, temp checks, logs, config validation.
 
 ### Common Guardrails
@@ -218,7 +218,7 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 **Tasks**
 - Parse `[B-ROLL]` markers into queries; call Pixabay/Pexels; respect `assets.max_per_section`.
 - Save assets and `license.json`, `sources_used.txt` per topic folder.
-- Normalize to target resolution where possible; downscale images to ≤1280×720 for blog.
+- Normalize to target resolution where possible; downscale images to ≤1280×720 for video.
 
 **Acceptance**
 - 10–20 usable assets per script; license data present and accurate.
@@ -244,29 +244,7 @@ img001.jpg / clip001.mp4 ... # normalized to target resolution where possible
 
 ---
 
-### F) Blog lane
-**Pick Topics — `bin/blog_pick_topics.py`**
-- FIFO from `topics_queue.json`, avoid duplicates within last 14 days.
 
-**Generate Post — `bin/blog_generate_post.py`**
-- LLM rewrites script to blog: headline, intro, H2/H3, bullets, FAQ, CTA.
-- SEO metadata: slug, title tag (60–65 chars), meta description (150–160 chars).
-- Internal links: query last 10 posts via WP REST (if available).
-
-**Render HTML — `bin/blog_render_html.py`**
-- Convert Markdown to HTML, insert ToC and schema.org Article JSON-LD.
-- Insert attribution block if licenses require it.
-
-**Post to WP — `bin/blog_post_wp.py`**
-- Upload featured + inline images to `/wp-json/wp/v2/media`.
-- Create post via `/wp-json/wp/v2/posts` with category/tags; schedule or publish.
-- Update `data/upload_queue.json` with `type:"blog"`, `status` updated, and `wp_id`.
-
-**Ping — `bin/blog_ping_search.py`**
-- Ping Google sitemap endpoint; warm cache by GET on post URL.
-
-**Acceptance**
-- 1 scheduled/published post/day with images and SEO fields set; sitemap ping success logged.
 
 ---
 
@@ -298,12 +276,7 @@ Trigger windows may be adjusted; each script **exits early** if lock present.
 30 13 * * *  python bin/assemble_video.py
 0  14 * * *  python bin/upload_stage.py
 
-# Blog lane
-20 7  * * *  python bin/blog_pick_topics.py
-35 7  * * *  python bin/blog_generate_post.py
-45 7  * * *  python bin/blog_render_html.py
-55 7  * * *  python bin/blog_post_wp.py
-5  8  * * *  python bin/blog_ping_search.py
+
 
 # Health
 0  *  * * *  python bin/healthcheck.py
@@ -315,11 +288,11 @@ Trigger windows may be adjusted; each script **exits early** if lock present.
 
 ## 6) Testing & Sign-off
 
-- **Dry-run E2E:** produce one blog post + one video using the same topic in a day.
+- **Dry-run E2E:** produce one video using the same topic in a day.
 - **Validation:** presence of assets, license files, SRT captions, thumbnail, SEO fields, and upload_queue entries.
 - **Idempotence:** re-running any step does not duplicate artifacts; instead it skips with “already exists” logs.
 - **Performance:** daily completion within allotted windows on Pi 5 with active cooling and SSD swap.
-- **Security:** WordPress API uses **Application Password** for a non-admin poster user only.
+
 
 ---
 
@@ -327,5 +300,5 @@ Trigger windows may be adjusted; each script **exits early** if lock present.
 - Stable ingestion and clustering with real APIs.
 - Authoring produces valid outlines and scripts respecting tone/length.
 - Shared assets downloaded with license metadata.
-- YouTube lane and Blog lane can independently consume shared artifacts.
+- YouTube lane can independently consume shared artifacts.
 - Healthcheck and logs indicate success; 3 days of unattended runs pass.

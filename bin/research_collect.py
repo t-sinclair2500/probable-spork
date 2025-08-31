@@ -35,9 +35,12 @@ class ResearchCollector:
     
     def __init__(self, models_config: Optional[Dict] = None, mode: str = "reuse"):
         """Initialize research collector."""
+        # Global runtime config (pydantic model) if needed elsewhere
         self.config = load_config()
         self.models_config = models_config or self._load_models_config()
-        self.research_config = self.config.get('research', {})
+
+        # Load research-specific configuration from conf/research.yaml
+        self.research_config = self._load_research_config()
         self.mode = mode
         
         # Database setup
@@ -56,7 +59,7 @@ class ResearchCollector:
         
         if self.cache_enabled:
             self.cache_base_path.mkdir(parents=True, exist_ok=True)
-    
+
     def _load_models_config(self) -> Dict:
         """Load models configuration."""
         try:
@@ -66,6 +69,21 @@ class ResearchCollector:
                 return yaml.safe_load(f)
         except Exception as e:
             log.warning(f"Failed to load models.yaml: {e}, using defaults")
+            return {}
+
+    def _load_research_config(self) -> Dict:
+        """Load research configuration from conf/research.yaml."""
+        try:
+            import yaml
+            research_path = Path(BASE) / "conf" / "research.yaml"
+            if research_path.exists():
+                with open(research_path, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f) or {}
+            else:
+                log.warning("conf/research.yaml not found; using defaults")
+                return {}
+        except Exception as e:
+            log.warning(f"Failed to load research.yaml: {e}; using defaults")
             return {}
     
     def _init_database(self):

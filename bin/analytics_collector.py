@@ -165,7 +165,7 @@ class MetricsCollector:
             return {"steps": {}, "errors": [], "performance": {}}
     
     def analyze_content_quality(self) -> Dict[str, Any]:
-        """Analyze content quality metrics from recent blog posts."""
+        """Analyze content quality metrics from recent content."""
         metrics = {
             "posts_analyzed": 0,
             "avg_word_count": 0,
@@ -175,7 +175,7 @@ class MetricsCollector:
         }
         
         try:
-            # Look for recent blog metadata
+            # Look for recent content metadata
             cache_dir = os.path.join(BASE, "data", "cache")
             meta_file = os.path.join(cache_dir, "post.meta.json")
             

@@ -1,4 +1,4 @@
-# Unified cron for shared pipeline (YouTube + Blog lanes) on a single Pi.
+# Unified cron for YouTube pipeline on a single Pi.
 # Uses orchestrator for single daily run instead of fragmented individual steps.
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -9,7 +9,7 @@ PY=$REPO/.venv/bin/python
 LOG=$REPO/logs/cron.log
 
 # MAIN ORCHESTRATED PIPELINE (single daily run)
-# Runs complete pipeline: ingestion -> YouTube lane -> Blog lane (staged)
+# Runs complete pipeline: ingestion -> YouTube lane
 0  9  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/run_pipeline.py >> $LOG 2>&1
 
 # Health monitoring (hourly)
@@ -17,4 +17,4 @@ LOG=$REPO/logs/cron.log
 
 # OPTIONAL: Manual override lanes (comment out for normal operation)
 # 30 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/run_pipeline.py --yt-only   >> $LOG 2>&1
-# 45 7  * * *  cd $REPO && source $REPO/.venv/bin/activate && $PY bin/run_pipeline.py --blog-only >> $LOG 2>&1
+

@@ -26,10 +26,8 @@ This directory contains the main pipeline executables that form the core content
 - **make_thumbnail.py** - Generates video thumbnails
 
 ### Content Management
-- **blog_generate_post.py** - Generates blog post content
-- **blog_post_wp.py** - WordPress publishing integration
-- **blog_ping_search.py** - Search engine notification
-- **blog_stage_local.py** - Local blog staging
+
+
 
 ### System & Utilities
 - **core.py** - Core utility functions and configuration

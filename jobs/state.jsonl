@@ -360,3 +360,19 @@
 {"ts": "2025-08-15T07:09:34Z", "step": "animatics_generate", "status": "FAILED", "notes": "'Scene' object has no attribute 'type'"}
 {"ts": "2025-08-15T07:09:50Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
 {"ts": "2025-08-15T07:12:19Z", "step": "assemble_video", "status": "OK", "notes": "eames.mp4"}
+{"ts": "2025-08-31T17:32:54Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'blog_only': False, 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=none"}
+{"ts": "2025-08-31T17:32:54Z", "step": "run_pipeline", "status": "ERROR", "notes": "exception=list index out of range"}
+{"ts": "2025-08-31T18:02:55Z", "step": "animatics_generate", "status": "FAILED", "notes": "'Scene' object has no attribute 'type'"}
+{"ts": "2025-08-31T18:03:15Z", "step": "animatics_generate", "status": "COMPLETED", "notes": "Rendered 5/5 scenes for eames"}
+{"ts": "2025-08-31T18:03:56Z", "step": "tts_generate", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-31T18:03:56Z", "step": "tts_generate", "status": "OK", "notes": "2025-08-12_productivity-tips.mp3"}
+{"ts": "2025-08-31T18:04:13Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-31T18:04:13Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-08-31T18:04:36Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-31T18:04:36Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-08-31T18:05:02Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-31T18:05:32Z", "step": "assemble_video", "status": "START", "notes": "brief=none"}
+{"ts": "2025-08-31T18:06:47Z", "step": "assemble_video", "status": "OK", "notes": "eames.mp4"}
+{"ts": "2025-08-31T18:07:14Z", "step": "make_thumbnail", "status": "START", "notes": "no brief"}
+{"ts": "2025-08-31T18:07:29Z", "step": "make_thumbnail", "status": "START", "notes": "no brief"}
+{"ts": "2025-08-31T18:07:29Z", "step": "make_thumbnail", "status": "OK", "notes": "2025-08-12_productivity-tips.png"}

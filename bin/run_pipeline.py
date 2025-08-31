@@ -120,13 +120,7 @@ def inject_brief_environment(brief: Dict[str, any]) -> Dict[str, str]:
         if video.get('target_length_max'):
             env_vars['BRIEF_VIDEO_LENGTH_MAX'] = str(video['target_length_max'])
     
-    # Blog settings
-    if brief.get('blog'):
-        blog = brief['blog']
-        if blog.get('words_min'):
-            env_vars['BRIEF_BLOG_WORDS_MIN'] = str(blog['words_min'])
-        if blog.get('words_max'):
-            env_vars['BRIEF_BLOG_WORDS_MAX'] = str(blog['words_max'])
+
     
     # Keywords
     if brief.get('keywords_include'):
@@ -357,56 +351,7 @@ def run_youtube_lane(cfg, dry_run: bool = False, brief_env: Dict[str, str] = Non
     log.info(f"=== YOUTUBE LANE {'COMPLETED' if success else 'FAILED'} ===")
     return success
 
-def run_blog_lane(cfg, dry_run: bool = False, brief_env: Dict[str, str] = None, brief_data: Dict[str, any] = None) -> bool:
-    """Execute blog content generation lane (staged only)"""
-    log.info("=== STARTING BLOG LANE (STAGED) ===")
-    
-    # Use centralized flag governance  
-    flags = get_publish_flags(cli_dry_run=dry_run, target="blog")
-    publish_enabled = flags["blog_publish_enabled"]
-    
-    success = True
-    
-    # Load pipeline configuration for blog generation steps
-    pipeline_cfg = load_pipeline_config()
-    
-    # Phase 5: Blog lane (staged only per spec)
-    blog_steps = pipeline_cfg.get("execution", {}).get("blog_generation", [
-        ("blog_pick_topics", True),
-        ("blog_generate_post", True), 
-        ("blog_render_html", True)
-    ])
-    
-    for step_name, required in blog_steps:
-        step_success = run_step(step_name, required=required, brief_env=brief_env, brief_data=brief_data)
-        if not step_success and required:
-            success = False
-            break
-    
-    # Stage locally instead of publishing to WordPress
-    if success:
-        try:
-            if not run_step("blog_stage_local", required=True, brief_env=brief_env, brief_data=brief_data):
-                success = False
-        except SystemExit:
-            # blog_stage_local doesn't exist yet - skip gracefully
-            log.warning("blog_stage_local.py not found, skipping local staging")
-            log_state("blog_stage_local", "SKIP", "script_not_found")
-    
-    # Skip WordPress publishing when disabled
-    if success and not publish_enabled:
-        log.info("WordPress publishing disabled, skipping blog_post_wp.py")
-        log_state("blog_post_wp", "SKIP", "publish_disabled")
-    elif success and publish_enabled:
-        log.info("WordPress publishing enabled, running blog_post_wp.py")
-        success = run_step("blog_post_wp", required=True, brief_env=brief_env, brief_data=brief_data)
-        
-        if success:
-            # Only ping search engines if we actually published
-            run_step("blog_ping_search", required=False, brief_env=brief_env, brief_data=brief_data)
-    
-    log.info(f"=== BLOG LANE {'COMPLETED' if success else 'FAILED'} ===")
-    return success
+
 
 def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Optional[Dict[str, str]] = None, brief_data: Optional[Dict] = None, models_config: Optional[Dict] = None, no_style_rewrite: bool = False) -> bool:
     """Execute shared data ingestion steps with batch-by-model execution"""
@@ -675,7 +620,7 @@ def run_shared_ingestion(cfg, from_step: Optional[str] = None, brief_env: Option
 def main():
     parser = argparse.ArgumentParser(description="Unified Pipeline Orchestrator")
     parser.add_argument("--yt-only", action="store_true", help="Run YouTube lane only")
-    parser.add_argument("--blog-only", action="store_true", help="Run blog lane only (staged)")
+
     parser.add_argument("--from-step", help="Resume from specific step")
     parser.add_argument("--dry-run", action="store_true", help="Force dry-run mode for all publishing")
     parser.add_argument("--brief", help="Path to a custom workstream brief file (YAML or MD)")
@@ -746,7 +691,7 @@ def main():
             log.info(f"Injected {len(brief_env_vars)} brief environment variables.")
         
         # Shared ingestion (unless skipping with specific lane flags and from-step)
-        if not (args.yt_only or args.blog_only) or not args.from_step:
+        if not args.yt_only or not args.from_step:
             if not run_shared_ingestion(cfg, args.from_step, brief_env_vars, brief_data, models_config, args.no_style_rewrite):
                 overall_success = False
                 log.error("Shared ingestion failed, aborting pipeline")
@@ -756,15 +701,12 @@ def main():
         if args.yt_only:
             if not run_youtube_lane(cfg, args.dry_run, brief_env_vars, brief_data, models_config):
                 overall_success = False
-        elif args.blog_only:
-            if not run_blog_lane(cfg, args.dry_run, brief_env_vars, brief_data):
-                overall_success = False
+
         else:
-            # Run both lanes
+            # Run YouTube lane only
             yt_success = run_youtube_lane(cfg, args.dry_run, brief_env_vars, brief_data, models_config)
-            blog_success = run_blog_lane(cfg, args.dry_run, brief_env_vars, brief_data)
             
-            if not (yt_success and blog_success):
+            if not yt_success:
                 overall_success = False
         
         # Final status

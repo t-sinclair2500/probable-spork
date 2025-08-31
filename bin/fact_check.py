@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fact-checking module for blog content validation.
+Fact-checking module for content validation.
 Uses the prompts/fact_check.txt prompt to identify claims requiring citations.
 """
 import json

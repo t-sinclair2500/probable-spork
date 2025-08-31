@@ -1,0 +1,8 @@
+Brief: {brief_title}
+Tone: {tone}
+Target Length: {target_length} seconds
+
+Grounded Beats:
+{beats_text}
+
+Generate a script following the brief and using the grounded beats.
