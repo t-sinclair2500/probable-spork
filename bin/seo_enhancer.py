@@ -24,7 +24,7 @@ log = get_logger("seo_enhancer")
 
 @dataclass
 class SEOMetadata:
-    """Comprehensive SEO metadata for a blog post."""
+    """Comprehensive SEO metadata for content."""
     # Basic metadata
     title: str
     description: str
@@ -226,7 +226,7 @@ class SEOEnhancer:
             {"@type": "ListItem", "position": 1, "name": "Home", "item": self.config["site_url"]}
         ]
         
-        category = post_metadata.get("category", "Blog")
+        category = post_metadata.get("category", "Content")
         if category:
             breadcrumbs.append({
                 "@type": "ListItem", 

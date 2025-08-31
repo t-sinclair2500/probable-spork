@@ -103,7 +103,7 @@ def validate_brief(brief: Dict[str, Any]) -> Dict[str, Any]:
         "audience": [],
         "tone": "informative",
         "video": {"target_length_min": 5, "target_length_max": 7},
-        "blog": {"words_min": 900, "words_max": 1300},
+
         "keywords_include": [],
         "keywords_exclude": [],
         "sources_preferred": [],
@@ -165,8 +165,8 @@ def _normalize_brief_fields(brief: Dict[str, Any]) -> Dict[str, Any]:
         # Normalize keywords: lowercase, strip whitespace
         brief[key] = [kw.lower().strip() for kw in brief[key] if kw.strip()]
     
-    # Ensure video/blog configs are dicts
-    for key in ["video", "blog"]:
+    # Ensure video configs are dicts
+    for key in ["video"]:
         if not isinstance(brief[key], dict):
             brief[key] = {}
     
@@ -220,10 +220,7 @@ def create_brief_template(output_path: str = None) -> str:
             "target_length_min": 5,
             "target_length_max": 7
         },
-        "blog": {
-            "words_min": 900,
-            "words_max": 1300
-        },
+
         "keywords_include": [
             "Google Business Profile",
             "reviews",
@@ -237,7 +234,7 @@ def create_brief_template(output_path: str = None) -> str:
         ],
         "sources_preferred": [
             "Google Search Central",
-            "Sterling Sky blog"
+            "Sterling Sky"
         ],
         "monetization": {
             "primary": ["lead_magnet", "email_capture"],
@@ -278,7 +275,7 @@ def parse_free_text_brief(text: str) -> Dict[str, Any]:
         "audience": [],
         "tone": "informative",
         "video": {"target_length_min": 5, "target_length_max": 7},
-        "blog": {"words_min": 900, "words_max": 1300},
+
         "keywords_include": [],
         "keywords_exclude": [],
         "sources_preferred": [],
@@ -408,22 +405,19 @@ def _enhance_brief_with_llm(text: str, base_brief: Dict[str, Any]) -> Optional[D
         
         # Check if we have a suitable model
         models_result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-        if "llama3.2" not in models_result.stdout.lower() and "mistral" not in models_result.stdout.lower():
+        if "llama3.2:3b" not in models_result.stdout.lower():
             return None
         
-        # Create LLM prompt for brief enhancement
-        prompt = f"""
-        Parse this video brief and return ONLY a JSON object with these fields:
-        - intent: one of [narrative_history, how_to, product_demo, explainer, story]
-        - audience: list of target audience segments
-        - keywords_include: list of relevant keywords
-        - motion: one of [subtle, moderate, dynamic] (animation style)
-        - seed: random number 1-9999 for consistent generation
+        # Load brief enhancement prompt template
+        prompt_path = os.path.join(BASE, "prompts", "brief_enhancement.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
         
-        Brief: "{text}"
-        
-        Return only valid JSON:
-        """
+        # Format prompt with variables
+        prompt = template.format(
+            brief_context="",  # Brief enhancement doesn't use brief context
+            text=text
+        )
         
         # Call Ollama
         llm_result = subprocess.run(
@@ -470,7 +464,7 @@ def resolve_brief(preferred: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
             "audience": ["general"],
             "tone": "informative",
             "video": {"target_length_min": 5, "target_length_max": 7},
-            "blog": {"words_min": 900, "words_max": 1300},
+
             "keywords_include": [],
             "keywords_exclude": [],
             "sources_preferred": [],

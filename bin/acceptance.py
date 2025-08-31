@@ -26,7 +26,7 @@ from bin.core import (
     BASE, 
     get_logger, 
     load_config, 
-    load_blog_cfg,
+
     load_modules_cfg,
     log_state,
     single_lock
@@ -38,9 +38,8 @@ log = get_logger("acceptance")
 class AcceptanceValidator:
     """Validates pipeline artifacts and quality thresholds"""
     
-    def __init__(self, cfg, blog_cfg):
+    def __init__(self, cfg):
         self.cfg = cfg
-        self.blog_cfg = blog_cfg
         self.modules_cfg = load_modules_cfg()
         
         # Load render configuration for acceptance settings
@@ -54,8 +53,7 @@ class AcceptanceValidator:
             "pipeline": "acceptance_harness",
             "overall_status": "PENDING",
             "lanes": {
-                "youtube": {"status": "PENDING", "artifacts": {}, "quality": {}},
-                "blog": {"status": "PENDING", "artifacts": {}, "quality": {}}
+                "youtube": {"status": "PENDING", "artifacts": {}, "quality": {}}
             },
             "quality_thresholds": {
                 "script_score_min": self.render_cfg.get("acceptance", {}).get("min_script_score", 50),
@@ -900,59 +898,7 @@ class AcceptanceValidator:
         youtube_results["status"] = "PASS"
         return True
     
-    def validate_blog_lane(self) -> bool:
-        """Validate blog lane artifacts and quality"""
-        log.info("=== VALIDATING BLOG LANE ===")
-        
-        blog_results = self.results["lanes"]["blog"]
-        
-        # Check for required artifacts
-        artifacts = self._find_blog_artifacts()
-        blog_results["artifacts"] = artifacts
-        
-        if not artifacts["post_html"]:
-            blog_results["status"] = "FAIL"
-            blog_results["quality"]["error"] = "Missing post.html"
-            return False
-            
-        if not artifacts["post_meta"]:
-            blog_results["status"] = "FAIL"
-            blog_results["quality"]["error"] = "Missing post.meta.json"
-            return False
-            
-        if not artifacts["schema"]:
-            blog_results["status"] = "FAIL"
-            blog_results["quality"]["error"] = "Missing schema.json"
-            return False
-            
-        if not artifacts["credits"]:
-            blog_results["status"] = "FAIL"
-            blog_results["quality"]["error"] = "Missing credits.json"
-            return False
-            
-        if not artifacts["wp_payload"]:
-            blog_results["status"] = "FAIL"
-            blog_results["quality"]["error"] = "Missing wp_rest_payload.json"
-            return False
-            
-        if not artifacts["assets"]:
-            blog_results["quality"]["warning"] = "No inline images found"
-        
-        # Quality validation
-        quality = self._validate_blog_quality(artifacts)
-        blog_results["quality"].update(quality)
-        
-        # Determine overall status
-        if not quality.get("seo_lint_pass", False):
-            blog_results["status"] = "FAIL"
-            blog_results["quality"]["error"] = "SEO lint failed"
-            return False
-            
-        if not quality.get("alt_text_coverage", 0) >= 100:
-            blog_results["quality"]["warning"] = f"Only {quality.get('alt_text_coverage', 0)}% of images have alt text"
-        
-        blog_results["status"] = "PASS"
-        return True
+
     
     def _find_youtube_artifacts(self) -> Dict[str, Any]:
         """Find YouTube lane artifacts"""
@@ -1117,55 +1063,7 @@ class AcceptanceValidator:
         
         return artifacts
     
-    def _find_blog_artifacts(self) -> Dict[str, Any]:
-        """Find blog lane artifacts"""
-        artifacts = {
-            "post_html": None,
-            "post_meta": None,
-            "schema": None,
-            "credits": None,
-            "wp_payload": None,
-            "assets": []
-        }
-        
-        # Find most recent blog export
-        exports_dir = os.path.join(BASE, "exports", "blog")
-        if os.path.exists(exports_dir):
-            export_dirs = [d for d in os.listdir(exports_dir) if os.path.isdir(os.path.join(exports_dir, d)) and not d.endswith('.zip')]
-            if export_dirs:
-                # Get most recent by date prefix
-                export_dirs.sort(reverse=True)
-                latest_export = export_dirs[0]
-                export_path = os.path.join(exports_dir, latest_export)
-                
-                # Check for required files
-                post_html = os.path.join(export_path, "post.html")
-                if os.path.exists(post_html):
-                    artifacts["post_html"] = f"exports/blog/{latest_export}/post.html"
-                
-                post_meta = os.path.join(export_path, "post.meta.json")
-                if os.path.exists(post_meta):
-                    artifacts["post_meta"] = f"exports/blog/{latest_export}/post.meta.json"
-                
-                schema = os.path.join(export_path, "schema.json")
-                if os.path.exists(schema):
-                    artifacts["schema"] = f"exports/blog/{latest_export}/schema.json"
-                
-                credits = os.path.join(export_path, "credits.json")
-                if os.path.exists(credits):
-                    artifacts["credits"] = f"exports/blog/{latest_export}/credits.json"
-                
-                wp_payload = os.path.join(export_path, "wp_rest_payload.json")
-                if os.path.exists(wp_payload):
-                    artifacts["wp_payload"] = f"exports/blog/{latest_export}/wp_rest_payload.json"
-                
-                # Check for assets
-                assets_dir = os.path.join(export_path, "assets")
-                if os.path.exists(assets_dir):
-                    asset_files = [f for f in os.listdir(assets_dir) if f.endswith(('.mp4', '.jpg', '.png'))]
-                    artifacts["assets"] = asset_files
-        
-        return artifacts
+
     
     def _validate_youtube_quality(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
         """Validate YouTube lane quality metrics"""
@@ -1245,59 +1143,7 @@ class AcceptanceValidator:
         
         return quality
     
-    def _validate_blog_quality(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate blog lane quality metrics"""
-        quality = {}
-        
-        # SEO lint check
-        if artifacts["post_html"]:
-            html_path = os.path.join(BASE, artifacts["post_html"])
-            if os.path.exists(html_path):
-                try:
-                    # Import SEO lint function
-                    from bin.seo_lint import lint as seo_lint
-                    
-                    with open(html_path, 'r', encoding='utf-8') as f:
-                        html_content = f.read()
-                    
-                    # Extract title and meta description from HTML for SEO lint
-                    import re
-                    title_match = re.search(r'<title>(.*?)</title>', html_content, re.IGNORECASE)
-                    meta_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\']([^"\']*)["\']', html_content, re.IGNORECASE)
-                    
-                    title = title_match.group(1) if title_match else "Untitled"
-                    meta_desc = meta_match.group(1) if meta_match else "No description"
-                    
-                    # Run SEO lint
-                    seo_issues = seo_lint(title, meta_desc)
-                    quality["seo_lint_pass"] = len(seo_issues) == 0
-                    quality["seo_issues"] = seo_issues
-                    
-                except ImportError:
-                    quality["seo_lint_pass"] = True  # Assume pass if lint not available
-                    quality["seo_warning"] = "SEO lint module not available"
-                except Exception as e:
-                    quality["seo_lint_pass"] = True  # Assume pass on error
-                    quality["seo_warning"] = f"SEO lint error: {str(e)}"
-        
-        # Alt text coverage
-        if artifacts["post_html"]:
-            html_path = os.path.join(BASE, artifacts["post_html"])
-            if os.path.exists(html_path):
-                with open(html_path, 'r', encoding='utf-8') as f:
-                    html_content = f.read()
-                
-                import re
-                img_pattern = r'<img[^>]*>'
-                images = re.findall(img_pattern, html_content, re.IGNORECASE)
-                
-                if images:
-                    alt_images = [img for img in images if 'alt=' in img.lower()]
-                    quality["alt_text_coverage"] = int((len(alt_images) / len(images)) * 100)
-                    quality["total_images"] = len(images)
-                    quality["images_with_alt"] = len(alt_images)
-        
-        return quality
+
     
     def _validate_youtube_audio(self, artifacts: Dict[str, Any]) -> Dict[str, Any]:
         """Validate YouTube lane audio quality metrics"""
@@ -2601,8 +2447,7 @@ class AcceptanceValidator:
         # Validate YouTube lane
         youtube_ok = self.validate_youtube_lane()
         
-        # Validate blog lane  
-        blog_ok = self.validate_blog_lane()
+
         
         # Validate evidence quality (research rigor)
         evidence_ok = self._validate_evidence_quality(self.results["lanes"]["youtube"]["artifacts"])
@@ -2631,7 +2476,7 @@ class AcceptanceValidator:
             pacing_ok["errors"].append("Pacing integrity guard: Missing KPI metrics or comparison data")
             self.results["pacing"] = pacing_ok
         
-        if youtube_ok and blog_ok and evidence_ok["status"] == "PASS" and pacing_ok["status"] == "PASS":
+        if youtube_ok and evidence_ok["status"] == "PASS" and pacing_ok["status"] == "PASS":
             self.results["overall_status"] = "PASS"
         else:
             self.results["overall_status"] = "FAIL"
@@ -2652,12 +2497,12 @@ class AcceptanceValidator:
         # Add summary
         self.results["summary"] = {
             "youtube_lane": "PASS" if youtube_ok else "FAIL",
-            "blog_lane": "PASS" if blog_ok else "FAIL",
+
             "evidence_lane": "PASS" if evidence_ok["status"] == "PASS" else "FAIL",
             "pacing_lane": "PASS" if pacing_ok["status"] == "PASS" else "FAIL",
             "total_artifacts": {
                 "youtube": len([v for v in self.results["lanes"]["youtube"]["artifacts"].values() if v]),
-                "blog": len([v for v in self.results["lanes"]["blog"]["artifacts"].values() if v])
+
             }
         }
         
@@ -2708,7 +2553,7 @@ class AcceptanceValidator:
             current_metrics = {
                 "overall_status": self.results["overall_status"],
                 "youtube_lane_status": self.results["lanes"]["youtube"]["status"],
-                "blog_lane_status": self.results["lanes"]["blog"]["status"],
+    
                 "evidence_status": self.results.get("evidence", {}).get("status", "UNKNOWN"),
                 "pacing_status": self.results.get("pacing", {}).get("status", "UNKNOWN"),
                 "duration_tolerance_pct": self.results["acceptance_config"]["duration_tolerance_pct"],
@@ -2718,7 +2563,7 @@ class AcceptanceValidator:
             previous_metrics = {
                 "overall_status": previous_results.get("overall_status", "UNKNOWN"),
                 "youtube_lane_status": previous_results.get("lanes", {}).get("youtube", {}).get("status", "UNKNOWN"),
-                "blog_lane_status": previous_results.get("lanes", {}).get("blog", {}).get("status", "UNKNOWN"),
+    
                 "evidence_status": previous_results.get("evidence", {}).get("status", "UNKNOWN"),
                 "pacing_status": previous_results.get("pacing", {}).get("status", "UNKNOWN"),
                 "duration_tolerance_pct": previous_results.get("acceptance_config_summary", {}).get("duration_tolerance_pct", 0),
@@ -2889,7 +2734,7 @@ def main():
     # Load configuration
     try:
         cfg = load_config()
-        blog_cfg = load_blog_cfg()
+
         log.info("Configuration loaded successfully")
     except Exception as e:
         log.error(f"Failed to load configuration: {e}")
@@ -2905,7 +2750,7 @@ def main():
         log.info("Skipping orchestrator run, validating existing artifacts")
     
     # Run validation
-    validator = AcceptanceValidator(cfg, blog_cfg)
+    validator = AcceptanceValidator(cfg)
     results = validator.run_validation()
     
     # Output results
@@ -2917,7 +2762,7 @@ def main():
     log.info(f"Acceptance results written to: {output_path}")
     log.info(f"Overall status: {results['overall_status']}")
     log.info(f"YouTube lane: {results['summary']['youtube_lane']}")
-    log.info(f"Blog lane: {results['summary']['blog_lane']}")
+
     
     # Exit with appropriate code
     if results["overall_status"] == "PASS":

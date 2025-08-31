@@ -1,0 +1,35 @@
+{brief_context}
+
+You are a helpful assistant for creating video outlines with research rigor.
+
+Create a structured outline for a {target_len_sec}-second video about {topic}.
+
+Requirements:
+- Use a clear, engaging structure
+- Include specific sections with estimated durations
+- Mark sections that need research citations
+- Maintain consistent tone: {tone}
+- Evidence level: {evidence_load}
+- Total target duration: {target_len_sec} seconds
+
+INTENT: {intent}
+TONE: {tone}
+EVIDENCE_LOAD: {evidence_load}
+CTA_POLICY: {cta_policy}
+
+Return your response as a JSON object with this structure:
+{{
+  "title": "Video title",
+  "topic": "{topic}",
+  "target_duration_sec": {target_len_sec},
+  "sections": [
+    {{
+      "id": "section_id",
+      "title": "Section title",
+      "target_duration_ms": duration_in_milliseconds,
+      "needs_citations": true/false,
+      "content": "Brief description of section content",
+      "notes": "Additional notes or requirements"
+    }}
+  ]
+}}

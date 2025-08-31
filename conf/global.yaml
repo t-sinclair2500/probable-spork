@@ -30,7 +30,7 @@ video:
 
 llm:
   provider: "ollama"
-  model: "phi3:mini"             # default local model
+  model: "llama3.2:3b"           # single model for all tasks
   endpoint: "http://127.0.0.1:11434/api/generate"
   temperature: 0.7
   max_tokens: 1200
@@ -48,11 +48,14 @@ tts:
   openai_enabled: false
 
 assets:
-  providers:
-    - "pixabay"
-    - "pexels"
-    # - "unsplash"   # Optional; requires UNSPLASH_ACCESS_KEY in .env and attribution
+  # Procedural generation only - no external API dependencies
+  providers: []  # Empty list - using procedural generation instead
   max_per_section: 3
+  procedural_generation: true
+  # Legacy external providers disabled
+  # - "pixabay"  # Disabled - using procedural generation
+  # - "pexels"   # Disabled - using procedural generation
+  # - "unsplash" # Disabled - using procedural generation
 
 # Music bed policy configuration
 music:

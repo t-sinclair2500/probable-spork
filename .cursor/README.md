@@ -15,7 +15,7 @@ The `environment.json` file configures the Ubuntu-based VM environment with:
 Two background agents are configured to work on parallel tracks:
 
 - **Agent 1** (`bg_agent1.md`): Data Integration & Testing Track
-- **Agent 2** (`bg_agent2.md`): WordPress & Content Generation Track
+- **Agent 2** (`bg_agent2.md`): Content Generation Track
 
 ## Important Constraints
 

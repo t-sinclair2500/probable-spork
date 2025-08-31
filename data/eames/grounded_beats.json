@@ -1,11 +1,11 @@
 [
   {
-    "id": 21,
+    "id": "beat_21",
     "title": "1. Think outside the box – or mold.",
     "content": "2. Collaborate with others to create something special.\n3. Sketch and experiment to innovate.\n4. Simplicity is key – less is often more.\n5. Push boundaries to create truly memorable designs.\"",
-    "word_count": 31,
+    "original_content": "2. Collaborate with others to create something special.\n3. Sketch and experiment to innovate.\n4. Simplicity is key – less is often more.\n5. Push boundaries to create truly memorable designs.\"",
     "grounded_content": "2. Collaborate with others to create something special.\n3. Sketch and experiment to innovate.\n4. Simplicity is key – less is often more.\n5. Push boundaries to create truly memorable designs.\"",
     "citations": [],
-    "research_chunks": []
+    "research_score": 0.0
   }
 ]

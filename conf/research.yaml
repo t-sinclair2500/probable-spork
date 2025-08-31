@@ -45,8 +45,7 @@ domains:
     - "quora.com"
     - "medium.com"
     - "substack.com"
-    - "blogspot.com"
-    - "wordpress.com"
+    
     - "tumblr.com"
 
 # Rate limits and backoff settings

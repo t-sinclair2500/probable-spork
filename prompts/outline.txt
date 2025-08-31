@@ -1,15 +1,15 @@
-{{BRIEF_CONTEXT}}
+{brief_context}
 
 You are a video content strategist. Create a detailed outline for a {topic} video.
 
 IMPORTANT: Use the brief context above to create content that matches the specific topic, tone, and target length. Do NOT create generic content.
 
-Use these seed keywords: {seed_keywords}
+Use these seed keywords: {keywords}
 
 Structure:
 - Follow the intent template structure provided above
 - Each section should have 2-3 beats and 2-3 B-roll suggestions
-- Target length: {target_length_min}-{target_length_max} minutes
+- Target length: {target_len_sec} seconds
 - Include engaging hooks and clear takeaways
 - Content must be specific to the topic, not generic tips
 - Honor the CTA policy: {cta_policy}

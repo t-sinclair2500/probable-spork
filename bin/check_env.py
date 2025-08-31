@@ -85,16 +85,21 @@ def main():
     ffmpeg_issues, ffmpeg_info = check_ffmpeg_installation()
     issues.extend(ffmpeg_issues)
     
-    # If assets providers enabled, require at least one API key
-    if cfg.assets.providers:
+    # Check asset configuration - procedural generation is preferred
+    if cfg.assets.providers and len(cfg.assets.providers) > 0:
+        # External providers are configured but not recommended
+        log.warning("External asset providers configured - consider using procedural generation instead")
         if not (
             env.get("PIXABAY_API_KEY")
             or env.get("PEXELS_API_KEY")
             or env.get("UNSPLASH_ACCESS_KEY")
         ):
             issues.append(
-                "No asset provider API keys set (PIXABAY_API_KEY/PEXELS_API_KEY/UNSPLASH_ACCESS_KEY)."
+                "External asset providers configured but no API keys set. Consider using procedural generation instead."
             )
+    else:
+        # Procedural generation mode - no external API keys needed
+        log.info("Asset pipeline configured for procedural generation - no external API keys required")
 
     # Check for required models configuration
     try:
@@ -212,12 +217,7 @@ def main():
     except Exception as e:
         issues.append(f"Failed to load render configuration: {e}")
 
-    # If blog lane used later, remind about WP app password
-    from pathlib import Path
 
-    blog_cfg = Path(os.path.join(os.path.dirname(__file__), "..", "conf", "blog.yaml"))
-    if blog_cfg.exists():
-        pass
 
     # Print results
     print("=== Environment Check Results ===")

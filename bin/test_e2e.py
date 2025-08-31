@@ -156,7 +156,7 @@ def main():
                 print(f"  - Shared ingestion steps: {len(execution.get('shared_ingestion', []))}")
                 print(f"  - Storyboard pipeline steps: {len(execution.get('storyboard_pipeline', {}).get('animatics_only', []))}")
                 print(f"  - Video production steps: {len(execution.get('video_production', []))}")
-                print(f"  - Blog generation steps: {len(execution.get('blog_generation', []))}")
+        
             else:
                 print("  - Execution configuration missing")
         else:
@@ -242,48 +242,35 @@ def main():
     run_safe("python bin/assemble_video.py", required=True)
     run_safe("python bin/upload_stage.py", required=True)
     
-    # Blog lane
-    print(f"\n=== Blog Lane ===")
-    run_safe("python bin/blog_pick_topics.py", required=True)
-    run_safe("python bin/blog_generate_post.py", required=True)
-    run_safe("python bin/blog_render_html.py", required=True)
+
     
-    # WordPress posting - always dry run in tests
-    os.environ["BLOG_DRY_RUN"] = "true"
+    # Test design prompt specifically (success criteria from integration prompt)
+    print(f"\n=== Design Prompt Test ===")
     
-    # Asset fetching - default to reuse mode unless explicitly set to live
-    if not os.environ.get("TEST_ASSET_MODE"):
-        os.environ["TEST_ASSET_MODE"] = "reuse"
-    run_safe("python bin/blog_post_wp.py", required=True)
-    run_safe("python bin/blog_ping_search.py", required=True)
+    print("Testing '2-minute history of modern design principles' prompt...")
     
-    # Test Eames prompt specifically (success criteria from integration prompt)
-    print(f"\n=== Eames Prompt Test ===")
-    if has_ollama:
-        print("Testing '2-minute history of Ray and Charles Eames' prompt...")
+    # Check if design script exists
+    design_script = "scripts/2025-08-12_design.txt"
+    if os.path.exists(design_script):
+        print("✓ Design script found")
         
-        # Check if Eames script exists
-        eames_script = "scripts/2025-08-12_eames.txt"
-        if os.path.exists(eames_script):
-            print("✓ Eames script found")
-            
-            # Test storyboard planning with Eames
-            print("Testing storyboard planning with Eames...")
-            run_safe("python bin/storyboard_plan.py --slug eames --dry-run", required=False, reason="Eames storyboard test")
-            
-            # Test animatics generation with Eames
-            print("Testing animatics generation with Eames...")
-            run_safe("python bin/animatics_generate.py --slug eames --dry-run", required=False, reason="Eames animatics test")
-            
-            print("✓ Eames prompt test completed")
-        else:
-            print("⚠ Eames script not found, skipping Eames-specific test")
+        # Test storyboard planning with design
+        print("Testing storyboard planning with design...")
+        run_safe("python bin/storyboard_plan.py --slug design --dry-run", required=False, reason="Design storyboard test")
+        
+        # Test animatics generation with design
+        print("Testing animatics generation with design...")
+        run_safe("python bin/animatics_generate.py --slug design --dry-run", required=False, reason="Design animatics test")
+        
+        print("✓ Design prompt test completed")
     else:
-        print("SKIP: Eames prompt test (Ollama not available)")
+        print("⚠ Design script not found, skipping design-specific test")
+    
+    print("SKIP: Design prompt test (Ollama not available)")
     
     print(f"\n✓ E2E test complete!")
     print(f"  - Video pipeline: PASSED")
-    print(f"  - Blog pipeline: PASSED")
+
     print(f"  - Captions: {'PASSED' if has_whisper else 'SKIPPED (no whisper.cpp)'}")
     print(f"  - Feature integration: {'PASSED' if os.path.exists('conf/pipeline.yaml') else 'SKIPPED'}")
     

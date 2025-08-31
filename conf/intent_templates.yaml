@@ -1,5 +1,5 @@
 # Intent Templates Configuration
-# Defines content strategy templates for different video/blog intents
+# Defines content strategy templates for different video intents
 
 intents:
   narrative_history:

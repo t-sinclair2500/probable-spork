@@ -110,7 +110,7 @@ def generate_outline(topic: str, target_len_sec: int = 60, brief: Dict = None,
             model_name = models_config['models']['research']['name']
         else:
             # Fallback to default model
-            model_name = 'mistral:7b-instruct'
+            model_name = 'llama3.2:3b'
         
         log.info(f"[outline] Using model: {model_name}")
         
@@ -139,47 +139,38 @@ def generate_outline(topic: str, target_len_sec: int = 60, brief: Dict = None,
         tone = intent_metadata['tone'] if intent_metadata else "conversational, informative"
         evidence_load = intent_metadata['evidence_load'] if intent_metadata else "medium"
         
-        # Enhance prompt with intent context
+        # Load prompt template
+        prompt_path = os.path.join(BASE, "prompts", "outline_generation.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
+        
+        # Format prompt with variables
         intent_context = ""
         if intent_template:
             intent_context = f"\nINTENT: {intent}\nTONE: {intent_metadata['tone']}\nEVIDENCE_LOAD: {intent_metadata['evidence_load']}\nCTA_POLICY: {intent_metadata['cta_policy']}"
         
-        system_prompt = f"""You are a helpful assistant for creating video outlines with research rigor.
+        system_prompt = template.format(
+            brief_context=create_brief_context(brief) if brief else "",
+            target_len_sec=target_len_sec,
+            topic=topic,
+            tone=tone,
+            evidence_load=evidence_load,
+            intent=intent,
+            cta_policy=intent_metadata.get('cta_policy', 'optional') if intent_metadata else 'optional'
+        )
 
-Create a structured outline for a {target_len_sec}-second video about {topic}.
-
-Requirements:
-- Use a clear, engaging structure
-- Include specific sections with estimated durations
-- Mark sections that need research citations
-- Maintain consistent tone: {tone}
-- Evidence level: {evidence_load}
-- Total target duration: {target_len_sec} seconds
-
-{intent_context}
-
-Return your response as a JSON object with this structure:
-{{
-  "title": "Video title",
-  "topic": "{topic}",
-  "target_duration_sec": {target_len_sec},
-  "sections": [
-    {{
-      "id": "section_id",
-      "title": "Section title",
-      "target_duration_ms": duration_in_milliseconds,
-      "needs_citations": true/false,
-      "content": "Brief description of section content",
-      "notes": "Additional notes or requirements"
-    }}
-  ]
-}}"""
-
+        # Load user prompt template
+        user_prompt_path = os.path.join(BASE, "prompts", "user_outline.txt")
+        with open(user_prompt_path, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=topic)
+        
         # Generate outline using LLM
         with model_session(model_name) as session:
             response = session.chat(
                 system=system_prompt,
-                user=f"Create a video outline for: {topic}",
+                user=user_prompt,
                 temperature=0.3
             )
             

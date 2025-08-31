@@ -52,9 +52,16 @@ def run_cluster(tasks: List[str]) -> List[Dict]:
         with open(prompt_path, 'r') as f:
             system_prompt = f.read()
         
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_cluster.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(task_text=task_text)
+        
         response = session.chat(
             system=system_prompt,
-            user=f"Cluster these topics:\n\n{task_text}",
+            user=user_prompt,
             temperature=0.2
         )
         
@@ -87,9 +94,16 @@ def run_outline(topic: str) -> str:
         with open(prompt_path, 'r') as f:
             system_prompt = f.read()
         
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_outline.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=topic)
+        
         return session.chat(
             system=system_prompt,
-            user=f"Generate an outline for: {topic}",
+            user=user_prompt,
             temperature=0.3
         )
 
@@ -122,14 +136,17 @@ def run_script(grounded_beats: List[Dict], brief: Dict) -> str:
             for i, beat in enumerate(grounded_beats)
         ])
         
-        user_prompt = f"""Brief: {brief.get('title', 'Untitled')}
-Tone: {brief.get('tone', 'informative')}
-Target Length: {brief.get('target_len_sec', 300)} seconds
-
-Grounded Beats:
-{beats_text}
-
-Generate a script following the brief and using the grounded beats."""
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_script_brief.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(
+            brief_title=brief.get('title', 'Untitled'),
+            tone=brief.get('tone', 'informative'),
+            target_length=brief.get('target_len_sec', 300),
+            beats_text=beats_text
+        )
         
         return session.chat(
             system=system_prompt,
@@ -151,18 +168,21 @@ def run_research_plan(topic: str) -> Dict:
     model_name = config.models.research.name
     
     with model_session(model_name) as session:
-        system_prompt = """You are a research planner. Generate a structured research plan for the given topic.
+        # Load research planning prompt
+        prompt_path = ROOT / "prompts" / "research_planning.txt"
+        with open(prompt_path, 'r') as f:
+            system_prompt = f.read()
         
-Return your response as JSON with the following structure:
-{
-  "queries": ["search query 1", "search query 2", ...],
-  "sources": ["source type 1", "source type 2", ...],
-  "focus_areas": ["area 1", "area 2", ...]
-}"""
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_research_plan.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=topic)
         
         response = session.chat(
             system=system_prompt,
-            user=f"Create a research plan for: {topic}",
+            user=user_prompt,
             temperature=0.3
         )
         
@@ -186,24 +206,21 @@ def run_fact_guard(script: str) -> Dict:
     model_name = config.models.research.name
     
     with model_session(model_name) as session:
-        system_prompt = """You are a fact-checker. Review the given script for factual accuracy and suggest improvements.
+        # Load fact-checking prompt
+        prompt_path = ROOT / "prompts" / "fact_check.txt"
+        with open(prompt_path, 'r') as f:
+            system_prompt = f.read()
         
-Return your response as JSON with the following structure:
-{
-  "issues": [
-    {
-      "text": "problematic text",
-      "issue": "description of the issue",
-      "suggestion": "corrected version"
-    }
-  ],
-  "citations_needed": ["fact 1", "fact 2", ...],
-  "overall_score": 0.95
-}"""
+        # Load user prompt template
+        user_prompt_path = ROOT / "prompts" / "user_fact_check.txt"
+        with open(user_prompt_path, 'r') as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(script=script)
         
         response = session.chat(
             system=system_prompt,
-            user=f"Fact-check this script:\n\n{script}",
+            user=user_prompt,
             temperature=0.1
         )
         
@@ -479,7 +496,7 @@ if __name__ == "__main__":
     try:
         response = client.chat('cluster', 
                               "You are a helpful assistant.", 
-                              "Say hello!")
+                              "Hello!")
         print(f"Chat test response: {response}")
     except Exception as e:
         print(f"Chat test failed: {e}")

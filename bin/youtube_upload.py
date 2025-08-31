@@ -53,7 +53,7 @@ def generate_monetized_description(original_desc: str, metadata: dict, monetizat
         return original_desc
     
     youtube_config = monetization_config.get("youtube", {})
-    crosslink_config = monetization_config.get("crosslinks", {}).get("video_to_blog", {})
+
     
     # Start with original description
     sections = [original_desc] if original_desc else []
@@ -71,18 +71,8 @@ def generate_monetized_description(original_desc: str, metadata: dict, monetizat
     if cta_text:
         sections.append(f"\n{cta_text}")
     
-    # Add blog link with UTM tracking
-    blog_link_text = youtube_config.get("blog_link_text", "📚 Read more on our blog")
-    if blog_link_text and crosslink_config:
-        # This would be the actual blog URL - for now using placeholder
-        blog_url = "https://yourdomain.com/blog"
-        utm_params = {
-            "utm_source": crosslink_config.get("utm_source", "youtube"),
-            "utm_medium": crosslink_config.get("utm_medium", "video_description"),
-            "utm_campaign": crosslink_config.get("utm_campaign", "traffic_from_video")
-        }
-        blog_url_with_utm = build_utm_url(blog_url, utm_params)
-        sections.append(f"\n{blog_link_text}: {blog_url_with_utm}")
+
+
     
     # Add end screen CTA
     end_screen_cta = youtube_config.get("end_screen_cta")
@@ -178,7 +168,7 @@ def upload_video(service, file_path: str, title: str, description: str, tags: li
         "status": {"privacyStatus": (privacy or "public")},
     }
     
-    # Add category if specified (default is 22 for "People & Blogs")
+    # Add category if specified (default is 22 for "People & Society")
     if category_id:
         body["snippet"]["categoryId"] = str(category_id)
     

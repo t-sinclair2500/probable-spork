@@ -5,7 +5,7 @@ Fact Guard - Content Validation and Fact-Checking
 P4-6 Implementation: Enforce that factual claims in the script are supported by references.
 Remove or rewrite ungrounded claims and produce a fact-guard report.
 
-Uses the research model (Mistral 7B) to validate content for factual accuracy,
+Uses the research model (llama3.2:3b) to validate content for factual accuracy,
 identify claims requiring citations, and ensure content quality.
 """
 
@@ -31,7 +31,7 @@ log = get_logger("fact_guard")
 
 def load_fact_guard_prompt() -> str:
     """Load the fact-guard prompt template."""
-    prompt_path = os.path.join(BASE, "prompts", "fact_check.txt")
+    prompt_path = os.path.join(BASE, "prompts", "fact_guard.txt")
     if not os.path.exists(prompt_path):
         log.error(f"Fact-guard prompt not found: {prompt_path}")
         raise FileNotFoundError(f"Fact-guard prompt not found: {prompt_path}")

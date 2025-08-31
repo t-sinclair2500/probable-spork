@@ -48,7 +48,19 @@ def call_ollama(prompt, cfg, models_config=None):
         
         # Use model session for deterministic load/unload
         with model_session(model_name) as session:
-            system_prompt = "You are a helpful assistant for clustering topics."
+            # Load clustering prompt template
+            prompt_path = os.path.join(BASE, "prompts", "cluster_topics.txt")
+            with open(prompt_path, "r", encoding="utf-8") as f:
+                template = f.read()
+            
+            # Format prompt with brief context if available
+            if brief:
+                from bin.core import create_brief_context
+                brief_context = create_brief_context(brief)
+                system_prompt = template.format(brief_context=brief_context)
+            else:
+                system_prompt = template.format(brief_context="")
+            
             return session.chat(system=system_prompt, user=prompt)
             
     except Exception as e:

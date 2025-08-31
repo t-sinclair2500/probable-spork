@@ -52,7 +52,7 @@ ifeq ($(OS),Windows_NT)
 	@echo "  serve-ui      # Start Gradio UI"
 	@echo "  smoke-test    # Run API smoke tests"
 	@echo "  backup-repo   # Create repository backup"
-	@echo "  backup-wp     # Create WordPress backup"
+	
 	@echo "  research-live # Run research collection in live mode (requires SLUG=)"
 	@echo "  research-reuse # Run research collection in reuse mode (requires SLUG=)"
 	@echo "  fact-guard    # Run fact-guard analysis (requires SLUG=)"
@@ -250,9 +250,7 @@ backup-repo: ## Create repository backup
 	@echo "Creating repository backup..."
 	@$(PY) scripts/backup_repo.py
 
-backup-wp: ## Create WordPress backup
-	@echo "Creating WordPress backup..."
-	@$(PY) scripts/backup_wp.py
+
 
 # Legacy shell script support (for backward compatibility)
 ifeq ($(OS),Windows_NT)
@@ -281,13 +279,7 @@ smoke-test-shell: ## Run smoke test (Bash)
 	@bash scripts/smoke_op_console.sh
 endif
 
-blog-once: ## Run blog pipeline once (legacy)
-	@echo "Running blog pipeline..."
-	@$(PY) bin/blog_pick_topics.py
-	@$(PY) bin/blog_generate_post.py
-	@$(PY) bin/blog_render_html.py
-	@$(PY) bin/blog_post_wp.py
-	@$(PY) bin/blog_ping_search.py
+
 
 health: ## Start health server (legacy)
 	@echo "Starting health server..."

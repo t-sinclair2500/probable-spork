@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fact-checking module for blog content validation.
+Fact-checking module for content validation.
 Uses the prompts/fact_check.txt prompt to identify claims requiring citations.
 """
 import json
@@ -74,7 +74,11 @@ def call_fact_checker(content: str, cfg, models_config=None) -> Dict:
         
         # Use model session for deterministic load/unload
         with model_session(model_name) as session:
-            system_prompt = "You are a fact-checker. Review the given content for factual accuracy."
+            # Load fact-checking prompt template
+            prompt_path = os.path.join(BASE, "prompts", "fact_check.txt")
+            with open(prompt_path, "r", encoding="utf-8") as f:
+                system_prompt = f.read()
+            
             response = session.chat(system=system_prompt, user=full_prompt)
             return parse_llm_json(response)
             

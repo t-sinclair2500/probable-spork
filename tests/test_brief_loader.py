@@ -33,7 +33,7 @@ class TestBriefLoader:
             "audience": ["test audience"],
             "tone": "test tone",
             "video": {"target_length_min": 3, "target_length_max": 5},
-            "blog": {"words_min": 800, "words_max": 1200},
+    
             "keywords_include": ["keyword1", "keyword2"],
             "keywords_exclude": ["avoid1", "avoid2"],
             "sources_preferred": ["source1", "source2"],
@@ -48,8 +48,7 @@ class TestBriefLoader:
         assert result["tone"] == "test tone"
         assert result["video"]["target_length_min"] == 3
         assert result["video"]["target_length_max"] == 5
-        assert result["blog"]["words_min"] == 800
-        assert result["blog"]["words_max"] == 1200
+        
         assert result["keywords_include"] == ["keyword1", "keyword2"]
         assert result["keywords_exclude"] == ["avoid1", "avoid2"]
         assert result["sources_preferred"] == ["source1", "source2"]
@@ -68,8 +67,7 @@ class TestBriefLoader:
         assert result["tone"] == "informative"
         assert result["video"]["target_length_min"] == 5
         assert result["video"]["target_length_max"] == 7
-        assert result["blog"]["words_min"] == 900
-        assert result["blog"]["words_max"] == 1300
+        
         assert result["keywords_include"] == []
         assert result["keywords_exclude"] == []
         assert result["sources_preferred"] == []

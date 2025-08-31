@@ -1,34 +1,29 @@
-title: "90-second history of Ray & Charles Eames"
+title: "90-second history of [TOPIC]"
 intent: "narrative_history"
 audience:
-- design enthusiasts
+- general enthusiasts
 - students
 tone: curious, authoritative
 video:
   target_length_min: 1.5
   target_length_max: 1.5
-blog:
-  words_min: 900
-  words_max: 1300
+
+
 keywords_include:
-- Eames
-- Ray Eames
-- Charles Eames
-- Herman Miller
-- molded plywood
-- Eames Lounge
-- Case Study House #8
+- [TOPIC_KEYWORDS]
+- [RELATED_TERMS]
+- [CORE_CONCEPTS]
 keywords_exclude:
 - AI tools
 - crypto
 - NFT
 sources_preferred:
-- Design Museum
-- Herman Miller Archives
-- MoMA Design Collection
+- [RELEVANT_SOURCES]
+- [EXPERT_ORGANIZATIONS]
+- [TRUSTED_COLLECTIONS]
 monetization:
   primary:
   - lead_magnet
   - email_capture
-  cta_text: Download the Design History Timeline
-notes: Focus on the Eames' innovative approach to furniture design and their impact on modern design principles.
+  cta_text: Download the [TOPIC] History Timeline
+notes: Focus on the innovative approach to [TOPIC] and its impact on [RELEVANT_FIELD] principles.

@@ -1,6 +1,6 @@
 # One-Pi Content Automation Pipeline
 
-Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts with a local LLM (Ollama), performs TTS, fetches royalty-free assets, assembles videos (MoviePy + FFmpeg), and stages for upload. Includes local ASR via `whisper.cpp` and dual-lane content production (YouTube + WordPress blog). Features real-time monitoring, asset quality assessment, fact-checking, and enhanced SEO optimization. Optional cloud fallbacks for TTS/ASR are wired but OFF by default.
+Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts with a local LLM (Ollama), performs TTS, fetches royalty-free assets, assembles videos (MoviePy + FFmpeg), and stages for upload. Includes local ASR via `whisper.cpp` and YouTube content production. Features real-time monitoring, asset quality assessment, fact-checking, and enhanced SEO optimization. Optional cloud fallbacks for TTS/ASR are wired but OFF by default.
 
 ## Quick Start
 
@@ -183,7 +183,7 @@ venv/bin/python --version  # Should show Python 3.11.x
 - **Automated Validation**: LLM-powered fact-checking with configurable severity levels
 - **Content Gating**: Optional blocking/warning modes for content with fact-check issues
 - **Citation Suggestions**: Automated recommendations for claims requiring sources
-- **Quality Metrics**: Integrated scoring in blog validation pipeline
+- **Quality Metrics**: Integrated scoring in video validation pipeline
 
 ### 🚀 Enhanced SEO & Metadata
 - **Comprehensive Meta Tags**: Auto-generated Open Graph, Twitter Cards, and schema.org markup
@@ -209,17 +209,15 @@ venv/bin/python --version  # Should show Python 3.11.x
 
 ⚠️ **Important**: This pipeline generates high-quality content but **does not include monetization mechanisms**. See `MONETIZATION_STRATEGY.md` for:
 - YouTube Partner Program setup
-- WordPress advertising integration  
 - Affiliate marketing automation
 - Revenue tracking and optimization
-- Domain setup for public WordPress access
 
 ## 📋 Red Team Review
 
 **🔍 For Red Team**: See `RED_TEAM_BRIEFING.md` for investigation focus areas and `PRODUCTION_READINESS_CHECKLIST.md` for complete task status.
 
 **Key Issues Identified**:
-- WordPress setup gap (technical integration complete, deployment missing)
+
 - Monetization void (no revenue generation strategy)
 - Documentation fragmentation (now consolidated)
 
@@ -230,80 +228,9 @@ This scaffold includes production-ready enhancements for content quality, SEO op
 
 ---
 
-## Blog Lane (Shared Repo)
 
-This repo also includes a **blog lane** that reuses shared artifacts (topics, scripts, assets) to publish posts to WordPress via REST.
-
-### Prerequisites: WordPress Setup Required
-
-**⚠️ You need a WordPress site before using the blog pipeline.** Options:
-
-1. **Cloud hosting** (Easiest): Bluehost, SiteGround, WP Engine (~$3-20/month)
-2. **Local Pi installation**: Full LAMP stack setup (see OPERATOR_RUNBOOK.md)
-3. **Docker on Pi**: Containerized WordPress (see OPERATOR_RUNBOOK.md)
-4. **WordPress.com**: Limited API access on free plans
-
-### Setup
-1) **Set up WordPress** using one of the options above
-2) Copy the blog config:
-```bash
-cp conf/blog.example.yaml conf/blog.yaml
-```
-3) Edit `conf/blog.yaml` with your WordPress URL and credentials
-4) Create a **non-admin** poster user in WordPress with an **Application Password**
-
-### Manual run (first time)
-```bash
-source .venv/bin/activate
-python bin/blog_pick_topics.py
-python bin/blog_generate_post.py  # Includes fact-checking and quality validation
-python bin/blog_render_html.py    # Enhanced with SEO metadata and schema.org
-python bin/blog_post_wp.py
-python bin/blog_ping_search.py
-```
-
-### Enhanced Blog Features
-- **Fact-Checking**: Automated validation with configurable gating modes (off/warn/block)
-- **SEO Optimization**: Comprehensive meta tags, Open Graph, Twitter Cards, and schema.org markup
-- **Content Analysis**: Reading time calculation, keyword extraction, and quality scoring
-- **Asset Integration**: Intelligent featured image selection from quality-assessed assets
-- **Structured Data**: Enhanced breadcrumbs and article markup for better search visibility
-
-## Publishing Control
-
-All publishing operations use **centralized flag governance** with clear precedence:
-
-1. **CLI flags** (highest): `--dry-run` forces dry-run mode
-2. **Environment variables**: `BLOG_DRY_RUN`, `YOUTUBE_UPLOAD_DRY_RUN` 
-3. **Config files**: `wordpress.publish_enabled` in `conf/blog.yaml`
-4. **Safe defaults** (lowest): dry-run enabled, publishing disabled
-
-**Quick toggles:**
-- Blog: Set `wordpress.publish_enabled: true` in `conf/blog.yaml` + `BLOG_DRY_RUN=false` in `.env`
-- YouTube: Set `YOUTUBE_UPLOAD_DRY_RUN=false` in `.env`
-- Global dry-run: Use `--dry-run` flag with any script or orchestrator
-
-> **Security**: Defaults are safe (dry-run enabled). Production requires explicit configuration.
-
-
-## Cron (Unified Seed)
-
-A unified crontab is provided in `ops/crontab.seed.txt` that schedules shared ingestion, the YouTube lane, the Blog lane, and health checks. Apply it with:
-
-```bash
-crontab ops/crontab.seed.txt
-```
-
-Each script is lock-aware and exits if another heavy step is in progress.
-
-
-## Makefile commands
-- `make install` — create venv and install deps
-- `make check` — validate config and env
-- `make run-once` — full YouTube lane once (placeholders where noted)
-- `make blog-once` — full Blog lane once (dry-run by default)
 - `make cron-install` — install unified cron
-- `make backup` — dump WP DB & repo artifacts
+- `make backup` — dump repo artifacts
 - `make health` — start local health server
 
 ## Health server
@@ -312,12 +239,12 @@ Each script is lock-aware and exits if another heavy step is in progress.
 
 For comprehensive documentation, see the organized structure in the `docs/` directory:
 
-- **[docs/README.md](docs/README.md)** - Complete documentation index
-- **Architecture**: `ARCHITECTURE.md` - System design and contracts
-- **Operations**: `docs/operational/` - Runbooks, checklists, and procedures
-- **Strategy**: `docs/strategy/` - Monetization and project goals
-- **Technical**: `docs/technical/` - Implementation details and optimizations
-- **Security**: `docs/security/` - Security assessments and compliance
+- **[docs/README.md](docs/README.md)** - Complete documentation index and navigation
+- **Architecture**: [docs/architecture/](docs/architecture/) - System design and design system
+- **Implementation**: [docs/implementation/](docs/implementation/) - Phase summaries and feature details
+- **Deployment**: [docs/deployment/](docs/deployment/) - Operations, runbooks, and procedures
+- **Development**: [docs/development/](docs/development/) - Workflow and best practices
+- **Technical**: [docs/technical/](docs/technical/) - Engine specs and technical deep-dives
 
 ## Configuration reference
 
@@ -326,7 +253,7 @@ For comprehensive documentation, see the organized structure in the `docs/` dire
   - Optional: UNSPLASH_ACCESS_KEY (only if enabled later)
   - Optional ingestion: YOUTUBE_API_KEY or GOOGLE_API_KEY; REDDIT_CLIENT_ID/SECRET/USER_AGENT
   - Optional fallbacks: OPENAI_API_KEY
-  - BLOG_DRY_RUN=true|false (controlled by centralized flags)
+  
   - YOUTUBE_UPLOAD_DRY_RUN=true|false (controlled by centralized flags)
 
 - `conf/global.yaml`

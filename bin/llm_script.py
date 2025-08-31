@@ -141,56 +141,38 @@ def generate_script(outline_path: str, target_len_sec: int = 60, brief: Dict = N
             model_name = models_config['models']['scriptwriter']['name']
         else:
             # Fallback to research model
-            model_name = models_config['models']['research']['name'] if models_config and 'research' in models_config.get('models', {}) else 'mistral:7b-instruct'
+            model_name = models_config['models']['research']['name'] if models_config and 'research' in models_config.get('models', {}) else 'llama3.2:3b'
         
         log.info(f"[script] Using model: {model_name}")
         
-        # Enhance prompt with intent and CTA context
-        intent_context = f"\nINTENT: {outline_intent}\nTONE: {tone}\nCTA_POLICY: {cta_policy}\nEVIDENCE_LOAD: {evidence_load}"
+        # Load prompt template
+        prompt_path = os.path.join(BASE, "prompts", "script_generation.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
         
-        system_prompt = f"""You are a video script writer creating engaging content with research rigor.
+        # Format prompt with variables
+        system_prompt = template.format(
+            brief_context=create_brief_context(brief) if brief else "",
+            target_len_sec=target_len_sec,
+            tone=tone,
+            evidence_load=evidence_load,
+            cta_policy=cta_policy,
+            outline_intent=outline_intent,
+            outline_data=json.dumps(outline_data, indent=2)
+        )
 
-Create a {target_len_sec}-second video script based on the provided outline.
-
-Requirements:
-- Follow the outline structure exactly
-- Use the specified tone: {tone}
-- Evidence level: {evidence_load}
-- CTA policy: {cta_policy}
-- Insert citation placeholders [CITATION NEEDED] for sections that need research
-- Target duration: {target_len_sec} seconds
-- Write in a conversational, engaging style
-
-{intent_context}
-
-OUTLINE:
-{json.dumps(outline_data, indent=2)}
-
-Return your response as a JSON object with this structure:
-{{
-  "title": "Video title",
-  "script": "Full script text with citation placeholders",
-  "sections": [
-    {{
-      "id": "section_id",
-      "title": "Section title",
-      "content": "Section script content",
-      "needs_citations": true/false,
-      "citation_placeholders": ["[CITATION NEEDED] for specific claim"]
-    }}
-  ],
-  "metadata": {{
-    "word_count": estimated_word_count,
-    "estimated_duration_sec": estimated_duration,
-    "citation_placeholders_count": number_of_placeholders
-  }}
-}}"""
-
+        # Load user prompt template
+        user_prompt_path = os.path.join(BASE, "prompts", "user_script.txt")
+        with open(user_prompt_path, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+        
+        user_prompt = user_prompt_template.format(topic=outline_data.get('topic', 'the topic'))
+        
         # Generate script using LLM
         with model_session(model_name) as session:
             response = session.chat(
                 system=system_prompt,
-                user=f"Create a video script based on this outline for: {outline_data.get('topic', 'the topic')}",
+                user=user_prompt,
                 temperature=0.3
             )
             

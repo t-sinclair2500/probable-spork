@@ -561,9 +561,17 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         anim_dir = ensure_animatics_dir(slug)
         print(f"📁 Output directory: {anim_dir}")
         
-        # Rasterize SVG assets
+        # Rasterize SVG assets (flatten elements across all scenes)
         print("🔄 Rasterizing SVG assets...")
-        asset_paths = rasterize_element_assets(script.scenes, style, texture_config)
+        try:
+            all_elements = []
+            for s in scenes_to_render:
+                if hasattr(s, 'elements') and s.elements:
+                    all_elements.extend(list(s.elements))
+            asset_paths = rasterize_element_assets(all_elements, style, texture_config)
+        except Exception as e:
+            log.error(f"Failed to prepare elements for rasterization: {e}")
+            asset_paths = {}
         log.info(f"Rasterized {len(asset_paths)} assets")
         
         # Render scenes with progress updates

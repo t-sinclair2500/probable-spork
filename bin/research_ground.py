@@ -33,7 +33,9 @@ class ResearchGrounder:
         """Initialize research grounder."""
         self.config = load_config()
         self.models_config = models_config or self._load_models_config()
-        self.research_config = self.config.get('research', {})
+        
+        # Load research config from models.yaml since it's not in global.yaml
+        self.research_config = self._load_research_config()
         
         # Database setup
         self.db_path = Path(BASE) / self.research_config.get('database', 'data/research.db')
@@ -56,10 +58,22 @@ class ResearchGrounder:
         try:
             import yaml
             models_path = Path(BASE) / "conf" / "models.yaml"
-            with open(models_path, 'r', encoding='utf-8') as None:
+            with open(models_path, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f)
         except Exception as e:
             log.warning(f"Failed to load models.yaml: {e}, using defaults")
+            return {}
+    
+    def _load_research_config(self) -> Dict:
+        """Load research configuration from models.yaml."""
+        try:
+            import yaml
+            models_path = Path(BASE) / "conf" / "models.yaml"
+            with open(models_path, 'r', encoding='utf-8') as f:
+                models_data = yaml.safe_load(f)
+                return models_data.get('research', {})
+        except Exception as e:
+            log.warning(f"Failed to load research config: {e}, using defaults")
             return {}
     
     def ground_script(self, script_path: Path, brief: Dict) -> Dict:
@@ -104,7 +118,7 @@ class ResearchGrounder:
         
         # Save results to data directory with slug
         script_basename = script_path.stem
-        # Extract slug from filename (e.g., "2025-08-12_eames.txt" -> "eames")
+        # Extract slug from filename (e.g., "2025-08-12_topic.txt" -> "topic")
         if '_' in script_basename:
             slug = script_basename.split('_', 1)[1]
         else:
@@ -320,16 +334,21 @@ class ResearchGrounder:
             for i, chunk in enumerate(chunks)
         ])
         
-        system_prompt = f"""You are a research assistant helping to ground content with factual information.
-
-Your task is to enhance the given content with research-backed information while maintaining the original tone and style.
-
-Guidelines:
-- Add factual details and statistics where relevant
-- Include specific examples from the research
-- Maintain the original voice and pacing
-- Don't change the core message or structure
-- Use {self.citation_format.replace('{num}', '1')}, {self.citation_format.replace('{num}', '2')}, etc. to cite sources
+        # Load prompt template
+        prompt_path = os.path.join(BASE, "prompts", "research_grounding.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
+        
+        # Format prompt with variables
+        system_prompt = template.format(
+            brief_context="",  # Research grounding doesn't use brief context
+            topic=topic,
+            research_goals="Enhance content with factual information",
+            evidence_level="high"
+        )
+        
+        # Add research context and content
+        system_prompt += f"""
 
 Research Context:
 {research_context}
@@ -341,12 +360,19 @@ Enhanced Content:"""
 
         try:
             # Use model runner for deterministic load/unload
-            model_name = self.research_config.get('models', {}).get('research', 'mistral:7b-instruct')
+            model_name = self.research_config.get('models', {}).get('research', 'llama3.2:3b')
+            
+            # Load user prompt template
+            user_prompt_path = os.path.join(BASE, "prompts", "user_research_ground.txt")
+            with open(user_prompt_path, "r", encoding="utf-8") as f:
+                user_prompt_template = f.read()
+            
+            user_prompt = user_prompt_template.strip()
             
             with model_session(model_name) as session:
                 grounded_content = session.chat(
                     system=system_prompt,
-                    user="Please enhance this content with research-backed information while maintaining the original style.",
+                    user=user_prompt,
                     temperature=0.3
                 )
                 
