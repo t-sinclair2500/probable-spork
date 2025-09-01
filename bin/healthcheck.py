@@ -18,7 +18,7 @@ log = get_logger("healthcheck")
 
 
 def cpu_temp():
-    """Get CPU temperature - works on Raspberry Pi with vcgencmd"""
+    """Get CPU temperature - works on Raspberry Pi with vcgencmd, platform-aware for Mac"""
     try:
         out = subprocess.check_output(["vcgencmd", "measure_temp"], text=True).strip()
         # Extract numeric value for threshold checking
@@ -34,6 +34,10 @@ def cpu_temp():
                 return {"raw": "sensors_available", "celsius": None, "status": "ok"}
         except Exception:
             pass
+        # For Mac systems, return ok status since thermal management is handled by macOS
+        import platform
+        if platform.system() == "Darwin":
+            return {"raw": "mac_thermal_managed", "celsius": None, "status": "ok"}
         return {"raw": "unknown", "celsius": None, "status": "unknown"}
 
 

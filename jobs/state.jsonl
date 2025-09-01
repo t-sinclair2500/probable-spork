@@ -376,3 +376,93 @@
 {"ts": "2025-08-31T18:07:14Z", "step": "make_thumbnail", "status": "START", "notes": "no brief"}
 {"ts": "2025-08-31T18:07:29Z", "step": "make_thumbnail", "status": "START", "notes": "no brief"}
 {"ts": "2025-08-31T18:07:29Z", "step": "make_thumbnail", "status": "OK", "notes": "2025-08-12_productivity-tips.png"}
+{"ts": "2025-09-01T03:11:48Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:11:48Z", "step": "run_pipeline", "status": "ERROR", "notes": "exception=too many values to unpack (expected 2)"}
+{"ts": "2025-09-01T03:12:03Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:12:03Z", "step": "tts_generate", "status": "OK", "notes": "elapsed_ms=177"}
+{"ts": "2025-09-01T03:12:03Z", "step": "generate_captions", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:12:03Z", "step": "generate_captions", "status": "SKIP", "notes": "no voiceovers"}
+{"ts": "2025-09-01T03:12:03Z", "step": "generate_captions", "status": "OK", "notes": "elapsed_ms=247"}
+{"ts": "2025-09-01T03:12:05Z", "step": "assemble_video", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:12:05Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-09-01T03:12:05Z", "step": "assemble_video", "status": "OK", "notes": "elapsed_ms=1816"}
+{"ts": "2025-09-01T03:12:05Z", "step": "make_thumbnail", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:12:05Z", "step": "make_thumbnail", "status": "OK", "notes": "brief=90-second history of [TOPIC] -> 2025-08-12_productivity-tips.png"}
+{"ts": "2025-09-01T03:12:05Z", "step": "make_thumbnail", "status": "OK", "notes": "elapsed_ms=277"}
+{"ts": "2025-09-01T03:12:06Z", "step": "upload_stage", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:12:06Z", "step": "upload_stage", "status": "SKIP", "notes": "no videos"}
+{"ts": "2025-09-01T03:12:06Z", "step": "upload_stage", "status": "OK", "notes": "elapsed_ms=186"}
+{"ts": "2025-09-01T03:12:06Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-09-01T03:12:09Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': 'ingest', 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:12:09Z", "step": "niche_trends", "status": "OK", "notes": "elapsed_ms=214"}
+{"ts": "2025-09-01T03:12:09Z", "step": "llm_cluster", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:12:45Z", "step": "llm_cluster", "status": "OK", "notes": "topics=0;brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:12:45Z", "step": "llm_cluster", "status": "OK", "notes": "elapsed_ms=36568"}
+{"ts": "2025-09-01T03:12:46Z", "step": "llm_outline", "status": "FAIL", "notes": "exit_code=2;elapsed_ms=320"}
+{"ts": "2025-09-01T03:13:19Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:13:20Z", "step": "tts_generate", "status": "OK", "notes": "elapsed_ms=150"}
+{"ts": "2025-09-01T03:13:20Z", "step": "generate_captions", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:13:20Z", "step": "generate_captions", "status": "SKIP", "notes": "no voiceovers"}
+{"ts": "2025-09-01T03:13:20Z", "step": "generate_captions", "status": "OK", "notes": "elapsed_ms=192"}
+{"ts": "2025-09-01T03:13:21Z", "step": "assemble_video", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:13:21Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-09-01T03:13:21Z", "step": "assemble_video", "status": "OK", "notes": "elapsed_ms=915"}
+{"ts": "2025-09-01T03:13:21Z", "step": "make_thumbnail", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:13:21Z", "step": "make_thumbnail", "status": "OK", "notes": "brief=90-second history of [TOPIC] -> 2025-08-12_productivity-tips.png"}
+{"ts": "2025-09-01T03:13:21Z", "step": "make_thumbnail", "status": "OK", "notes": "elapsed_ms=220"}
+{"ts": "2025-09-01T03:13:21Z", "step": "upload_stage", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:13:21Z", "step": "upload_stage", "status": "SKIP", "notes": "no videos"}
+{"ts": "2025-09-01T03:13:21Z", "step": "upload_stage", "status": "OK", "notes": "elapsed_ms=157"}
+{"ts": "2025-09-01T03:13:21Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-09-01T03:16:23Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:16:23Z", "step": "tts_generate", "status": "OK", "notes": "elapsed_ms=140"}
+{"ts": "2025-09-01T03:16:23Z", "step": "generate_captions", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:23Z", "step": "generate_captions", "status": "SKIP", "notes": "no voiceovers"}
+{"ts": "2025-09-01T03:16:23Z", "step": "generate_captions", "status": "OK", "notes": "elapsed_ms=174"}
+{"ts": "2025-09-01T03:16:23Z", "step": "assemble_video", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:23Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-09-01T03:16:24Z", "step": "assemble_video", "status": "OK", "notes": "elapsed_ms=695"}
+{"ts": "2025-09-01T03:16:24Z", "step": "make_thumbnail", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:24Z", "step": "make_thumbnail", "status": "OK", "notes": "brief=90-second history of [TOPIC] -> 2025-08-12_productivity-tips.png"}
+{"ts": "2025-09-01T03:16:24Z", "step": "make_thumbnail", "status": "OK", "notes": "elapsed_ms=218"}
+{"ts": "2025-09-01T03:16:24Z", "step": "upload_stage", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:24Z", "step": "upload_stage", "status": "SKIP", "notes": "no videos"}
+{"ts": "2025-09-01T03:16:24Z", "step": "upload_stage", "status": "OK", "notes": "elapsed_ms=156"}
+{"ts": "2025-09-01T03:16:24Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-09-01T03:16:27Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:16:27Z", "step": "tts_generate", "status": "OK", "notes": "elapsed_ms=144"}
+{"ts": "2025-09-01T03:16:27Z", "step": "generate_captions", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:27Z", "step": "generate_captions", "status": "SKIP", "notes": "no voiceovers"}
+{"ts": "2025-09-01T03:16:27Z", "step": "generate_captions", "status": "OK", "notes": "elapsed_ms=266"}
+{"ts": "2025-09-01T03:16:28Z", "step": "assemble_video", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:28Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-09-01T03:16:28Z", "step": "assemble_video", "status": "OK", "notes": "elapsed_ms=623"}
+{"ts": "2025-09-01T03:16:28Z", "step": "make_thumbnail", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:28Z", "step": "make_thumbnail", "status": "OK", "notes": "brief=90-second history of [TOPIC] -> 2025-08-12_productivity-tips.png"}
+{"ts": "2025-09-01T03:16:28Z", "step": "make_thumbnail", "status": "OK", "notes": "elapsed_ms=194"}
+{"ts": "2025-09-01T03:16:28Z", "step": "upload_stage", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:28Z", "step": "upload_stage", "status": "SKIP", "notes": "no videos"}
+{"ts": "2025-09-01T03:16:28Z", "step": "upload_stage", "status": "OK", "notes": "elapsed_ms=148"}
+{"ts": "2025-09-01T03:16:28Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-09-01T03:16:51Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': True, 'from_step': 'ingest', 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:16:51Z", "step": "tts_generate", "status": "OK", "notes": "elapsed_ms=153"}
+{"ts": "2025-09-01T03:16:52Z", "step": "generate_captions", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:52Z", "step": "generate_captions", "status": "SKIP", "notes": "no voiceovers"}
+{"ts": "2025-09-01T03:16:52Z", "step": "generate_captions", "status": "OK", "notes": "elapsed_ms=198"}
+{"ts": "2025-09-01T03:16:52Z", "step": "assemble_video", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:52Z", "step": "assemble_video", "status": "FAIL", "notes": "no voiceover"}
+{"ts": "2025-09-01T03:16:52Z", "step": "assemble_video", "status": "OK", "notes": "elapsed_ms=848"}
+{"ts": "2025-09-01T03:16:53Z", "step": "make_thumbnail", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:53Z", "step": "make_thumbnail", "status": "OK", "notes": "brief=90-second history of [TOPIC] -> 2025-08-12_productivity-tips.png"}
+{"ts": "2025-09-01T03:16:53Z", "step": "make_thumbnail", "status": "OK", "notes": "elapsed_ms=203"}
+{"ts": "2025-09-01T03:16:53Z", "step": "upload_stage", "status": "START", "notes": "brief=90-second history of [TOPIC]"}
+{"ts": "2025-09-01T03:16:53Z", "step": "upload_stage", "status": "SKIP", "notes": "no videos"}
+{"ts": "2025-09-01T03:16:53Z", "step": "upload_stage", "status": "OK", "notes": "elapsed_ms=147"}
+{"ts": "2025-09-01T03:16:53Z", "step": "run_pipeline", "status": "SUCCESS", "notes": "all_lanes_completed"}
+{"ts": "2025-09-01T03:31:49.511Z", "step": "test_step", "status": "OK", "test_field": "test_value"}
+{"ts": "2025-09-01T03:37:22Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'profile': 'm2_8gb_optimized', 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:37:24Z", "step": "run_pipeline", "status": "ERROR", "notes": "exception='dict' object has no attribute 'storage'"}
+{"ts": "2025-09-01T03:37:57Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'profile': 'm2_8gb_optimized', 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:37:58Z", "step": "run_pipeline", "status": "ERROR", "notes": "exception='PipelineConfig' object has no attribute 'get'"}
+{"ts": "2025-09-01T03:38:33Z", "step": "run_pipeline", "status": "START", "notes": "args={'yt_only': False, 'profile': 'm2_8gb_optimized', 'from_step': None, 'dry_run': True, 'brief': None, 'no_style_rewrite': False};brief=90-second history of [TOPIC];source=unknown"}
+{"ts": "2025-09-01T03:38:34Z", "step": "run_pipeline", "status": "ERROR", "notes": "exception=run_step() got an unexpected keyword argument 'required'"}

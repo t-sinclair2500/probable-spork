@@ -3,7 +3,7 @@ description: "Project overview and core principles for One-Pi shared pipeline"
 alwaysApply: true
 ---
 
-- This repo targets a single Raspberry Pi 5 (8GB), local-first stack: Ollama, whisper.cpp, Coqui TTS, FFmpeg/MoviePy, Python.
+- This repo targets Mac M2 8GB (local-first) primary, Raspberry Pi 5 supported secondary: Ollama, whisper.cpp, Coqui TTS, FFmpeg/MoviePy, Python.
 - Heavy tasks must run sequentially and be lock-aware (single lane).
 - Idempotence required: re-running any step should short-circuit if outputs already exist.
 - Operator control lives in `conf/global.yaml` and `conf/blog.yaml`; secrets in `.env`.

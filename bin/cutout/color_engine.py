@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from bin.core import load_config
+from bin.utils.palette import load_palette as load_palette_adapter, ensure_palette, Palette
 
 log = logging.getLogger(__name__)
 
@@ -35,19 +36,28 @@ def load_palette() -> Dict[str, str]:
         FileNotFoundError: If design_language.json is missing
         KeyError: If colors section is missing
     """
-    design_path = Path("design/design_language.json")
-    if not design_path.exists():
-        raise FileNotFoundError(f"Design language file not found: {design_path}")
+    # Use the new Palette adapter for backward compatibility
+    palette_obj = load_palette_adapter("design/design_language.json")
     
-    with open(design_path, 'r') as f:
-        design_data = json.load(f)
+    # Convert back to the expected dict format for backward compatibility
+    # The original format was {"color_name": "#hexvalue"}
+    # We'll create a mapping from the flat colors list
+    color_names = [
+        "primary_blue", "primary_red", "primary_yellow", 
+        "secondary_orange", "secondary_green", "accent_teal",
+        "accent_brown", "accent_black", "accent_white", 
+        "accent_cream", "accent_pink"
+    ]
     
-    if 'colors' not in design_data:
-        raise KeyError("No 'colors' section found in design_language.json")
+    palette_dict = {}
+    for i, color in enumerate(palette_obj.colors):
+        if i < len(color_names):
+            palette_dict[color_names[i]] = color
+        else:
+            palette_dict[f"color_{i}"] = color
     
-    palette = design_data['colors']
-    log.info(f"Loaded {len(palette)} colors from design palette")
-    return palette
+    log.info(f"Loaded {len(palette_dict)} colors from design palette")
+    return palette_dict
 
 
 def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:

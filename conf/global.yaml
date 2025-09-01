@@ -14,11 +14,27 @@ pipeline:
   daily_videos: 1
   video_length_seconds: 420      # target finished length
   tone: "conversational"         # e.g., dramatic, silly, authoritative
-  niches: ["ai tools","raspberry pi tips","space trivia"]
+  niches: ["ai tools","mac optimization","space trivia"]
   category_ids: [27,28]          # YouTube Education, Science & Tech
   enable_captions: true
   enable_thumbnails: true
   pacing_cooldown_seconds: 60    # sleep between heavy steps
+
+# Performance and concurrency settings
+performance:
+  max_concurrent_renders: 1
+  pacing_cooldown_seconds: 30
+  encode:
+    delivery_crf: 19
+    pix_fmt: "yuv420p"
+
+# System guards
+guards:
+  disk_free_gb_min: 5
+  thermal: "platform_aware"
+
+# Deterministic run seed for RNG/LLM components
+seed: 1337
 
 video:
   resolution: "1920x1080"

@@ -12,10 +12,16 @@ import time
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-import bleach
+try:
+    import bleach
+except ImportError:
+    bleach = None
 import yaml
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ValidationError
+
+# Platform-aware utilities
+from bin.utils.platform import is_macos, is_linux_arm, read_pi_cpu_temp_celsius
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -58,7 +64,7 @@ class PipelineCfg(BaseModel):
     daily_videos: int = 1
     video_length_seconds: int = 420
     tone: str = "conversational"
-    niches: List[str] = ["ai tools", "raspberry pi tips", "space trivia"]
+    niches: List[str] = ["ai tools", "mac optimization", "space trivia"]
     category_ids: List[int] = [27, 28]
     enable_captions: bool = True
     enable_thumbnails: bool = True
@@ -524,13 +530,8 @@ def paced_sleep(cfg: GlobalCfg):
 
 
 def cpu_temp_c() -> Optional[float]:
-    try:
-        out = subprocess.check_output(["vcgencmd", "measure_temp"], text=True).strip()
-        # temp=48.0'C
-        m = re.search(r"temp=([\d\.]+)", out)
-        return float(m.group(1)) if m else None
-    except Exception:
-        return None
+    """Legacy function - use read_pi_cpu_temp_celsius from platform utils."""
+    return read_pi_cpu_temp_celsius()
 
 
 def disk_free_gb(path: str) -> float:
@@ -538,12 +539,31 @@ def disk_free_gb(path: str) -> float:
     return round(free / 1e9, 2)
 
 
+def maybe_defer_for_thermals(threshold_c: float = 75.0, sleep_seconds: int = 30) -> None:
+    """
+    Pi-only: If CPU temp exceeds threshold, sleep/backoff to protect device.
+    On macOS: no-op (thermal management is handled by OS; no vcgencmd).
+    """
+    if is_macos():
+        return  # no-op on Mac
+    if not is_linux_arm():
+        return  # only guard Raspberry Pi class devices
+
+    temp = read_pi_cpu_temp_celsius()
+    if temp is None:
+        return
+    if temp >= threshold_c:
+        log.warning(
+            f"[thermal-guard] CPU temp {temp:.1f}°C ≥ {threshold_c}°C; sleeping {sleep_seconds}s..."
+        )
+        time.sleep(sleep_seconds)
+
+
 def guard_system(cfg: GlobalCfg, min_free_gb: float = 5.0, max_temp_c: float = 75.0):
-    t = cpu_temp_c()
-    if t is not None and t > max_temp_c:
-        log_state("guard", "DEFERRED", f"cpu_temp_c={t}")
-        time.sleep(60)
-        sys.exit(0)
+    # Use platform-aware thermal guard
+    maybe_defer_for_thermals(max_temp_c, 60)
+    
+    # Disk space check
     free = disk_free_gb(cfg.storage.base_dir)
     if free < min_free_gb:
         log_state("guard", "FAIL", f"low_disk_free_gb={free}")
@@ -571,34 +591,43 @@ def parse_llm_json(text: str) -> dict:
         raise ValueError("No JSON object found in LLM output.")
 
 
-ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS.union(
-    {
-        "p",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "ul",
-        "ol",
-        "li",
-        "strong",
-        "em",
-        "blockquote",
-        "code",
-        "pre",
-        "img",
-        "figure",
-        "figcaption",
+if bleach is not None:
+    ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS.union(
+        {
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "ul",
+            "ol",
+            "li",
+            "strong",
+            "em",
+            "blockquote",
+            "code",
+            "pre",
+            "img",
+            "figure",
+            "figcaption",
+        }
+    )
+    ALLOWED_ATTRS = {
+        "img": ["src", "alt", "title", "width", "height"],
+        "a": ["href", "title", "rel", "target"],
     }
-)
-ALLOWED_ATTRS = {
-    "img": ["src", "alt", "title", "width", "height"],
-    "a": ["href", "title", "rel", "target"],
-}
+else:
+    ALLOWED_TAGS = set()
+    ALLOWED_ATTRS = {}
 
 
 def sanitize_html(html: str) -> str:
-    return bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True)
+    if bleach is not None:
+        return bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True)
+    else:
+        # Fallback: basic HTML stripping
+        import re
+        return re.sub(r'<[^>]+>', '', html)
 
 
 # ---------------- Hashing & Dedupe ----------------

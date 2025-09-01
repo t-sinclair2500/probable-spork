@@ -11,13 +11,13 @@ This file remains for historical reference only.
 
 # CURSOR SHARED CORE PIPELINE — Master Prompt (ARCHIVED)
 
-**Goal:** Implement a **shared, core pipeline** that powers multiple outputs from one Raspberry Pi 5:
+**Goal:** Implement a **shared, core pipeline** that powers multiple outputs from Mac M2 8GB (primary) with Raspberry Pi 5 support:
 - **YouTube lane** (video scripts → VO → assets → render → stage/upload)
 
 - (Future lanes: newsletter, static site, data dashboard, digital products)
 
 **Constraints & Principles**
-- **Single device** (Pi 5, 8GB). Heavy tasks are **sequential** (single-lane) with lockfile control.
+- **Primary device** (Mac M2, 8GB). Heavy tasks are **sequential** (single-lane) with lockfile control. Pi 5 supported as alternate target.
 - **One source of truth** for trends, topics, artifacts, and job state.
 - **Local-first** stack: Ollama (phi3:mini), whisper.cpp (ASR), Coqui TTS, FFmpeg, MoviePy, Python.
 - **Optional cloud fallbacks** are **OFF by default** and require explicit enabling and keys.

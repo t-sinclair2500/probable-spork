@@ -1,146 +1,51 @@
-# M2 MacBook Air 8GB Optimized Configuration
-# Optimized for Apple Silicon with Metal Performance Shaders
+# conf/m2_8gb_optimized.yaml
+# Mac M2 8GB optimized profile
+# Higher concurrency, faster pacing, VideoToolbox encoding
 
-hardware:
-  # Apple Silicon Configuration
-  cpu_type: "Apple M2"
-  cpu_cores: 8
-  cpu_threads: 8
-  gpu_type: "Apple M2 Integrated GPU"
-  gpu_memory: "Unified Memory"
-  
-  # Memory Configuration (8GB total)
-  total_ram_gb: 8
-  available_ram_gb: 6.5  # Reserve 1.5GB for system
-  model_memory_gb: 4.0   # Reserve 4GB for models
-  system_memory_gb: 1.5  # Reserve 1.5GB for system
-  pipeline_memory_gb: 2.5  # Reserve 2.5GB for pipeline operations
+platform:
+  target: "mac_m2_8gb"
+  description: "Apple Silicon M2 with 8GB RAM - local-first pipeline optimized"
 
-# Ollama Configuration (M2 Optimized)
-ollama:
-  # Model Management
-  models:
-    primary: "llama3.2:3b"  # Single model for all tasks
-  
-  # Performance Settings (M2-optimized)
-  num_parallel: 1        # Single model to prevent memory conflicts
-  timeout_seconds: 120   # Longer timeouts for stability
-  max_concurrent: 1      # Single request at a time
-  
-  # Memory Management (Critical for 8GB)
-  model_memory_gb: 4.0   # Maximum model memory
-  system_memory_gb: 1.5  # System reserve
-  pipeline_memory_gb: 2.5  # Pipeline operations
-  
-  # M2/Metal Optimizations
-  gpu_layers: 0          # Use CPU for stability on 8GB
-  cpu_layers: -1         # Use all CPU layers
-  threads: 4             # Optimal thread count for M2
-  
-  # Metal Performance Shaders (MPS)
-  mps_enabled: true      # Enable Metal Performance Shaders
-  metal_device: "auto"   # Auto-detect Metal device
-  
-  # Memory Pressure Handling
-  low_memory_mode: true  # Enable low memory optimizations
-  aggressive_gc: true    # Aggressive garbage collection
-  context_clear_threshold: 0.7  # Clear context at 70% memory usage
+performance:
+  max_concurrent_renders: 2
+  pacing_cooldown_seconds: 15
+  encode:
+    delivery_crf: 19
+    pix_fmt: "yuv420p"
+    # VideoToolbox acceleration available on macOS
+    use_videotoolbox: true
 
-# Pipeline Configuration (Memory-Conscious)
-pipeline:
-  # Sequential Processing (Memory-friendly)
-  max_workers: 1         # Single worker to prevent memory conflicts
-  batch_size: 1          # Single batch processing
-  sequential_execution: true  # Force sequential execution
-  
-  # Memory Management
-  memory_check_interval: 5  # Check memory every 5 seconds
-  memory_warning_threshold: 0.8  # Warn at 80% memory usage
-  memory_critical_threshold: 0.9  # Critical at 90% memory usage
-  
-  # Context Management
-  max_context_length: 4096  # Limit context to prevent memory issues
-  context_clear_frequency: "after_each_step"  # Clear context after each step
-  
-  # Asset Processing (Memory-conscious)
-  concurrent_downloads: 1  # Single download at a time
-  cache_size_gb: 1.0      # Small asset cache
-  asset_cleanup_frequency: "after_each_run"  # Clean assets after each run
+llm:
+  defaults:
+    # Keep 3B reliable; allow opt-in larger model for scriptwriting
+    chat_model: "llama3.2:3b"
+    generate_model: "llama3.2:3b"
+  options:
+    num_ctx: 4096
+    num_predict: 640
+    temperature: 0.4
+    seed: 1337
+  scriptwriter_optional:
+    enable: false
+    model: "llama3.1:8b-instruct-q4_K_M"  # example quantized
 
-# Service Configuration (Memory-optimized)
-services:
-  fastapi:
-    workers: 1           # Single worker for memory efficiency
-    max_requests: 100    # Lower request limits
-    timeout: 60          # Longer timeouts for stability
-  
-  gradio:
-    max_threads: 2       # Minimal UI threads
-    queue_size: 5        # Small request queue
-  
-  ollama:
-    server_url: "http://localhost:11434"
-    health_check_interval: 30  # Less frequent health checks
-    memory_monitoring: true    # Enable memory monitoring
+research:
+  policy:
+    mode: "reuse"        # default reuse; allow live providers via CLI
+    allow_providers: ["local_fixtures"]
+    min_citations: 2
 
-# Performance Monitoring (Memory-focused)
-monitoring:
-  enable_metrics: true
-  log_level: "info"
-  performance_tracking: true
-  memory_tracking: true  # Critical for 8GB system
-  
-  # Memory Alerts
-  memory_warning_gb: 6.5  # Warn at 6.5GB usage
-  memory_critical_gb: 7.5  # Critical at 7.5GB usage
-  
-  # Performance Thresholds
-  response_time_warning_ms: 10000  # Warn if response > 10s
-  memory_usage_warning_pct: 80     # Warn at 80% memory usage
+audio:
+  bitrate: "320k"
+  # macOS has good audio codec support
+  codec: "aac"
 
-# Development Settings (Memory-conscious)
-development:
-  hot_reload: false      # Disable hot reload for memory efficiency
-  debug_mode: false      # Disable debug for production performance
-  profiling: false       # Disable profiling to save memory
-  
-  # Memory-Saving Features
-  disable_logging: false # Keep logging for debugging
-  minimal_imports: true  # Minimize unnecessary imports
-  lazy_loading: true     # Enable lazy loading where possible
+guards:
+  disk_free_gb_min: 5
+  thermal: "platform_aware"  # no-op on macOS; Pi-only behavior otherwise
 
-# Metal Performance Shaders (MPS) Configuration
-metal:
-  enabled: true          # Enable Metal Performance Shaders
-  device_priority: ["mps", "cpu"]  # Prefer MPS, fallback to CPU
-  memory_pool_size: "2GB"  # Limit MPS memory pool
-  texture_cache_size: "512MB"  # Limit texture cache
-  
-  # MPS Fallback Strategy
-  fallback_to_cpu: true  # Fallback to CPU if MPS fails
-  cpu_fallback_memory_gb: 3.0  # CPU fallback memory limit
-  
-  # Metal Optimization Flags
-  enable_fast_math: true  # Enable fast math operations
-  enable_metal_validation: false  # Disable validation for performance
-  enable_metal_debugging: false  # Disable debugging for performance
-
-# Memory Management Strategy
-memory_management:
-  # Aggressive Memory Management
-  gc_frequency: "after_each_request"  # Garbage collect after each request
-  context_clear_strategy: "immediate"  # Clear context immediately after use
-  
-  # Memory Pressure Response
-  low_memory_response:
-    - "clear_model_cache"
-    - "clear_asset_cache"
-    - "reduce_context_length"
-    - "force_garbage_collection"
-  
-  # Memory Monitoring
-  monitoring_interval: 2  # Check memory every 2 seconds
-  alert_thresholds:
-    warning: 0.75         # 75% memory usage
-    critical: 0.90        # 90% memory usage
-    emergency: 0.95       # 95% memory usage - emergency measures
+# Mac-specific optimizations
+mac_optimizations:
+  use_metal: true
+  use_videotoolbox: true
+  memory_pressure_handling: "os_managed"

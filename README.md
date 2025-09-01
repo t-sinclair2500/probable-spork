@@ -1,6 +1,23 @@
-# One-Pi Content Automation Pipeline
+# Probable Spork - Mac-First Content Automation Pipeline
 
-Single Raspberry Pi 5 (64-bit) pipeline that discovers topics, generates scripts with a local LLM (Ollama), performs TTS, fetches royalty-free assets, assembles videos (MoviePy + FFmpeg), and stages for upload. Includes local ASR via `whisper.cpp` and YouTube content production. Features real-time monitoring, asset quality assessment, fact-checking, and enhanced SEO optimization. Optional cloud fallbacks for TTS/ASR are wired but OFF by default.
+**Primary:** macOS Apple Silicon (Mac M2, 8GB) — local-first pipeline optimized for a single laptop.
+
+**Secondary:** Raspberry Pi 5 (8GB) — supported via conservative profile.
+
+Automated content pipeline that discovers topics, generates scripts with a local LLM (Ollama), performs TTS, fetches royalty-free assets, assembles videos (MoviePy + FFmpeg), and stages for upload. Includes local ASR via `whisper.cpp` and YouTube content production. Features real-time monitoring, asset quality assessment, fact-checking, and enhanced SEO optimization. Optional cloud fallbacks for TTS/ASR are wired but OFF by default.
+
+## Platform Support
+
+Use profiles to tailor performance:
+```bash
+# Mac M2 optimized
+python bin/run_pipeline.py --profile m2_8gb_optimized --brief conf/brief.yaml
+
+# Raspberry Pi 5
+python bin/run_pipeline.py --profile pi_8gb --brief conf/brief.yaml
+```
+
+**Thermals:** Pi thermal guard engages automatically on ARM Linux with vcgencmd; macOS skips thermal guard by design.
 
 ## Quick Start
 
@@ -91,7 +108,7 @@ python bin/upload_stage.py
 ## Storage Notes
 
 - Use a USB SSD (recommended). Update paths in `conf/global.yaml` if needed.
-- This repo uses a single-lane, lock-aware flow to avoid overloading the Pi.
+- This repo uses a single-lane, lock-aware flow optimized for Mac M2 8GB with Pi 5 support.
 
 ## Safety & Licensing
 
@@ -122,7 +139,7 @@ The pipeline uses a deterministic batch-by-model execution strategy to optimize 
 ### Environment Controls
 
 - `OLLAMA_NUM_PARALLEL=1`: Ensures only one model is active at a time
-- `OLLAMA_TIMEOUT=120`: Sets reasonable timeout for single-lane operation
+- `OLLAMA_TIMEOUT=120`: Sets reasonable timeout for single-lane operation (optimized for Mac M2)
 - Models are automatically loaded on first use and unloaded between batches
 
 ### Pipeline Control
@@ -162,7 +179,7 @@ venv/bin/python --version  # Should show Python 3.11.x
 - **MoviePy Compatibility**: MoviePy 1.0.3 has known issues with Python 3.12+
 - **Dependency Stability**: All tested dependencies work reliably with Python 3.11
 - **Performance**: Optimal performance for video processing tasks
-- **Hardware Acceleration**: Full support for macOS VideoToolbox integration
+- **Hardware Acceleration**: Full support for macOS VideoToolbox integration (M2 optimized)
 
 ## Enhanced Features
 

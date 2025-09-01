@@ -27,6 +27,7 @@ if ROOT not in sys.path:
 
 from bin.core import BASE, get_logger, load_config, log_state, single_lock
 from bin.model_runner import model_session
+from bin.utils.config import load_research_config, load_models_config
 
 log = get_logger("research_collect")
 
@@ -37,54 +38,32 @@ class ResearchCollector:
         """Initialize research collector."""
         # Global runtime config (pydantic model) if needed elsewhere
         self.config = load_config()
-        self.models_config = models_config or self._load_models_config()
+        self.models_config = models_config or load_models_config()
 
         # Load research-specific configuration from conf/research.yaml
-        self.research_config = self._load_research_config()
-        self.mode = mode
+        self.research_config = load_research_config()
+        self.policy = self.research_config.policy
+        self.mode = mode or self.policy.mode
         
         # Database setup
-        self.db_path = Path(BASE) / self.research_config.get('database', 'data/research.db')
+        self.db_path = Path(BASE) / "data/research.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
         
-        # Load domain allowlist and blacklist
-        self.domain_allowlist = set(self.research_config.get('domains', {}).get('allowlist', []))
-        self.domain_blacklist = set(self.research_config.get('domains', {}).get('blacklist', []))
+        # Load domain allowlist and blacklist from legacy config
+        self.domain_allowlist = set(self.research_config.domains.get('allowlist', []) if hasattr(self.research_config, 'domains') else [])
+        self.domain_blacklist = set(self.research_config.domains.get('blacklist', []) if hasattr(self.research_config, 'domains') else [])
         
-        # Cache settings
-        self.cache_enabled = self.research_config.get('cache', {}).get('disk_cache', {}).get('enabled', True)
-        self.cache_base_path = Path(BASE) / self.research_config.get('cache', {}).get('disk_cache', {}).get('base_path', 'data/research_cache')
-        self.cache_ttl_hours = self.research_config.get('cache', {}).get('ttl_hours', 24)
+        # Cache settings from legacy config
+        cache_config = getattr(self.research_config, 'cache', {})
+        self.cache_enabled = cache_config.get('disk_cache', {}).get('enabled', True)
+        self.cache_base_path = Path(BASE) / cache_config.get('disk_cache', {}).get('base_path', 'data/research_cache')
+        self.cache_ttl_hours = cache_config.get('ttl_hours', 24)
         
         if self.cache_enabled:
             self.cache_base_path.mkdir(parents=True, exist_ok=True)
 
-    def _load_models_config(self) -> Dict:
-        """Load models configuration."""
-        try:
-            import yaml
-            models_path = Path(BASE) / "conf" / "models.yaml"
-            with open(models_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            log.warning(f"Failed to load models.yaml: {e}, using defaults")
-            return {}
 
-    def _load_research_config(self) -> Dict:
-        """Load research configuration from conf/research.yaml."""
-        try:
-            import yaml
-            research_path = Path(BASE) / "conf" / "research.yaml"
-            if research_path.exists():
-                with open(research_path, 'r', encoding='utf-8') as f:
-                    return yaml.safe_load(f) or {}
-            else:
-                log.warning("conf/research.yaml not found; using defaults")
-                return {}
-        except Exception as e:
-            log.warning(f"Failed to load research.yaml: {e}; using defaults")
-            return {}
     
     def _init_database(self):
         """Initialize SQLite database for research data."""
@@ -259,7 +238,8 @@ class ResearchCollector:
                 log.error(f"Failed to collect from {source}: {e}")
         
         # Collect from general search if we need more sources
-        max_sources = self.research_config.get('collection', {}).get('max_sources_per_topic', 15)
+        collection_config = getattr(self.research_config, 'collection', {})
+        max_sources = collection_config.get('max_sources_per_topic', 15)
         if len(sources) < max_sources:
             additional_sources = self._collect_from_search(keywords, max_sources - len(sources))
             sources.extend(additional_sources)

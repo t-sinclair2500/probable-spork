@@ -23,8 +23,17 @@ if ROOT not in sys.path:
 
 from bin.core import BASE, get_logger, load_config, log_state, single_lock
 from bin.model_runner import model_session
+from bin.utils.config import load_research_config, load_models_config
 
 log = get_logger("research_ground")
+
+def _safe_subject(slug: str | None, brief: dict | None) -> str:
+    """Safely extract a subject from slug or brief."""
+    title = ""
+    if isinstance(brief, dict):
+        title = str(brief.get("title") or brief.get("topic") or "").strip()
+    s = (title or (slug or "")).strip()
+    return s or "untitled"
 
 class ResearchGrounder:
     """Grounds script content with research citations and references."""
@@ -32,49 +41,28 @@ class ResearchGrounder:
     def __init__(self, models_config: Optional[Dict] = None):
         """Initialize research grounder."""
         self.config = load_config()
-        self.models_config = models_config or self._load_models_config()
+        self.models_config = models_config or load_models_config()
         
-        # Load research config from models.yaml since it's not in global.yaml
-        self.research_config = self._load_research_config()
+        # Load research config from conf/research.yaml
+        self.research_config = load_research_config()
+        self.policy = self.research_config.policy
         
         # Database setup
-        self.db_path = Path(BASE) / self.research_config.get('database', 'data/research.db')
+        self.db_path = Path(BASE) / "data/research.db"
         if not self.db_path.exists():
             raise FileNotFoundError(f"Research database not found: {self.db_path}")
         
-        # Grounding settings
-        self.grounding_config = self.research_config.get('grounding', {})
-        self.min_citations_per_beat = self.grounding_config.get('min_citations_per_beat', 1)
-        self.target_citations_per_beat = self.grounding_config.get('target_citations_per_beat', 2)
-        self.min_beats_coverage_pct = self.grounding_config.get('min_beats_coverage_pct', 60.0)
-        self.citation_format = self.grounding_config.get('citation_format', '[S{num}]')
+        # Grounding settings from policy
+        self.min_citations_per_beat = self.policy.min_citations
+        self.target_citations_per_beat = self.policy.min_citations * 2  # Target 2x minimum
+        self.min_beats_coverage_pct = self.policy.coverage_threshold * 100  # Convert to percentage
+        self.citation_format = '[S{num}]'  # Default format
         
-        # Quality thresholds
-        self.min_domain_quality_score = self.grounding_config.get('min_domain_quality_score', 0.6)
-        self.min_content_relevance_score = self.grounding_config.get('min_content_relevance_score', 0.7)
+        # Quality thresholds from policy
+        self.min_domain_quality_score = self.policy.min_domain_score or 0.6
+        self.min_content_relevance_score = 0.7  # Default
     
-    def _load_models_config(self) -> Dict:
-        """Load models configuration."""
-        try:
-            import yaml
-            models_path = Path(BASE) / "conf" / "models.yaml"
-            with open(models_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            log.warning(f"Failed to load models.yaml: {e}, using defaults")
-            return {}
-    
-    def _load_research_config(self) -> Dict:
-        """Load research configuration from models.yaml."""
-        try:
-            import yaml
-            models_path = Path(BASE) / "conf" / "models.yaml"
-            with open(models_path, 'r', encoding='utf-8') as f:
-                models_data = yaml.safe_load(f)
-                return models_data.get('research', {})
-        except Exception as e:
-            log.warning(f"Failed to load research config: {e}, using defaults")
-            return {}
+
     
     def ground_script(self, script_path: Path, brief: Dict) -> Dict:
         """
@@ -260,7 +248,8 @@ class ResearchGrounder:
     
     def _score_chunks(self, chunks: List[Dict], content: str) -> List[Dict]:
         """Score chunks by quality and relevance."""
-        scoring_weights = self.research_config.get('collection', {}).get('scoring_weights', {})
+        collection_config = getattr(self.research_config, 'collection', {})
+        scoring_weights = collection_config.get('scoring_weights', {})
         
         for chunk in chunks:
             # Domain quality score
@@ -306,7 +295,8 @@ class ResearchGrounder:
             return 0.7
         else:
             # Check if domain is in allowlist
-            allowlist = self.research_config.get('domains', {}).get('allowlist', [])
+            domains_config = getattr(self.research_config, 'domains', {})
+            allowlist = domains_config.get('allowlist', [])
             if domain in allowlist:
                 return 0.6
             else:
@@ -339,10 +329,13 @@ class ResearchGrounder:
         with open(prompt_path, "r", encoding="utf-8") as f:
             template = f.read()
         
+        # Compute safe subject from brief or slug
+        subject = _safe_subject(self.slug, self.brief)
+        
         # Format prompt with variables
         system_prompt = template.format(
             brief_context="",  # Research grounding doesn't use brief context
-            topic=topic,
+            topic=subject,
             research_goals="Enhance content with factual information",
             evidence_level="high"
         )
@@ -360,7 +353,8 @@ Enhanced Content:"""
 
         try:
             # Use model runner for deterministic load/unload
-            model_name = self.research_config.get('models', {}).get('research', 'llama3.2:3b')
+            models_config = getattr(self.research_config, 'models', {})
+            model_name = models_config.get('research', {}).get('name', 'llama3.2:3b')
             
             # Load user prompt template
             user_prompt_path = os.path.join(BASE, "prompts", "user_research_ground.txt")

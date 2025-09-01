@@ -2089,16 +2089,13 @@ class AcceptanceValidator:
             # Validate domain whitelist compliance
             try:
                 # Load research configuration for domain allowlist
-                research_config_path = os.path.join(BASE, "conf", "research.yaml")
-                if os.path.exists(research_config_path):
-                    import yaml
-                    with open(research_config_path, 'r') as f:
-                        research_config = yaml.safe_load(f)
-                    
-                    allowlist = set(research_config.get("domains", {}).get("allowlist", []))
-                    blacklist = set(research_config.get("domains", {}).get("blacklist", []))
-                    
-                    if allowlist:  # Only validate if allowlist is configured
+                from bin.utils.config import load_research_config
+                research_config = load_research_config()
+                
+                allowlist = set(research_config.domains.get("allowlist", []) if hasattr(research_config, 'domains') else [])
+                blacklist = set(research_config.domains.get("blacklist", []) if hasattr(research_config, 'domains') else [])
+                
+                if allowlist:  # Only validate if allowlist is configured
                         non_whitelisted_domains = []
                         for domain in unique_domains:
                             if domain not in allowlist and domain not in blacklist:
@@ -2110,12 +2107,9 @@ class AcceptanceValidator:
                             evidence_results["warnings"].append(f"Found {len(non_whitelisted_domains)} non-whitelisted domains: {', '.join(non_whitelisted_domains[:5])}")
                         else:
                             evidence_results["policy_checks"]["whitelist_compliance"] = "PASS"
-                    else:
-                        evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
-                        evidence_results["warnings"].append("Domain allowlist not configured, skipping whitelist validation")
                 else:
                     evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
-                    evidence_results["warnings"].append("Research config not found, skipping whitelist validation")
+                    evidence_results["warnings"].append("Domain allowlist not configured, skipping whitelist validation")
             except Exception as e:
                 evidence_results["policy_checks"]["whitelist_compliance"] = "PENDING"
                 evidence_results["warnings"].append(f"Whitelist validation error: {str(e)}")

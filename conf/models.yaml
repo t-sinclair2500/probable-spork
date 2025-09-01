@@ -4,10 +4,23 @@
 profile: "laptop_m2_8gb"  # Hardware profile for optimization hints
 
 ollama:
-  server: "http://localhost:11434"
-  timeout_s: 120
-  retry_attempts: 3
-  retry_delay_s: 2
+  base_url: "http://127.0.0.1:11434"
+  timeout_sec: 60
+
+defaults:
+  chat_model: "llama3.2:3b"
+  generate_model: "llama3.2:3b"
+  embeddings_model: "nomic-embed-text"
+
+options:
+  # Sent to Ollama in the "options" payload for chat/generate
+  num_ctx: 4096
+  num_predict: 512
+  temperature: 0.4
+  seed: 1337
+  # Remove hardcoded CPU-only; allow GPU where applicable (Ollama manages device on macOS via Metal)
+  # Set num_gpu to -1 to offload as much as possible; leave unset to let Ollama decide
+  # num_gpu: -1
 
 models:
   # All tasks use the same model - llama3.2:3b
@@ -65,11 +78,8 @@ voice:
     language: "en"
     task: "transcribe"
 
-# Research grounding settings
-research:
-  max_sources: 8
-  chunk_size_tokens: 1200
-  max_chunks_per_source: 5
-  min_relevance_score: 0.6
-  citation_format: "inline"  # inline, footnote, endnote
-  database: "data/research.db"  # SQLite database for research data
+# Model identifiers for unified access
+script_model: "llama3.2:3b"
+outline_model: "llama3.2:3b"
+caption_asr_model: "whisper-small-int8"
+tts_voice: "piper/en_US-amy-medium"

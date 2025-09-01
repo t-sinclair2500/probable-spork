@@ -105,12 +105,61 @@ dependencies:
 
 # Quality gates and validation
 quality_gates:
+  # Script quality
+  script:
+    wpm_range: [145, 175]
+    cta_required: true
+    citation_needed_block: true
+    required: true
+  
+  # Audio quality (monetization-grade)
+  audio:
+    lufs_target: -14.0
+    lufs_tolerance: 0.5
+    true_peak_max: -1.5
+    lra_max: 11.0
+    sibilance_threshold: 0.15
+    silence_max_percent: 4.0
+    music_ducking_applied: true
+    required: true
+  
+  # Visual quality
+  visual:
+    contrast_min: 4.5
+    text_safe_areas: true
+    ssim_min: 0.93
+    duration_tolerance_percent: 3.0
+    required: true
+  
+  # Video encoding
+  video:
+    intermediate_codec: "prores_422"  # or "h264_lossless"
+    delivery_crf: [18, 20]
+    audio_bitrate: 320
+    audio_sample_rate: 48000
+    codec_fallback_verified: true
+    required: true
+  
+  # Research and claims
+  research:
+    min_citations_per_beat: 1
+    fact_guard_policy: "block"  # off, warn, block
+    required: true
+  
+  # Monetization
+  monetization:
+    disclosure_required: true
+    utm_links_present: true
+    max_links: 5
+    required: true
+  
+  # Legacy gates (maintained for compatibility)
   asset_coverage:
     minimum: 0.95
     required: true
   
   duration_tolerance:
-    percentage: 5.0
+    percentage: 3.0  # Updated to match new standard
     required: true
   
   asset_quality:
@@ -120,7 +169,29 @@ quality_gates:
 
 # Performance and resource limits
 performance:
-  max_concurrent_renders: 1  # Single-lane constraint
+  max_concurrent_renders: 2  # Mac M2 optimized (Pi 5: use 1)
   render_timeout_seconds: 3600
-  memory_limit_gb: 6  # Raspberry Pi 5 constraint
+  memory_limit_gb: 6  # Mac M2 8GB constraint (conservative)
   cache_cleanup_threshold: 0.8  # Cleanup when 80% full
+
+# Step policy configuration for centralized error handling
+steps:
+  research_collect:
+    required: false
+    on_fail: warn   # continue, mark PARTIAL
+  research_ground:
+    required: true  # hard requirement
+  storyboard:
+    required: true
+  animatics:
+    required: true
+  audio:
+    required: true
+  assemble:
+    required: true
+  thumbnail:
+    required: false
+    on_fail: warn
+  upload:
+    required: false
+    on_fail: skip   # if upload fails, skip without blocking

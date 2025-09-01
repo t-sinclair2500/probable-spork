@@ -4,7 +4,7 @@ globs: ["**/*.py"]
 alwaysApply: true
 ---
 
-- Target Python 3.9+; code must run on ARM (Raspberry Pi 5).
+- Target Python 3.9+; code must run on ARM (Apple Silicon M2 primary, Raspberry Pi 5 secondary).
 - Follow PEP 8 and prefer readable, multi-line code over dense one-liners.
 - Use `logging` (via `bin.core.get_logger`) not `print` in scripts (except short CLIs/tools).
 - Prefer explicit, descriptive names (no 1–2 character variables).

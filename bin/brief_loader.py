@@ -86,6 +86,32 @@ def from_markdown_front_matter(md_path: str) -> Dict[str, Any]:
     return brief
 
 
+def _normalize_list_field(val):
+    """
+    Accepts str | list | None and returns a clean list[str].
+    - If str: wrap as single item.
+    - If list: coerce each item to str, strip whitespace, filter out empties/None.
+    """
+    if val is None:
+        return []
+    if isinstance(val, str):
+        # Wrap as single item, but filter out empty strings
+        s = val.strip()
+        items = [s] if s else []
+    elif isinstance(val, (list, tuple)):
+        items = []
+        for x in val:
+            if x is None:
+                continue
+            s = str(x).strip()
+            if s:
+                items.append(s)
+    else:
+        # unexpected scalar; coerce to single-item list
+        s = str(val).strip()
+        items = [s] if s else []
+    return items
+
 def validate_brief(brief: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate and normalize brief configuration.
@@ -149,21 +175,12 @@ def _normalize_brief_fields(brief: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Normalized brief
     """
-    # Ensure audience is a list
-    if isinstance(brief["audience"], str):
-        brief["audience"] = [brief["audience"]]
-    elif not isinstance(brief["audience"], list):
-        brief["audience"] = []
+    # Normalize list fields using robust helper
+    brief["audience"] = _normalize_list_field(brief.get("audience"))
     
     # Ensure keywords are lists and normalized
     for key in ["keywords_include", "keywords_exclude", "sources_preferred"]:
-        if isinstance(brief[key], str):
-            brief[key] = [brief[key]]
-        elif not isinstance(brief[key], list):
-            brief[key] = []
-        
-        # Normalize keywords: lowercase, strip whitespace
-        brief[key] = [kw.lower().strip() for kw in brief[key] if kw.strip()]
+        brief[key] = _normalize_list_field(brief.get(key))
     
     # Ensure video configs are dicts
     for key in ["video"]:

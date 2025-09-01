@@ -1,40 +1,14 @@
-# Monetization configuration for the content pipeline
-# This file defines CTAs, affiliate settings, and UTM tracking for revenue generation
-
-youtube:
-  # Call-to-action text and URL for video descriptions
-  cta_text: "🔔 Subscribe for daily AI tips and hit the bell for notifications!"
-  cta_url: "https://youtube.com/@YourChannel"
-  
-  # Affiliate disclosure text (required by FTC)
-  affiliate_disclosure: "Some links in this description may be affiliate links. We earn a small commission if you purchase through these links at no extra cost to you."
-  
-  # Default hashtags for all videos
-  default_hashtags: ["#AI", "#Productivity", "#TechTips", "#Automation", "#Tutorial"]
-  
-  # UTM tracking parameters for YouTube traffic
-  utm_source: "youtube"
-  utm_medium: "video"
-  utm_campaign: "ai_content_pipeline"
-  
-  # Additional video monetization settings
-  end_screen_cta: "Check out our channel for more detailed guides and tools!"
-
-
-
-
-
-# Content monetization rules
-content:
-  # Minimum word count before adding monetization elements
-  min_words_for_monetization: 500
-  
-  # Whether to include affiliate disclosure by default
-  include_affiliate_disclosure: true
-  
-  # Whether to include newsletter signup by default
-  include_newsletter_signup: true
-  
-  # Maximum number of affiliate links per piece of content
-  max_affiliate_links: 3
+# conf/monetization.yaml
+disclosure: "This video may contain affiliate links. As an Amazon Associate, we earn from qualifying purchases."
+newsletter_url: "https://example.com/newsletter"
+max_affiliate_links: 5
+utm:
+  source: "youtube"
+  medium: "video"
+  campaign_prefix: "psrk"
+links:
+  - label: "Main Product"
+    url: "https://example.com/product"
+  - label: "Newsletter"
+    url: "https://example.com/newsletter"
 

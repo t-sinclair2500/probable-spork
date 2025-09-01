@@ -48,7 +48,9 @@ from bin.cutout.anim_fx import (
     apply_keyframes,
 )
 from bin.cutout.layout_engine import LayoutEngine
-from bin.cutout.color_engine import load_palette, pick_scene_colors
+from bin.cutout.color_engine import pick_scene_colors
+from bin.utils.palette import load_palette, ensure_palette, Palette
+from bin.utils.flatten import flatten_elements
 from bin.cutout.motif_generators import generate_background_motif
 from bin.cutout.layout_apply import auto_layout_scene, check_scene_layout_validity
 from moviepy.editor import VideoClip, CompositeVideoClip
@@ -552,10 +554,15 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         # Load palette
         palette = None
         try:
-            palette = load_palette()
+            # Load from design_language.json using the new Palette adapter
+            palette_raw = load_palette("design/design_language.json")
+            # Ensure palette is wrapped with adapter to guarantee .colors access
+            palette = ensure_palette(palette_raw)
             log.info(f"Loaded procedural palette with {len(palette.colors)} colors")
         except Exception as e:
             log.warning(f"Failed to load palette: {e}")
+            # Fallback to empty palette
+            palette = Palette(colors=[])
         
         # Ensure animatics directory exists
         anim_dir = ensure_animatics_dir(slug)
@@ -564,10 +571,8 @@ def render_animatics(slug: str, scene_id: Optional[str] = None) -> bool:
         # Rasterize SVG assets (flatten elements across all scenes)
         print("🔄 Rasterizing SVG assets...")
         try:
-            all_elements = []
-            for s in scenes_to_render:
-                if hasattr(s, 'elements') and s.elements:
-                    all_elements.extend(list(s.elements))
+            # Use unified flatten utility to handle mixed inputs
+            all_elements = flatten_elements(scenes_to_render)
             asset_paths = rasterize_element_assets(all_elements, style, texture_config)
         except Exception as e:
             log.error(f"Failed to prepare elements for rasterization: {e}")

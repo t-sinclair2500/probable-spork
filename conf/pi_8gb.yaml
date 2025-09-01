@@ -1,0 +1,50 @@
+# conf/pi_8gb.yaml
+# Raspberry Pi 5 8GB conservative profile
+# Single-threaded, longer pacing, thermal-aware
+
+platform:
+  target: "pi_5_8gb"
+  description: "Raspberry Pi 5 with 8GB RAM - conservative pipeline for ARM Linux"
+
+performance:
+  max_concurrent_renders: 1
+  pacing_cooldown_seconds: 60
+  encode:
+    delivery_crf: 20
+    pix_fmt: "yuv420p"
+    # Software encoding on ARM
+    use_videotoolbox: false
+
+llm:
+  defaults:
+    chat_model: "llama3.2:3b"
+    generate_model: "llama3.2:3b"
+  options:
+    num_ctx: 3072
+    num_predict: 448
+    temperature: 0.3
+    seed: 1337
+  scriptwriter_optional:
+    enable: false
+    model: "llama3.2:3b"  # Keep conservative on Pi
+
+research:
+  policy:
+    mode: "reuse"        # conservative offline default
+    allow_providers: ["local_fixtures"]
+    min_citations: 2
+
+audio:
+  bitrate: "192k"
+  # Conservative audio settings for Pi
+  codec: "aac"
+
+guards:
+  disk_free_gb_min: 5
+  thermal: "pi_only"     # Enable thermal monitoring on Pi
+
+# Pi-specific optimizations
+pi_optimizations:
+  thermal_monitoring: true
+  cpu_throttling: true
+  memory_management: "conservative"

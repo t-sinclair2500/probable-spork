@@ -115,7 +115,7 @@ Successfully integrated storyboard asset loop, texture/paper feel, SVG path oper
 
 ### Single-Lane Execution
 - **Max concurrent renders**: 1
-- **Memory limit**: 6GB (Raspberry Pi 5 constraint)
+- **Memory limit**: 6GB (Mac M2 8GB constraint, conservative)
 - **Render timeout**: 3600 seconds
 - **Cache cleanup threshold**: 80%
 
@@ -170,6 +170,6 @@ The pipeline integration is complete and ready for production use. The system no
 3. **Applies consistent textures and paper feel** across all content
 4. **Integrates music bed policy** with intelligent selection and ducking
 5. **Executes in the correct order** with proper dependencies and quality gates
-6. **Maintains single-lane constraints** for Raspberry Pi 5 compatibility
+6. **Maintains single-lane constraints** for Mac M2 8GB optimization with Pi 5 compatibility
 
 All new features are fully integrated and the pipeline is ready for end-to-end content generation.

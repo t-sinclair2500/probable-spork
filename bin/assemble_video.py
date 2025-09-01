@@ -25,6 +25,8 @@ from bin.core import (  # noqa: E402
 )
 from bin.core import parse_llm_json  # noqa: E402
 from bin.music_integration import MusicIntegrationManager  # noqa: E402
+from bin.utils.ffmpeg import encode_with_fallback  # noqa: E402
+from bin.utils.media import find_voiceover_for_slug, write_media_inspector  # noqa: E402
 
 from moviepy.editor import (
     AudioFileClip,
@@ -57,13 +59,28 @@ except Exception:
 
 def ffprobe_duration(path: str) -> float:
     try:
-        p = subprocess.run(
-            f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{path}"',
-            shell=True,
-            capture_output=True,
-            text=True,
-        )
-        return float((p.stdout or "0").strip() or 0)
+        from bin.utils.subproc import run_streamed
+        import tempfile
+        
+        # Use streamed subprocess for ffprobe
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False) as tmp_log:
+            log_path = tmp_log.name
+        
+        try:
+            cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', 
+                   '-of', 'default=noprint_wrappers=1:nokey=1', path]
+            run_streamed(cmd, log_path=log_path, echo=False, check=True)
+            
+            # Read the output from the log file
+            with open(log_path, 'r') as f:
+                output = f.read().strip()
+            return float(output or 0)
+        finally:
+            # Clean up temp log file
+            try:
+                os.unlink(log_path)
+            except:
+                pass
     except Exception:
         return 0.0
 
@@ -72,19 +89,32 @@ def check_hardware_acceleration(codec: str) -> str:
     """Check if hardware acceleration codec is available, fallback to software if not."""
     if codec == "h264_videotoolbox":
         try:
-            # Check if VideoToolbox is available
-            result = subprocess.run(
-                ["ffmpeg", "-encoders"], 
-                capture_output=True, 
-                text=True, 
-                check=False
-            )
-            if "h264_videotoolbox" in result.stdout:
-                log.info("VideoToolbox hardware acceleration available")
-                return codec
-            else:
-                log.warning("VideoToolbox not available, falling back to software encoding")
-                return "libx264"
+            # Check if VideoToolbox is available using streamed subprocess
+            from bin.utils.subproc import run_streamed
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False) as tmp_log:
+                log_path = tmp_log.name
+            
+            try:
+                run_streamed(["ffmpeg", "-encoders"], log_path=log_path, echo=False, check=True)
+                
+                # Read the output from the log file
+                with open(log_path, 'r') as f:
+                    output = f.read()
+                
+                if "h264_videotoolbox" in output:
+                    log.info("VideoToolbox hardware acceleration available")
+                    return codec
+                else:
+                    log.warning("VideoToolbox not available, falling back to software encoding")
+                    return "libx264"
+            finally:
+                # Clean up temp log file
+                try:
+                    os.unlink(log_path)
+                except:
+                    pass
         except Exception:
             log.warning("Could not check VideoToolbox availability, falling back to software encoding")
             return "libx264"
@@ -394,11 +424,14 @@ def main(brief=None, slug=None):
         files.sort(reverse=True)
         key = files[0].replace(".txt", "")
     
-    vo = os.path.join(vodir, key + ".mp3")
-    if not os.path.exists(vo):
+    # Use tolerant VO discovery
+    vo_path = find_voiceover_for_slug(key, search_dirs=[vodir])
+    if not vo_path:
         log_state("assemble_video", "FAIL", "no voiceover")
         print("No VO")
         return
+    vo = str(vo_path)
+    log.info(f"Using VO: {vo}")
 
     os.makedirs(vdir, exist_ok=True)
     out_mp4 = os.path.join(vdir, key + ".mp4")
@@ -703,9 +736,11 @@ def main(brief=None, slug=None):
     vo_normalized_path = os.path.join(vodir, key + "_normalized.mp3")
     if not os.path.exists(vo_normalized_path):
         try:
-            # Target -16 LUFS for stable VO loudness
-            cmd = f'ffmpeg -y -i "{vo}" -af "loudnorm=I=-16:TP=-1.5:LRA=11" "{vo_normalized_path}"'
-            subprocess.run(cmd, shell=True, check=True, capture_output=True)
+            # Target -16 LUFS for stable VO loudness using streamed subprocess
+            from bin.utils.subproc import run_streamed
+            log_path = os.path.join("logs", "subprocess", "loudnorm.log")
+            cmd = ['ffmpeg', '-y', '-i', vo, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', vo_normalized_path]
+            run_streamed(cmd, log_path=log_path, check=True)
             log.info(f"Applied loudness normalization: {os.path.basename(vo_normalized_path)}")
         except Exception as e:
             log.warning(f"Loudness normalization failed: {e}, using original VO")
@@ -796,42 +831,87 @@ def main(brief=None, slug=None):
     target_dur = max(0.0, min(float(getattr(video, "duration", 0.0)), safe_audio_dur)) or float(getattr(video, "duration", 0.0))
     video = video.set_audio(audio).set_duration(target_dur)
 
-    # Export
-    codec_to_use = cfg.render.codec
-    if cfg.render.use_hardware_acceleration:
-        codec_to_use = check_hardware_acceleration(codec_to_use)
+    # Export with platform-aware encoding
+    delivery_crf = str(cfg.render.get("delivery_crf", 19))
+    a_bitrate = cfg.render.get("audio_bitrate", "320k")
     
-    log.info(f"Using video codec: {codec_to_use} (hardware acceleration: {cfg.render.use_hardware_acceleration})")
-    
+    # Write temporary video file for encoding
+    temp_video_path = os.path.join(vdir, key + "_temp.mp4")
     video.write_videofile(
-        out_mp4,
-        codec=codec_to_use,  # Use configured codec (hardware acceleration)
+        temp_video_path,
+        codec="libx264",  # Use software codec for temp file
         audio_codec="aac",
         fps=int(cfg.render.fps),
         bitrate=cfg.render.target_bitrate,
-        threads=cfg.render.threads,  # Use configured thread count
+        threads=cfg.render.threads,
         ffmpeg_params=[
             "-pix_fmt", "yuv420p",
-            "-preset", cfg.render.preset,  # Use configured preset
-            "-crf", str(cfg.render.crf),  # Use configured CRF quality
-            "-movflags", "+faststart",  # Optimize for web streaming
+            "-preset", "fast",  # Fast preset for temp file
+            "-crf", "23",  # Lower quality for temp file
+            "-movflags", "+faststart",
         ],
-        verbose=True,
-        logger=TenSecProgressLogger(emit_interval_seconds=10.0),
+        verbose=False,
+        logger=None,
     )
+    
+    # Final delivery encode with platform-aware fallback
+    log.info("Starting final delivery encode with platform-aware fallback...")
+    encode_args = {
+        "crf": delivery_crf,
+        "a_bitrate": a_bitrate,
+        "profile": "high",
+        "pix_fmt": "yuv420p",
+    }
+    
+    encode_with_fallback(
+        input_path=temp_video_path,
+        output_path=out_mp4,
+        crf=delivery_crf,
+        a_bitrate=a_bitrate,
+        profile="high",
+        pix_fmt="yuv420p",
+        extra_video_args=None,
+        codecs=None,  # default order by platform (VT on macOS → libx264)
+        log_path=os.path.join("logs", "subprocess", "final_encode.log"),
+    )
+    log.info(f"Final delivery written: {out_mp4}")
+    
+    # Clean up temp file
+    try:
+        os.unlink(temp_video_path)
+    except Exception:
+        pass
 
-    # Optional caption burn-in via ffmpeg (no ImageMagick dependency)
+    # Optional caption burn-in via ffmpeg with fallback (no ImageMagick dependency)
     final_out = out_mp4
     if getattr(cfg.pipeline, "enable_captions", True) and os.path.exists(srt):
         try:
             burned = out_mp4.replace(".mp4", "_cc.mp4")
-            # Use ffmpeg subtitles filter with configured codec
-            cmd = f"ffmpeg -y -i {shlex.quote(out_mp4)} -vf subtitles={shlex.quote(srt)} -c:a copy -c:v {cfg.render.codec} -pix_fmt yuv420p {shlex.quote(burned)}"
-            subprocess.run(cmd, shell=True, check=False)
+            # Use ffmpeg subtitles filter with fallback encoding
+            log_path = os.path.join("logs", "subprocess", "caption_burn.log")
+            encode_with_fallback(
+                input_path=out_mp4,
+                output_path=burned,
+                crf=str(cfg.render.crf),
+                a_bitrate="320k",
+                profile="high",
+                pix_fmt="yuv420p",
+                extra_video_args=["-vf", f"subtitles={shlex.quote(srt)}", "-c:a", "copy"],
+                log_path=log_path,
+            )
             if os.path.exists(burned):
                 final_out = burned
-        except Exception:
+                log.info(f"Caption burn-in completed: {burned}")
+        except Exception as e:
+            log.warning(f"Caption burn-in failed: {e}, using original video")
             pass
+    
+    # Media inspector JSON
+    try:
+        report_path = write_media_inspector(key, Path(final_out), encode_args)
+        log.info(f"Encode inspector saved: {report_path}")
+    except Exception as e:
+        log.warning(f"Failed to write media inspector: {e}")
     
     # Log final coverage metrics
     if has_animatics:

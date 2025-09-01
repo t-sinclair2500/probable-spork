@@ -1,8 +1,72 @@
 # Research and trending topics configuration
 # This file controls API access, rate limits, and provider settings
 
-# Research mode: reuse (cache-first) or live (with API calls)
-mode: "reuse"  # Default to reuse mode for safety
+# Research policy configuration
+policy:
+  # Research mode: reuse (cache-first) or live (with API calls)
+  mode: "reuse"  # Default to reuse mode for safety
+  
+  # Provider allowlist and blacklist for research collection
+  allow_providers: ["local_fixtures"]
+  deny_providers: []
+  
+  # Grounding settings
+  min_citations: 2
+  coverage_threshold: 0.65
+  fact_guard: "block"  # off | warn | block
+  min_domain_score: 0.25
+
+  # Rate limits and backoff settings
+  rate_limits:
+    reddit:
+      max_rps: 1.0
+      burst: 60
+      min_interval_ms: 60000
+      jitter_ms: 6000
+    
+    youtube:
+      max_rps: 0.17
+      burst: 10
+      min_interval_ms: 6000
+      jitter_ms: 1200
+    
+    google_trends:
+      max_rps: 0.08
+      burst: 5
+      min_interval_ms: 120000
+      jitter_ms: 18000
+    
+    # General web scraping limits
+    web_scraping:
+      max_rps: 0.5
+      burst: 30
+      min_interval_ms: 60000
+      jitter_ms: 12000
+
+  # Domain quality scores
+  domain_scores:
+    wikipedia.org: 0.9
+    en.wikipedia.org: 0.9
+    designmuseum.org: 0.8
+    moma.org: 0.85
+    tate.org.uk: 0.8
+    vam.ac.uk: 0.8
+    cooperhewitt.org: 0.75
+    metmuseum.org: 0.85
+    nga.gov: 0.8
+    si.edu: 0.8
+    britannica.com: 0.85
+    encyclopedia.com: 0.7
+    academic.oup.com: 0.9
+    jstor.org: 0.95
+    arxiv.org: 0.9
+    researchgate.net: 0.7
+    scholar.google.com: 0.8
+    ieee.org: 0.9
+    acm.org: 0.9
+    springer.com: 0.85
+    nature.com: 0.95
+    example.com: 0.2
 
 # API toggles - enable/disable live data sources
 apis:
@@ -45,40 +109,12 @@ domains:
     - "quora.com"
     - "medium.com"
     - "substack.com"
-    
     - "tumblr.com"
-
-# Rate limits and backoff settings
-rate_limits:
-  reddit:
-    requests_per_minute: 60
-    requests_per_hour: 1000
-    backoff_seconds: 60
-    jitter: 0.1
-  
-  youtube:
-    requests_per_minute: 10
-    requests_per_day: 10000
-    backoff_seconds: 300
-    jitter: 0.2
-  
-  google_trends:
-    requests_per_minute: 5
-    requests_per_hour: 100
-    backoff_seconds: 120
-    jitter: 0.15
-  
-  # General web scraping limits
-  web_scraping:
-    requests_per_minute: 30
-    requests_per_hour: 500
-    backoff_seconds: 60
-    jitter: 0.2
 
 # Provider-specific settings
 providers:
   reddit:
-    subreddits: ["technology", "science", "programming", "raspberry_pi"]
+    subreddits: ["technology", "science", "programming", "mac", "macbook"]
     time_filter: "week"  # hour, day, week, month, year, all
     limit: 25
   

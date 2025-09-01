@@ -217,7 +217,7 @@ class TrendingIntake:
             # Return demo data
             return [
                 {
-                    'topic': 'Raspberry Pi projects',
+                    'topic': 'Mac optimization tips',
                     'score': 0.7,
                     'source': 'youtube',
                     'ts': datetime.now().isoformat()

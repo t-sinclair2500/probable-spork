@@ -14,6 +14,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from bin.core import BASE, get_logger, load_config, log_state, single_lock  # noqa: E402
+from bin.utils.media import resolve_metadata_for_slug, sanitize_text_for_pillow  # noqa: E402
 
 
 log = get_logger("make_thumbnail")
@@ -25,7 +26,7 @@ def safe_text(t, max_len=28):
     return (t[:max_len] + "...") if len(t) > max_len else t
 
 
-def main(brief=None):
+def main(brief=None, slug=None):
     """Main function for thumbnail generation with optional brief context"""
     cfg = load_config()
     
@@ -35,14 +36,24 @@ def main(brief=None):
     else:
         log_state("make_thumbnail", "START", "no brief")
     
-    scripts_dir = os.path.join(BASE, "scripts")
-    files = [f for f in os.listdir(scripts_dir) if f.endswith(".metadata.json")]
-    if not files:
-        log_state("make_thumbnail", "SKIP", "no metadata")
-        print("No metadata")
-        return
-    files.sort(reverse=True)
-    meta = json.load(open(os.path.join(scripts_dir, files[0]), "r", encoding="utf-8"))
+    # Resolve metadata using slug or fallback to newest
+    meta = None
+    if slug:
+        meta_path = resolve_metadata_for_slug(slug)
+        if not meta_path:
+            raise SystemExit(f"No metadata found for slug: {slug}")
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        log.info(f"Loaded metadata for slug: {slug}")
+    else:
+        # Fallback to existing behavior (newest metadata)
+        scripts_dir = os.path.join(BASE, "scripts")
+        files = [f for f in os.listdir(scripts_dir) if f.endswith(".metadata.json")]
+        if not files:
+            log_state("make_thumbnail", "SKIP", "no metadata")
+            print("No metadata")
+            return
+        files.sort(reverse=True)
+        meta = json.load(open(os.path.join(scripts_dir, files[0]), "r", encoding="utf-8"))
     
     # Apply brief settings to title if available
     title = meta.get("title", "New Video")
@@ -56,8 +67,15 @@ def main(brief=None):
                 title = f"{title} - {primary_keyword}"
                 log.info(f"Enhanced title with brief keyword: {primary_keyword}")
     
+    # Sanitize text for PIL compatibility
+    title = sanitize_text_for_pillow(title)
     title = safe_text(title, max_len=28)
-    out_png = os.path.join(BASE, "videos", files[0].replace(".metadata.json", ".png"))
+    
+    # Determine output path based on slug or metadata filename
+    if slug:
+        out_png = os.path.join(BASE, "videos", f"{slug}.png")
+    else:
+        out_png = os.path.join(BASE, "videos", files[0].replace(".metadata.json", ".png"))
 
     # Apply brief tone for visual style if available
     color_scheme = (20, 24, 35)  # Default dark blue
@@ -107,6 +125,7 @@ def main(brief=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Thumbnail generation")
+    parser.add_argument("--slug", default=None, help="Slug to resolve metadata (overrides newest metadata heuristic)")
     parser.add_argument("--brief-data", help="JSON string containing brief data")
     
     args = parser.parse_args()
@@ -121,4 +140,4 @@ if __name__ == "__main__":
             log.warning(f"Failed to parse brief data: {e}")
     
     with single_lock():
-        main(brief)
+        main(brief, args.slug)
