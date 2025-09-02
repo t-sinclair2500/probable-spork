@@ -1,51 +1,115 @@
 #!/usr/bin/env python3
 """
-Model Lifecycle Manager for Deterministic Multi-Model Pipeline
-Optimized for 8GB MacBook Air M2 with Metal Performance Shaders
-
-Provides context managers that ensure models are loaded only when needed
-and explicitly unloaded between batches to prevent memory accumulation.
-Includes memory pressure handling and Metal optimization.
+Consolidated LLM Client for Ollama Integration
+Single client with robust timeouts, retries, and model lifecycle management.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, Iterable, List, Optional
-import os
+
+import random
+import time
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests
 
-from bin.utils.http import make_session, request_json
-from bin.utils.config import load_models_config
+from bin.utils.config import load_all_configs
+
 
 class ModelRunner:
-    def __init__(self, base_url: Optional[str] = None, timeout_sec: Optional[float] = None):
-        cfg = load_models_config()
-        self.base_url = base_url or (cfg.model_dump().get("ollama", {}) or {}).get("base_url", "http://127.0.0.1:11434")
-        self.timeout = float(timeout_sec or (cfg.model_dump().get("ollama", {}) or {}).get("timeout_sec", 60))
-        self.defaults = (cfg.model_dump().get("defaults") or {})
-        self.options = (cfg.model_dump().get("options") or {})
-        self.sess: requests.Session = make_session()
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        timeout_sec: Optional[float] = None,
+        retries: int = 3,
+    ):
+        bundle = load_all_configs()
+        o = bundle.models.ollama
+        self.base = base_url or o.base_url
+        self.timeout = float(timeout_sec or o.timeout_sec)
+        self.retries = retries
+        self.sess = requests.Session()
+        self.defaults = bundle.models.defaults
+        self.options = bundle.models.options
+        self._ensured = set()
 
-    # ---------------------------
-    # Model lifecycle
-    # ---------------------------
-    def list_tags(self) -> List[str]:
-        url = urljoin(self.base_url, "/api/tags")
-        _, data = request_json(self.sess, "GET", url, timeout=self.timeout)
-        # Ollama returns {"models": [{"model":"llama3.2:3b", ...}, ...]}
-        models = data.get("models", [])
-        return [m.get("model") for m in models if isinstance(m, dict)]
+    @classmethod
+    def for_task(cls, task: str, **kwargs) -> ModelRunner:
+        """
+        Factory method to create ModelRunner for specific task.
 
-    def pull(self, model_name: str) -> None:
-        url = urljoin(self.base_url, "/api/pull")
-        body = {"name": model_name, "stream": False}
-        request_json(self.sess, "POST", url, json=body, timeout=self.timeout)
+        Args:
+            task: Task name (e.g., "viral", "research", "scriptwriter")
+            **kwargs: Additional arguments to pass to __init__
 
-    def ensure_model(self, model_name: str) -> None:
-        tags = set(self.list_tags())
-        if model_name not in tags:
-            self.pull(model_name)
+        Returns:
+            ModelRunner configured for the task
+        """
+        bundle = load_all_configs()
+
+        # Get task-specific configuration
+        if hasattr(bundle.models, "models") and hasattr(bundle.models.models, task):
+            task_cfg = getattr(bundle.models.models, task)
+
+            # Extract timeout from task config if available
+            timeout = getattr(task_cfg, "timeout_s", None)
+            if timeout:
+                kwargs["timeout_sec"] = timeout
+
+            # Create runner with task-specific config
+            runner = cls(**kwargs)
+            runner._task_config = task_cfg
+            return runner
+
+        # Fallback to default configuration
+        return cls(**kwargs)
+
+    def _retry_request(
+        self, method: str, url: str, timeout: Optional[float] = None, **kw
+    ) -> requests.Response:
+        """Retry request with exponential backoff on transient errors."""
+        delay = 0.5
+        request_timeout = timeout or self.timeout
+
+        for attempt in range(self.retries):
+            try:
+                resp = self.sess.request(method, url, timeout=request_timeout, **kw)
+                if resp.status_code >= 500:
+                    raise requests.HTTPError(f"HTTP {resp.status_code}")
+                return resp
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+                if attempt >= self.retries - 1:
+                    raise
+                time.sleep(delay + random.random() * 0.25)  # Add jitter
+                delay *= 2
+        # Should not reach here
+        raise RuntimeError("Retry loop failed")
+
+    def ensure_model(self, model: str) -> None:
+        """Ensure model is available (optional preflight check)."""
+        if model in self._ensured:
+            return
+
+        try:
+            # Query available models
+            resp = self._retry_request("GET", urljoin(self.base, "/api/tags"))
+            resp.raise_for_status()
+            data = resp.json()
+            names = {t.get("name") for t in data.get("models", [])}
+
+            if model not in names:
+                # Pull model if missing
+                print(f"Pulling model {model}...")
+                pull_resp = self._retry_request(
+                    "POST", urljoin(self.base, "/api/pull"), json={"name": model}
+                )
+                pull_resp.raise_for_status()
+                print(f"Model {model} pulled successfully")
+        except Exception as e:
+            # Non-fatal; let /api/chat lazy-load if supported
+            print(f"Warning: Could not ensure model {model}: {e}")
+
+        self._ensured.add(model)
 
     # ---------------------------
     # Chat / Generate / Embeddings
@@ -56,31 +120,41 @@ class ModelRunner:
         model: Optional[str] = None,
         options: Optional[Dict[str, Any]] = None,
         stream: bool = False,
+        timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
-        mdl = model or self.defaults.get("chat_model") or self.defaults.get("generate_model")
-        if not mdl:
-            raise ValueError("No chat model configured in conf/models.yaml under defaults.chat_model")
-        # Removed ensure_model call to prevent /api/pull on every request
+        mdl = model or self.defaults.chat_model
+        self.ensure_model(mdl)  # Optional preflight; never per-call pull
 
-        url = urljoin(self.base_url, "/api/chat")
-        body = {
-            "model": mdl,
-            "messages": messages,
-            "stream": stream,
-        }
-        merged_opts = dict(self.options)
+        body = {"model": mdl, "messages": messages, "stream": stream}
+
+        # Merge options with defaults and task-specific config
+        merged_options = dict(self.options.__dict__)
+
+        # Add task-specific options if available
+        if hasattr(self, "_task_config"):
+            task_opts = {
+                k: v
+                for k, v in self._task_config.__dict__.items()
+                if k not in ["name", "description", "timeout_s"]
+            }
+            merged_options.update(task_opts)
+
+        # Add user-provided options
         if options:
-            merged_opts.update(options)
-        if merged_opts:
-            body["options"] = merged_opts
+            merged_options.update(options)
 
-        if not stream:
-            _, data = request_json(self.sess, "POST", url, json=body, timeout=self.timeout)
-            return data
-        # streaming mode
-        # For Cursor's scope here, keep non-stream path primary; if you already support SSE, maintain it.
-        _, data = request_json(self.sess, "POST", url, json=body, timeout=self.timeout)
-        return data
+        body["options"] = merged_options
+
+        # Use task-specific timeout if available, otherwise use instance timeout
+        request_timeout = timeout or getattr(self, "_task_config", {}).get(
+            "timeout_s", self.timeout
+        )
+
+        resp = self._retry_request(
+            "POST", urljoin(self.base, "/api/chat"), json=body, timeout=request_timeout
+        )
+        resp.raise_for_status()
+        return resp.json()
 
     def generate(
         self,
@@ -89,35 +163,38 @@ class ModelRunner:
         options: Optional[Dict[str, Any]] = None,
         stream: bool = False,
     ) -> Dict[str, Any]:
-        mdl = model or self.defaults.get("generate_model") or self.defaults.get("chat_model")
-        if not mdl:
-            raise ValueError("No generate model configured in conf/models.yaml under defaults.generate_model")
-        # Removed ensure_model call to prevent /api/pull on every request
+        mdl = model or self.defaults.generate_model
+        self.ensure_model(mdl)  # Optional preflight; never per-call pull
 
-        url = urljoin(self.base_url, "/api/generate")
         body = {"model": mdl, "prompt": prompt, "stream": stream}
-        merged_opts = dict(self.options)
-        if options:
-            merged_opts.update(options)
-        if merged_opts:
-            body["options"] = merged_opts
+        if options or self.options:
+            oo = dict(self.options.__dict__)
+            oo.update(options or {})
+            body["options"] = oo
 
-        _, data = request_json(self.sess, "POST", url, json=body, timeout=self.timeout)
-        return data
+        resp = self._retry_request(
+            "POST", urljoin(self.base, "/api/generate"), json=body
+        )
+        resp.raise_for_status()
+        return resp.json()
 
-    def embeddings(self, input_texts: List[str], model: Optional[str] = None) -> Dict[str, Any]:
-        mdl = model or self.defaults.get("embeddings_model")
-        if not mdl:
-            raise ValueError("No embeddings model configured in conf/models.yaml under defaults.embeddings_model")
-        # Removed ensure_model call to prevent /api/pull on every request
+    def embeddings(
+        self, input_texts: List[str], model: Optional[str] = None
+    ) -> Dict[str, Any]:
+        mdl = model or self.defaults.embeddings_model
+        self.ensure_model(mdl)  # Optional preflight; never per-call pull
 
-        url = urljoin(self.base_url, "/api/embeddings")
         body = {"model": mdl, "input": input_texts}
-        _, data = request_json(self.sess, "POST", url, json=body, timeout=self.timeout)
-        return data
+        resp = self._retry_request(
+            "POST", urljoin(self.base, "/api/embeddings"), json=body
+        )
+        resp.raise_for_status()
+        return resp.json()
+
 
 # Convenience functions (if current code expects module-level helpers)
 _runner_singleton: Optional[ModelRunner] = None
+
 
 def _runner() -> ModelRunner:
     global _runner_singleton
@@ -125,14 +202,18 @@ def _runner() -> ModelRunner:
         _runner_singleton = ModelRunner()
     return _runner_singleton
 
+
 def chat(messages, model=None, options=None, stream=False):
     return _runner().chat(messages, model=model, options=options, stream=stream)
+
 
 def generate(prompt, model=None, options=None, stream=False):
     return _runner().generate(prompt, model=model, options=options, stream=stream)
 
+
 def embeddings(input_texts, model=None):
     return _runner().embeddings(input_texts, model=model)
+
 
 # Legacy ModelSession for backward compatibility
 class ModelSession:
@@ -140,46 +221,49 @@ class ModelSession:
     Legacy ModelSession for backward compatibility.
     Use ModelRunner directly for new code.
     """
-    
+
     def __init__(self, model_name: str, server: str = "http://localhost:11434"):
         self.model_name = model_name
         self.server = server
         self._runner = ModelRunner(base_url=server)
-    
+
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
-    
+
     def chat(self, system: str, user: str, **opts) -> str:
         messages = [
             {"role": "system", "content": system},
-            {"role": "user", "content": user}
+            {"role": "user", "content": user},
         ]
         options = {}
         if opts:
             options.update(opts)
-        
+
         result = self._runner.chat(messages, model=self.model_name, options=options)
         return result.get("message", {}).get("content", "")
-    
+
     def generate(self, prompt: str, **opts) -> str:
         options = {}
         if opts:
             options.update(opts)
-        
+
         result = self._runner.generate(prompt, model=self.model_name, options=options)
         return result.get("response", "")
 
-def model_session(model_name: str, server: str = "http://localhost:11434") -> ModelSession:
+
+def model_session(
+    model_name: str, server: str = "http://localhost:11434"
+) -> ModelSession:
     """
     Create a model session context manager (legacy compatibility).
-    
+
     Args:
         model_name: Name of the Ollama model to use
         server: Ollama server URL
-        
+
     Returns:
         ModelSession context manager
     """

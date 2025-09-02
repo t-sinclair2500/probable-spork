@@ -7,7 +7,11 @@ from bin.seo_lint import lint as seo_lint
 
 def main():
     if len(sys.argv) < 3:
-        print(json.dumps({"error": "usage: seo_lint_gate.py <title> <meta_desc> [--allow-fail]"}))
+        print(
+            json.dumps(
+                {"error": "usage: seo_lint_gate.py <title> <meta_desc> [--allow-fail]"}
+            )
+        )
         sys.exit(2)
     title = sys.argv[1]
     meta = sys.argv[2]

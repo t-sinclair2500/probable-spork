@@ -1,6 +1,8 @@
 from __future__ import annotations
-from pathlib import Path
+
 from typing import Dict
+
+from pathlib import Path
 
 
 def artifact_paths(slug: str) -> Dict[str, Path]:
@@ -28,4 +30,3 @@ def ensure_dirs_for_slug(slug: str) -> None:
     Path("logs/subprocess").mkdir(parents=True, exist_ok=True)
     Path("jobs").mkdir(parents=True, exist_ok=True)
     Path("data/analytics").mkdir(parents=True, exist_ok=True)
-

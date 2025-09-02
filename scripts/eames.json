@@ -1,0 +1,78 @@
+{
+  "title": "eames: Narrative History",
+  "script": "[Opening Hook content will be generated]\n\n[Historical Context content will be generated] [CITATION NEEDED]\n\n[Key Figure Introduction content will be generated] [CITATION NEEDED]\n\n[Major Historical Event content will be generated] [CITATION NEEDED]\n\n[Lasting Impact content will be generated] [CITATION NEEDED]\n\n[Reflective Close content will be generated]",
+  "sections": [
+    {
+      "id": "hook",
+      "title": "Opening Hook",
+      "target_duration_ms": 6666,
+      "needs_citations": false,
+      "content": "[Opening Hook content will be generated]",
+      "notes": "Target duration: 6666ms, Citations required: False",
+      "citation_placeholders": []
+    },
+    {
+      "id": "context",
+      "title": "Historical Context",
+      "target_duration_ms": 10000,
+      "needs_citations": true,
+      "content": "[Historical Context content will be generated] [CITATION NEEDED]",
+      "notes": "Target duration: 10000ms, Citations required: True",
+      "citation_placeholders": [
+        "[CITATION NEEDED] for factual claims"
+      ]
+    },
+    {
+      "id": "key_figure",
+      "title": "Key Figure Introduction",
+      "target_duration_ms": 12500,
+      "needs_citations": true,
+      "content": "[Key Figure Introduction content will be generated] [CITATION NEEDED]",
+      "notes": "Target duration: 12500ms, Citations required: True",
+      "citation_placeholders": [
+        "[CITATION NEEDED] for factual claims"
+      ]
+    },
+    {
+      "id": "major_event",
+      "title": "Major Historical Event",
+      "target_duration_ms": 15000,
+      "needs_citations": true,
+      "content": "[Major Historical Event content will be generated] [CITATION NEEDED]",
+      "notes": "Target duration: 15000ms, Citations required: True",
+      "citation_placeholders": [
+        "[CITATION NEEDED] for factual claims"
+      ]
+    },
+    {
+      "id": "impact",
+      "title": "Lasting Impact",
+      "target_duration_ms": 10000,
+      "needs_citations": true,
+      "content": "[Lasting Impact content will be generated] [CITATION NEEDED]",
+      "notes": "Target duration: 10000ms, Citations required: True",
+      "citation_placeholders": [
+        "[CITATION NEEDED] for factual claims"
+      ]
+    },
+    {
+      "id": "closing",
+      "title": "Reflective Close",
+      "target_duration_ms": 5833,
+      "needs_citations": false,
+      "content": "[Reflective Close content will be generated]",
+      "notes": "Target duration: 5833ms, Citations required: False",
+      "citation_placeholders": []
+    }
+  ],
+  "metadata": {
+    "word_count": 46,
+    "estimated_duration_sec": 60,
+    "citation_placeholders_count": 4
+  },
+  "generated_at": "/Users/tylersinclair/Documents/GitHub/probable-spork",
+  "model_used": "llama3.2:3b",
+  "intent": "narrative_history",
+  "cta_policy": "omit",
+  "evidence_load": "high"
+}

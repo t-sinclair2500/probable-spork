@@ -12,15 +12,15 @@ slug = sys.argv[1]
 report_path = f"runs/{slug}/pacing_report.json"
 
 try:
-    with open(report_path, 'r') as f:
+    with open(report_path, "r") as f:
         data = json.load(f)
-    
+
     # Extract KPI metrics
     kpi_metrics = data.get("kpi_metrics", data)
-    
+
     print(f"words_per_sec: {kpi_metrics.get('words_per_sec')}")
     print(f"avg_scene_s: {kpi_metrics.get('avg_scene_s')}")
-    
+
 except Exception as e:
     print(f"Error: {e}")
     sys.exit(1)

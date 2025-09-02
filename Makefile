@@ -1,290 +1,122 @@
-# Cross-platform Makefile for Probable Spork
-# Supports both Windows and Unix-like systems
+# Probable Spork — Makefile (Mac-first, local-only)
+SHELL := /bin/bash
 
-# OS detection
-ifeq ($(OS),Windows_NT)
-    # Windows
-    SHELL := cmd
-    PY := .venv\Scripts\python.exe
-    VENV := .venv
-    RM := rmdir /s /q
-    MKDIR := mkdir
-    RMDIR := rmdir /s /q
-    CP := copy
-    PYTHON := python
-    VENV_CMD := python -m venv
-    ACTIVATE := .venv\Scripts\activate
-else
-    # Unix-like (macOS, Linux)
-    SHELL := /bin/bash
-    PY := .venv/bin/python
-    VENV := .venv
-    RM := rm -rf
-    MKDIR := mkdir -p
-    RMDIR := rm -rf
-    CP := cp
-    PYTHON := python3
-    VENV_CMD := python3 -m venv
-    ACTIVATE := source .venv/bin/activate
-endif
+PY ?= python
+SLUG ?= demo-001
+MODE ?= reuse
+SEED ?= 1337
+VIRAL ?= 1
+SHORTS ?= 1
+SEO ?= 1
+YT_ONLY ?= 0
+FROM ?=
 
-# Default target
+OS := $(shell uname -s)
+
+# Colors
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+BLUE := \033[1;34m
+RED := \033[0;31m
+NC := \033[0m
+
 .DEFAULT_GOAL := help
 
-.PHONY: help setup start check clean test install-deps
+.PHONY: help install setup ensure-models smoke run viral shorts seo qa ui audit-wiring audit-consistency quality quality-fix clean clean-artifacts
 
-help: ## Show this help message
-	@echo "Probable Spork - Cross-Platform Development"
-	@echo "=========================================="
-	@echo ""
-	@echo "Available targets:"
-ifeq ($(OS),Windows_NT)
-	@echo "  setup         # Create virtual environment and install dependencies"
-	@echo "  start         # Start the development environment"
-	@echo "  check         # Validate environment and configuration"
-	@echo "  clean         # Remove virtual environment and caches"
-	@echo "  test          # Run test suite"
-	@echo "  format        # Format Python code with Black and isort"
-	@echo "  lint          # Lint Python code"
-	@echo "  format-check  # Check if code needs formatting"
-	@echo "  optimize      # Optimize for current hardware"
-	@echo "  serve-api     # Start FastAPI server"
-	@echo "  serve-ui      # Start Gradio UI"
-	@echo "  smoke-test    # Run API smoke tests"
-	@echo "  backup-repo   # Create repository backup"
-	
-	@echo "  research-live # Run research collection in live mode (requires SLUG=)"
-	@echo "  research-reuse # Run research collection in reuse mode (requires SLUG=)"
-	@echo "  fact-guard    # Run fact-guard analysis (requires SLUG=)"
-else
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-endif
-	@echo ""
-	@echo "Quick start:"
-	@echo "  make setup    # Create virtual environment and install dependencies"
-	@echo "  make start    # Start the development environment"
-	@echo "  make check    # Validate environment and configuration"
-	@echo ""
-	@echo "Research commands (require SLUG parameter):"
-	@echo "  make research-live SLUG=eames-history    # Collect research in live mode"
-	@echo "  make research-reuse SLUG=eames-history   # Use cached research only"
-	@echo "  make fact-guard SLUG=eames-history       # Run fact-guard analysis"
+define HEADER
+@echo -e "$(BLUE)==>$(NC) $(1)"
+endef
 
-setup: ## Create virtual environment and install dependencies
-	@echo "Setting up development environment..."
-	@if not exist $(VENV) ( \
-		echo "Creating virtual environment..." && \
-		$(VENV_CMD) $(VENV) \
-	) else ( \
-		echo "Virtual environment already exists" \
-	)
-	@echo "Installing Python dependencies..."
-	@$(PY) -m pip install --upgrade pip
-	@if exist requirements-basic.txt ( \
-		echo "Installing basic requirements..." && \
-		$(PY) -m pip install -r requirements-basic.txt \
-	) else if exist requirements.txt ( \
-		echo "Installing full requirements..." && \
-		$(PY) -m pip install -r requirements.txt \
-	) else ( \
-		echo "No requirements file found" \
-	)
-	@echo "✅ Setup complete! Run 'make start' to begin development."
+help: ## Show this help
+	@echo "Probable Spork — targets"
+	@grep -E '^[a-zA-Z0-9_\-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*?## /: /' | sort
 
-start: ## Start the development environment
-	@echo "Starting development environment..."
-	@$(PY) scripts/bootstrap.py
-	@$(PY) scripts/start.py
+install: ## Install Python dependencies
+	$(call HEADER,Installing dependencies)
+	@if [ ! -d ".venv" ]; then \
+		echo -e "$(YELLOW)Creating virtual environment...$(NC)"; \
+		python3.11 -m venv .venv; \
+	fi
+	@echo -e "$(GREEN)Activating virtual environment and installing packages...$(NC)"
+	@source .venv/bin/activate && pip install --upgrade pip
+	@source .venv/bin/activate && pip install -r requirements.txt
+	@echo -e "$(GREEN)Dependencies installed successfully!$(NC)"
+	@echo -e "$(BLUE)To activate: source .venv/bin/activate$(NC)"
 
-check: ## Validate environment and configuration
-	@echo "Checking development environment..."
-	@if exist $(PY) ( \
-		echo "✅ Virtual environment found" && \
-		$(PY) --version && \
-		$(PY) -c "import sys; print(f'Python path: {sys.executable}')" \
-	) else ( \
-		echo "❌ Virtual environment not found. Run 'make setup' first." && \
-		exit 1 \
-	)
-	@if exist requirements.txt ( \
-		echo "✅ Requirements file found" \
-	) else ( \
-		echo "⚠️  No requirements.txt found" \
-	)
-	@if exist .env ( \
-		echo "✅ Environment file found" \
-	) else if exist .env.example ( \
-		echo "⚠️  .env file missing. Copy .env.example to .env and configure." \
-	) else ( \
-		echo "⚠️  No .env or .env.example found" \
-	)
-	@echo "✅ Environment check complete"
+setup: ## Complete setup: install dependencies and ensure models
+	$(call HEADER,Complete setup)
+	@$(MAKE) install
+	@$(MAKE) ensure-models
+	@echo -e "$(GREEN)Setup complete! Ready to run: make smoke SLUG=eames$(NC)"
 
-format: ## Format Python code with Black and isort
-	@echo "🎨 Formatting Python code..."
-	@$(PY) -m pip install --quiet black isort
-	@$(PY) -m isort .
-	@$(PY) -m black .
-	@echo "✅ Code formatting complete"
+ensure-models: ## Ensure local LLM models for Viral (ollama)
+	$(call HEADER,Ensuring models)
+	@if command -v ollama >/dev/null 2>&1; then \
+		echo "Using ollama"; \
+		ollama list || true; \
+		ollama pull llama3.2:3b || true; \
+	else \
+		echo -e "$(YELLOW)ollama not found — Viral will use heuristics-only fallback$(NC)"; \
+	fi
 
-lint: ## Lint Python code
-	@echo "🔍 Linting Python code..."
-	@$(PY) -m pip install --quiet flake8
-	@$(PY) -m flake8 --max-line-length=88 --extend-ignore=E203,W503 .
-	@echo "✅ Code linting complete"
+smoke: ## Minimal e2e on $(SLUG)
+	$(call HEADER,Smoke run $(SLUG))
+	$(PY) bin/run_pipeline.py --slug $(SLUG) --seed $(SEED) --enable-viral --enable-shorts --enable-seo
 
-format-check: ## Check if code needs formatting
-	@echo "🔍 Checking code formatting..."
-	@$(PY) -m pip install --quiet black isort
-	@$(PY) -m isort --check-only .
-	@$(PY) -m black --check .
-	@echo "✅ Code formatting is correct"
+run: ## Full pipeline (honors toggles VIRAL/SHORTS/SEO/YT_ONLY/FROM)
+	$(call HEADER,Full pipeline $(SLUG))
+	$(PY) bin/run_pipeline.py --slug $(SLUG) --seed $(SEED) $(if $(YT_ONLY),--yt-only,) \
+	$(if $(FROM),--from-step $(FROM),) \
+	$(if $(filter 1,$(VIRAL)),--enable-viral,--no-viral) \
+	$(if $(filter 1,$(SHORTS)),--enable-shorts,--no-shorts) \
+	$(if $(filter 1,$(SEO)),--enable-seo,--no-seo)
 
-optimize: ## Optimize configuration for current hardware
-	@echo "🚀 Optimizing configuration for your hardware..."
-	@$(PY) scripts/optimize_hardware.py
+viral: ## Run Viral Lab (variants only)
+	$(call HEADER,Viral lab $(SLUG))
+	$(PY) bin/viral/run.py --slug $(SLUG) || true
 
-clean: ## Remove virtual environment and caches
-	@echo "Cleaning up development environment..."
-	@if exist $(VENV) ( \
-		echo "Removing virtual environment..." && \
-		$(RMDIR) $(VENV) \
-	) else ( \
-		echo "No virtual environment to remove" \
-	)
-	@if exist __pycache__ ( \
-		echo "Removing Python cache..." && \
-		$(RMDIR) __pycache__ \
-	)
-	@if exist .pytest_cache ( \
-		echo "Removing pytest cache..." && \
-		$(RMDIR) .pytest_cache \
-	)
-	@if exist .mypy_cache ( \
-		echo "Removing mypy cache..." && \
-		$(RMDIR) .mypy_cache \
-	)
-	@echo "✅ Cleanup complete"
+shorts: ## Generate Shorts/Cutdowns
+	$(call HEADER,Shorts $(SLUG))
+	$(PY) bin/viral/shorts.py --slug $(SLUG)
 
-test: ## Run tests
-	@echo "Running tests..."
-	@$(PY) -m pytest tests/ -v
+seo: ## SEO packaging + end screens
+	$(call HEADER,SEO packaging $(SLUG))
+	$(PY) bin/packaging/seo_packager.py --slug $(SLUG)
+	$(PY) bin/packaging/end_screens.py --slug $(SLUG) || true
 
-install-deps: ## Install additional dependencies (alias for setup)
-	@$(MAKE) setup
+qa: ## Run QA gates for $(SLUG)
+	$(call HEADER,QA $(SLUG))
+	$(PY) bin/qa/run_gates.py --slug $(SLUG) || true
 
-# Research commands
-research-live: ## Run research collection in live mode (requires SLUG=)
-	@if not defined SLUG ( \
-		echo "❌ SLUG parameter required. Usage: make research-live SLUG=eames-history" && \
-		exit 1 \
-	)
-	@echo "🔍 Running research collection in LIVE mode for slug: $(SLUG)"
-	@$(PY) bin/research_collect.py --slug $(SLUG) --mode live
+ui: ## Launch Gradio Operator Console
+	$(call HEADER,Launching UI)
+	$(PY) bin/ui/app.py
 
-research-reuse: ## Run research collection in reuse mode (requires SLUG=)
-	@if not defined SLUG ( \
-		echo "❌ SLUG parameter required. Usage: make research-reuse SLUG=eames-history" && \
-		exit 1 \
-	)
-	@echo "🔍 Running research collection in REUSE mode for slug: $(SLUG)"
-	@$(PY) bin/research_collect.py --slug $(SLUG) --mode reuse
+audit-wiring: ## Viral wiring auditor
+	$(call HEADER,Wiring auditor)
+	$(PY) bin/audit/viral_wiring_auditor.py --slug $(SLUG) || true
 
-fact-guard: ## Run fact-guard analysis (requires SLUG=)
-	@if not defined SLUG ( \
-		echo "❌ SLUG parameter required. Usage: make fact-guard SLUG=eames-history" && \
-		exit 1 \
-	)
-	@echo "🛡️ Running fact-guard analysis for slug: $(SLUG)"
-	@$(PY) bin/fact_guard.py --slug $(SLUG) --strictness balanced
+audit-consistency: ## General implementation auditor
+	$(call HEADER,Consistency auditor)
+	$(PY) bin/audit/consistency_auditor.py || true
 
-# Legacy targets for backward compatibility
-run-once: ## Run full pipeline once (legacy)
-	@echo "Running full pipeline..."
-	@$(PY) bin/niche_trends.py
-	@$(PY) bin/llm_cluster.py
-	@$(PY) bin/llm_outline.py
-	@$(PY) bin/llm_script.py
-	@$(PY) bin/fetch_assets.py
-	@$(PY) bin/tts_generate.py
-	@$(PY) bin/assemble_video.py
-	@$(PY) bin/upload_stage.py
+quality: ## Run code quality suite (no fixes)
+	$(call HEADER,Quality report)
+	$(PY) bin/quality/run_code_quality.py || true
+	@echo -e "$(GREEN)Report: CODE_QUALITY_REPORT.md$(NC)"
 
-# Cross-platform script execution (Python-based)
-serve-api: ## Start FastAPI server
-	@echo "Starting FastAPI server..."
-	@$(PY) scripts/serve_api.py
+quality-fix: ## Apply safe autofixes, then re-run analyses
+	$(call HEADER,Quality autofix + report)
+	$(PY) bin/quality/run_code_quality.py --apply-fixes || true
+	@echo -e "$(GREEN)Report: CODE_QUALITY_REPORT.md$(NC)"
 
-serve-ui: ## Start Gradio UI
-	@echo "Starting Gradio UI..."
-	@$(PY) scripts/serve_ui.py
+clean: ## Remove caches and temporary files
+	$(call HEADER,Clean caches)
+	find . -type d -name "__pycache__" -prune -exec rm -rf {} \; || true
+	find . -type f -name "*.pyc" -delete || true
 
-smoke-test: ## Run smoke test
-	@echo "Running smoke test..."
-	@$(PY) scripts/smoke_op_console.py
-
-# Operator Console targets
-op-console-api: ## Start operator console API server
-	@echo "Starting operator console API server..."
-	@$(PY) scripts/serve_api.py
-
-op-console-ui: ## Start operator console UI
-	@echo "Starting operator console UI..."
-	@$(PY) scripts/serve_ui.py
-
-op-console: ## Start both API and UI for operator console
-	@echo "Starting operator console (API + UI)..."
-	@echo "Starting API server in background..."
-	@$(PY) scripts/serve_api.py &
-	@echo "Waiting for API to start..."
-	@sleep 3
-	@echo "Starting UI..."
-	@$(PY) scripts/serve_ui.py
-
-op-console-smoke: ## Run operator console smoke test
-	@echo "Running operator console smoke test..."
-	@$(PY) scripts/smoke_op_console.py
-
-# Backup operations
-backup-repo: ## Create repository backup
-	@echo "Creating repository backup..."
-	@$(PY) scripts/backup_repo.py
-
-
-
-# Legacy shell script support (for backward compatibility)
-ifeq ($(OS),Windows_NT)
-serve-api-shell: ## Start FastAPI server (PowerShell)
-	@echo "Starting FastAPI server (PowerShell)..."
-	@powershell -ExecutionPolicy Bypass -File scripts/serve_api.ps1
-
-serve-ui-shell: ## Start Gradio UI (PowerShell)
-	@echo "Starting Gradio UI (PowerShell)..."
-	@powershell -ExecutionPolicy Bypass -File scripts/serve_ui.ps1
-
-smoke-test-shell: ## Run smoke test (PowerShell)
-	@echo "Running smoke test (PowerShell)..."
-	@powershell -ExecutionPolicy Bypass -File scripts/smoke_op_console.ps1
-else
-serve-api-shell: ## Start FastAPI server (Bash)
-	@echo "Starting FastAPI server (Bash)..."
-	@bash scripts/serve_api.sh
-
-serve-ui-shell: ## Start Gradio UI (Bash)
-	@echo "Starting Gradio UI (Bash)..."
-	@bash scripts/serve_ui.sh
-
-smoke-test-shell: ## Run smoke test (Bash)
-	@echo "Running smoke test (Bash)..."
-	@bash scripts/smoke_op_console.sh
-endif
-
-
-
-health: ## Start health server (legacy)
-	@echo "Starting health server..."
-	@$(PY) bin/health_server.py
-
-web-ui: ## Start web UI (legacy)
-	@echo "Starting web UI..."
-	@$(PY) bin/web_ui.py
+clean-artifacts: ## Danger: remove generated videos and assets (set CONFIRM=1)
+	@if [ "$(CONFIRM)" != "1" ]; then echo -e "$(RED)Refusing to delete artifacts. Re-run with CONFIRM=1$(NC)"; exit 1; fi
+	$(call HEADER,Removing artifacts)
+	rm -rf videos/* assets/generated/* || true

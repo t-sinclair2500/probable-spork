@@ -1,22 +1,29 @@
 # bin/utils/slug.py
+from typing import Union
+
 from pathlib import Path
-import re
 
-_SLUG_SAFE = re.compile(r"[^a-z0-9-]+")
 
-def safe_slug_from_script(path: str) -> str:
+def safe_slug_from_script(path: Union[str, Path]) -> str:
     """
-    Derive a robust slug from a script filename or path.
-    - Use basename without extension.
-    - If there's an underscore, do NOT assume semantic parts; just use stem as-is.
-    - Normalize: lowercase, replace spaces/underscores with '-', strip non [a-z0-9-], dedupe '-'.
+    Robust slug derivation:
+      - Prefer stem of filename (no underscore assumption).
+      - Lowercase, replace spaces and underscores with hyphens, collapse repeats.
+      - Strip special characters, provide fallback for empty results.
     """
-    stem = Path(path).stem  # handles .txt or other extensions
-    # normalize separators to hyphen
-    s = stem.replace("_", "-").replace(" ", "-").lower()
-    # strip disallowed
-    s = _SLUG_SAFE.sub("-", s)
-    # dedupe hyphens
-    s = re.sub(r"-{2,}", "-", s).strip("-")
-    # fallback in worst case
-    return s or "unnamed"
+    stem = Path(path).stem.strip()
+    # Replace underscores and spaces with hyphens
+    s = stem.replace("_", "-").replace(" ", "-")
+    # Split and rejoin to handle multiple spaces/underscores
+    s = "-".join(s.split())
+    # Strip special characters (keep only alphanumeric and hyphens)
+    import re
+
+    s = re.sub(r"[^a-zA-Z0-9-]", "", s)
+    # Collapse multiple hyphens
+    while "--" in s:
+        s = s.replace("--", "-")
+    # Strip leading/trailing hyphens
+    s = s.strip("-")
+    # Provide fallback for empty results
+    return s.lower() if s else "unnamed"

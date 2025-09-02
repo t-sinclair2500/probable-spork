@@ -1,9 +1,11 @@
 # bin/utils/palette.py
 from __future__ import annotations
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union
+
 import json
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Union
+
+from pathlib import Path
 
 try:
     import yaml  # type: ignore
@@ -11,6 +13,7 @@ except Exception:
     yaml = None  # optional; only needed for YAML files
 
 HexColor = str
+
 
 @dataclass
 class Palette:
@@ -21,6 +24,7 @@ class Palette:
         if not self.colors:
             return "#000000"
         return self.colors[idx % len(self.colors)]
+
 
 def _flatten_color_sources(obj: Any) -> List[HexColor]:
     """
@@ -65,6 +69,7 @@ def _flatten_color_sources(obj: Any) -> List[HexColor]:
         return [obj]
     return []
 
+
 def ensure_palette(obj: Any, *, name: Optional[str] = None) -> Palette:
     """
     Convert legacy forms (dict/list) into a Palette with .colors.
@@ -74,7 +79,10 @@ def ensure_palette(obj: Any, *, name: Optional[str] = None) -> Palette:
     colors = _flatten_color_sources(obj)
     return Palette(colors=colors, name=name)
 
-def load_palette(source: Union[str, Path, Dict[str, Any], Palette], *, name: Optional[str] = None) -> Palette:
+
+def load_palette(
+    source: Union[str, Path, Dict[str, Any], Palette], *, name: Optional[str] = None
+) -> Palette:
     """
     Load a Palette from:
       - Path to .json or .yaml/.yml file

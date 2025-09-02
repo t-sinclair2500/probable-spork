@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Dict, List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 # Shared literals
@@ -118,4 +120,3 @@ class Bundle(BaseModel):
     class Config:
         allow_population_by_field_name = True
         extra = "allow"
-

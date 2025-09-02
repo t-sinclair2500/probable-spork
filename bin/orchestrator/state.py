@@ -1,9 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from bin.utils.logs import audit_event, get_logger
-
 
 log = get_logger("state")
 
@@ -31,6 +31,7 @@ class StateMachine:
         if not step.idempotent_outputs:
             return False
         import os
+
         return all(os.path.exists(p) for p in step.idempotent_outputs)
 
     def run(self, force: bool = False) -> str:
@@ -44,10 +45,28 @@ class StateMachine:
                 continue
 
             status = self.runner(s.name, s.cmd)
+            if status == "OK":
+                continue
+
+            if status == "FAIL":
+                # Enforce policy based on required/optional + on_fail
+                if s.required or s.on_fail == "block":
+                    audit_event(s.name, "FAIL", notes="policy_block")
+                    log.error(f"[{s.name}] FAIL (policy block)")
+                    return "FAIL"
+                if s.on_fail == "skip":
+                    audit_event(s.name, "SKIP", notes="policy_skip")
+                    log.warning(f"[{s.name}] SKIP (optional failure)")
+                    if final_status == "OK":
+                        final_status = "PARTIAL"
+                    continue
+                # warn
+                audit_event(s.name, "PARTIAL", notes="policy_warn")
+                log.warning(f"[{s.name}] PARTIAL (optional failure; continuing)")
+                if final_status == "OK":
+                    final_status = "PARTIAL"
+                continue
+
             if status in ("PARTIAL", "SKIP") and final_status == "OK":
                 final_status = "PARTIAL"
-            if status == "FAIL":
-                # upstream runner should have enforced policy, but propagate
-                return "FAIL"
         return final_status
-

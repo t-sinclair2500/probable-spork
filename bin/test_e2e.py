@@ -1,30 +1,28 @@
 #!/usr/bin/env python3
-import json
 import os
 import subprocess
 import sys
-import time
 
 # Ensure repo root on path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from bin.core import load_env, load_config, get_logger
+from bin.core import get_logger, load_config, load_env
 
 log = get_logger("test_e2e")
+
 
 def check_api_keys(env):
     """Check for available API keys and return available providers"""
     providers = {
-        'youtube': bool(env.get("YOUTUBE_API_KEY") or env.get("GOOGLE_API_KEY")),
-        'reddit': bool(env.get("REDDIT_CLIENT_ID") and env.get("REDDIT_CLIENT_SECRET")),
-        'pixabay': bool(env.get("PIXABAY_API_KEY")),
-        'pexels': bool(env.get("PEXELS_API_KEY")),
-        'unsplash': bool(env.get("UNSPLASH_ACCESS_KEY")),
-        'openai': bool(env.get("OPENAI_API_KEY")),
+        "youtube": bool(env.get("YOUTUBE_API_KEY") or env.get("GOOGLE_API_KEY")),
+        "reddit": bool(env.get("REDDIT_CLIENT_ID") and env.get("REDDIT_CLIENT_SECRET")),
+        "openai": bool(env.get("OPENAI_API_KEY")),
+        # Legacy stock providers removed - using procedural generation
     }
     return providers
+
 
 def check_whisper_cpp():
     """Check if whisper.cpp is available"""
@@ -47,23 +45,26 @@ def check_whisper_cpp():
     except Exception:
         return False
 
+
 def check_ollama():
     """Check if Ollama service is available"""
     try:
         cfg = load_config()
         endpoint = cfg.llm.endpoint
         import requests
-        r = requests.get(endpoint.replace('/api/generate', '/api/tags'), timeout=5)
+
+        r = requests.get(endpoint.replace("/api/generate", "/api/tags"), timeout=5)
         return r.status_code == 200
     except Exception:
         return False
+
 
 def run_safe(cmd, required=True, reason=""):
     """Run command with optional skipping for missing dependencies"""
     print(f"RUN: {cmd}")
     if not required:
         print(f"  (OPTIONAL - {reason})")
-    
+
     try:
         r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
         if r.returncode != 0:
@@ -95,90 +96,119 @@ def run_safe(cmd, required=True, reason=""):
             print(f"SKIPPED: {cmd} ({e})")
             return False
 
+
 def main():
     """Enhanced E2E test with graceful dependency handling"""
     print("Starting E2E test with dependency checks...")
-    
+
     # Load environment and check capabilities
     env = load_env()
     providers = check_api_keys(env)
     has_whisper = check_whisper_cpp()
     has_ollama = check_ollama()
-    
-    print(f"\nDependency Status:")
+
+    print("\nDependency Status:")
     print(f"  Ollama service: {'✓' if has_ollama else '✗'}")
     print(f"  whisper.cpp: {'✓' if has_whisper else '✗'}")
     print(f"  YouTube API: {'✓' if providers['youtube'] else '✗'}")
     print(f"  Reddit API: {'✓' if providers['reddit'] else '✗'}")
-    print(f"  Asset providers: {'✓' if any([providers['pixabay'], providers['pexels'], providers['unsplash']]) else '✗'}")
     print(f"  OpenAI API: {'✓' if providers['openai'] else '✗'}")
-    
+    print(f"  Asset generation: ✓ (procedural)")
+
     # Core pipeline (required)
-    print(f"\n=== Core Pipeline ===")
-    
+    print("\n=== Core Pipeline ===")
+
     # Ingestion - should work even with limited APIs due to fallbacks
     run_safe("python bin/niche_trends.py", required=True)
-    
+
     # LLM steps - require Ollama
     if has_ollama:
         run_safe("python bin/llm_cluster.py", required=True)
-        run_safe("python bin/llm_outline.py", required=True) 
+        run_safe("python bin/llm_outline.py", required=True)
         run_safe("python bin/llm_script.py", required=True)
     else:
         print("SKIP: LLM steps (Ollama not available)")
         return
-    
+
     # Procedural pipeline components (new)
-    print(f"\n=== Procedural Pipeline ===")
-    
+    print("\n=== Procedural Pipeline ===")
+
     # Check pipeline configuration
     try:
         import yaml
+
         pipeline_path = "conf/pipeline.yaml"
         if os.path.exists(pipeline_path):
-            with open(pipeline_path, 'r') as f:
+            with open(pipeline_path, "r") as f:
                 pipeline_cfg = yaml.safe_load(f)
             print("✓ Pipeline configuration loaded")
-            
+
             # Check feature integration
             features = pipeline_cfg.get("features", {})
             if features:
-                print("  - Asset loop: ✓" if features.get("asset_loop", {}).get("enabled", False) else "  - Asset loop: ✗")
-                print("  - Textures: ✓" if features.get("textures", {}).get("enabled", False) else "  - Textures: ✗")
-                print("  - SVG ops: ✓" if features.get("svg_ops", {}).get("enabled", False) else "  - SVG ops: ✗")
-                print("  - Music bed: ✓" if features.get("music_bed", {}).get("enabled", False) else "  - Music bed: ✗")
+                print(
+                    "  - Asset loop: ✓"
+                    if features.get("asset_loop", {}).get("enabled", False)
+                    else "  - Asset loop: ✗"
+                )
+                print(
+                    "  - Textures: ✓"
+                    if features.get("textures", {}).get("enabled", False)
+                    else "  - Textures: ✗"
+                )
+                print(
+                    "  - SVG ops: ✓"
+                    if features.get("svg_ops", {}).get("enabled", False)
+                    else "  - SVG ops: ✗"
+                )
+                print(
+                    "  - Music bed: ✓"
+                    if features.get("music_bed", {}).get("enabled", False)
+                    else "  - Music bed: ✗"
+                )
             else:
                 print("  - Features configuration missing")
-            
+
             # Check execution order
             execution = pipeline_cfg.get("execution", {})
             if execution:
-                print(f"  - Shared ingestion steps: {len(execution.get('shared_ingestion', []))}")
-                print(f"  - Storyboard pipeline steps: {len(execution.get('storyboard_pipeline', {}).get('animatics_only', []))}")
-                print(f"  - Video production steps: {len(execution.get('video_production', []))}")
-        
+                print(
+                    f"  - Shared ingestion steps: {len(execution.get('shared_ingestion', []))}"
+                )
+                print(
+                    f"  - Storyboard pipeline steps: {len(execution.get('storyboard_pipeline', {}).get('animatics_only', []))}"
+                )
+                print(
+                    f"  - Video production steps: {len(execution.get('video_production', []))}"
+                )
+
             else:
                 print("  - Execution configuration missing")
         else:
             print("✗ Pipeline configuration not found")
     except Exception as e:
         print(f"WARNING: Could not load pipeline configuration: {e}")
-    
+
     # Check modules configuration
     try:
         from bin.core import load_modules_cfg
+
         modules_cfg = load_modules_cfg()
         if modules_cfg:
             print("✓ Modules configuration loaded")
             procedural = modules_cfg.get("procedural", {})
             if procedural:
                 print(f"  - Procedural seed: {procedural.get('seed', 'not set')}")
-                print(f"  - Max colors per scene: {procedural.get('max_colors_per_scene', 'not set')}")
-                print(f"  - Placement settings: {procedural.get('placement', 'not set')}")
+                print(
+                    f"  - Max colors per scene: {procedural.get('max_colors_per_scene', 'not set')}"
+                )
+                print(
+                    f"  - Placement settings: {procedural.get('placement', 'not set')}"
+                )
                 print(f"  - Motion settings: {procedural.get('motion', 'not set')}")
             else:
                 print("  - Procedural settings missing")
-            
+
             render = modules_cfg.get("render", {})
             if render:
                 print(f"  - Render resolution: {render.get('resolution', 'not set')}")
@@ -190,90 +220,78 @@ def main():
             print("✗ Modules configuration not found")
     except Exception as e:
         print(f"WARNING: Could not load modules configuration: {e}")
-    
+
     # Test storyboard planning with QA gates
     if has_ollama:
         print("Testing storyboard planning with QA gates...")
-        run_safe("python bin/storyboard_plan.py --slug test_e2e --dry-run", required=False, reason="QA gates test")
+        run_safe(
+            "python bin/storyboard_plan.py --slug test_e2e --dry-run",
+            required=False,
+            reason="QA gates test",
+        )
     else:
         print("SKIP: Storyboard planning (Ollama not available)")
-    
-    # Check pipeline mode configuration
-    try:
-        import yaml
-        with open("conf/global.yaml", 'r') as f:
-            cfg = yaml.safe_load(f)
-        animatics_only = cfg.get("video", {}).get("animatics_only", True)
-        enable_legacy = cfg.get("video", {}).get("enable_legacy_stock", False)
-        
-        if animatics_only and not enable_legacy:
-            print("Pipeline mode: ANIMATICS-ONLY")
-            # Skip asset fetching in animatics-only mode
-            print("SKIP: Asset fetching (animatics-only mode)")
-            # Create empty assets folder so pipeline can continue
-            os.makedirs("assets", exist_ok=True)
-        else:
-            print("Pipeline mode: LEGACY STOCK ASSETS")
-            # Assets - require at least one provider
-            if any([providers['pixabay'], providers['pexels'], providers['unsplash']]):
-                run_safe("python bin/fetch_assets.py", required=True)
-            else:
-                print("SKIP: Asset fetching (no API keys available)")
-                # Create empty assets folder so pipeline can continue
-                os.makedirs("assets", exist_ok=True)
-    except Exception as e:
-        print(f"WARNING: Could not read pipeline config: {e}")
-        # Fallback to legacy behavior
-        if any([providers['pixabay'], providers['pexels'], providers['unsplash']]):
-            run_safe("python bin/fetch_assets.py", required=True)
-        else:
-            print("SKIP: Asset fetching (no API keys available)")
-            os.makedirs("assets", exist_ok=True)
-    
+
+    # Pipeline mode (animatics-only by default)
+    print("Pipeline mode: ANIMATICS-ONLY (procedural generation)")
+    print("SKIP: Asset fetching (using procedural generation)")
+    # Create empty assets folder so pipeline can continue
+    os.makedirs("assets", exist_ok=True)
+
     # Audio generation
     run_safe("python bin/tts_generate.py", required=True)
-    
+
     # Captions - optional if whisper.cpp missing
-    run_safe("python bin/generate_captions.py", 
-             required=False, 
-             reason="whisper.cpp not available" if not has_whisper else "unknown")
-    
+    run_safe(
+        "python bin/generate_captions.py",
+        required=False,
+        reason="whisper.cpp not available" if not has_whisper else "unknown",
+    )
+
     # Video assembly
     run_safe("python bin/assemble_video.py", required=True)
     run_safe("python bin/upload_stage.py", required=True)
-    
 
-    
     # Test design prompt specifically (success criteria from integration prompt)
-    print(f"\n=== Design Prompt Test ===")
-    
+    print("\n=== Design Prompt Test ===")
+
     print("Testing '2-minute history of modern design principles' prompt...")
-    
+
     # Check if design script exists
     design_script = "scripts/2025-08-12_design.txt"
     if os.path.exists(design_script):
         print("✓ Design script found")
-        
+
         # Test storyboard planning with design
         print("Testing storyboard planning with design...")
-        run_safe("python bin/storyboard_plan.py --slug design --dry-run", required=False, reason="Design storyboard test")
-        
+        run_safe(
+            "python bin/storyboard_plan.py --slug design --dry-run",
+            required=False,
+            reason="Design storyboard test",
+        )
+
         # Test animatics generation with design
         print("Testing animatics generation with design...")
-        run_safe("python bin/animatics_generate.py --slug design --dry-run", required=False, reason="Design animatics test")
-        
+        run_safe(
+            "python bin/animatics_generate.py --slug design --dry-run",
+            required=False,
+            reason="Design animatics test",
+        )
+
         print("✓ Design prompt test completed")
     else:
         print("⚠ Design script not found, skipping design-specific test")
-    
+
     print("SKIP: Design prompt test (Ollama not available)")
-    
-    print(f"\n✓ E2E test complete!")
-    print(f"  - Video pipeline: PASSED")
+
+    print("\n✓ E2E test complete!")
+    print("  - Video pipeline: PASSED")
 
     print(f"  - Captions: {'PASSED' if has_whisper else 'SKIPPED (no whisper.cpp)'}")
-    print(f"  - Feature integration: {'PASSED' if os.path.exists('conf/pipeline.yaml') else 'SKIPPED'}")
-    
+    print(
+        f"  - Feature integration: {'PASSED' if os.path.exists('conf/pipeline.yaml') else 'SKIPPED'}"
+    )
+
 
 if __name__ == "__main__":
     main()

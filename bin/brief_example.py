@@ -6,20 +6,20 @@ This script demonstrates how to integrate the brief loader
 into your pipeline scripts.
 """
 
-import sys
 import os
+import sys
 
 # Add the bin directory to the path
 sys.path.insert(0, os.path.dirname(__file__))
 
 from brief_loader import load_brief
-from core import load_config, load_brief as core_load_brief
+from core import load_brief as core_load_brief
 
 
 def main():
     """Demonstrate brief loader usage."""
     print("=== Workstream Brief Loader Example ===\n")
-    
+
     # Method 1: Direct import from brief_loader
     print("1. Loading brief directly:")
     try:
@@ -27,7 +27,9 @@ def main():
         print(f"   Title: {brief['title']}")
         print(f"   Audience: {', '.join(brief['audience'])}")
         print(f"   Tone: {brief['tone']}")
-        print(f"   Video target: {brief['video']['target_length_min']}-{brief['video']['target_length_max']} minutes")
+        print(
+            f"   Video target: {brief['video']['target_length_min']}-{brief['video']['target_length_max']} minutes"
+        )
 
         print(f"   Keywords to include: {', '.join(brief['keywords_include'][:3])}...")
         print(f"   CTA: {brief['monetization']['cta_text']}")
@@ -35,7 +37,7 @@ def main():
     except Exception as e:
         print(f"   Error: {e}")
         print()
-    
+
     # Method 2: Through core module
     print("2. Loading brief through core module:")
     try:
@@ -46,12 +48,12 @@ def main():
     except Exception as e:
         print(f"   Error: {e}")
         print()
-    
+
     # Method 3: Show how to use brief in content generation
     print("3. Using brief for content generation:")
     try:
         brief = load_brief()
-        
+
         # Example: Generate a content outline based on brief
         print(f"   Content Strategy for: {brief['title']}")
         print(f"   Target Audience: {', '.join(brief['audience'])}")
@@ -62,24 +64,24 @@ def main():
         print(f"   Monetization: {', '.join(brief['monetization']['primary'])}")
         print(f"   Call to Action: {brief['monetization']['cta_text']}")
         print()
-        
+
         # Example: Content length planning
-        video_min = brief['video']['target_length_min']
-        video_max = brief['video']['target_length_max']
-        print(f"   Content Targets:")
+        video_min = brief["video"]["target_length_min"]
+        video_max = brief["video"]["target_length_max"]
+        print("   Content Targets:")
         print(f"     Video: {video_min}-{video_max} minutes")
         print()
-        
+
         # Example: Notes and context
-        if brief['notes']:
-            print(f"   Additional Context:")
+        if brief["notes"]:
+            print("   Additional Context:")
             print(f"     {brief['notes'][:100]}...")
             print()
-            
+
     except Exception as e:
         print(f"   Error: {e}")
         print()
-    
+
     print("=== End Example ===")
 
 

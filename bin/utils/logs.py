@@ -1,19 +1,21 @@
 # bin/utils/logs.py
 from __future__ import annotations
+
 import json
 import logging
-import os
-import time
 from datetime import datetime
+from typing import Any, Dict
+
 from pathlib import Path
-from typing import Any, Dict, Optional
 
 _LOGGER_INITIALIZED = False
+
 
 def _ensure_dirs() -> None:
     Path("logs").mkdir(parents=True, exist_ok=True)
     Path("logs/subprocess").mkdir(parents=True, exist_ok=True)
     Path("jobs").mkdir(parents=True, exist_ok=True)
+
 
 def get_logger(name: str = "pipeline") -> logging.Logger:
     global _LOGGER_INITIALIZED
@@ -30,11 +32,13 @@ def get_logger(name: str = "pipeline") -> logging.Logger:
     _LOGGER_INITIALIZED = True
     return logger
 
+
 def _json_default(o: Any) -> Any:
     try:
         return str(o)
     except Exception:
         return None
+
 
 def audit_event(step: str, status: str, **fields: Any) -> None:
     """

@@ -16,57 +16,38 @@ policy:
   fact_guard: "block"  # off | warn | block
   min_domain_score: 0.25
 
-  # Rate limits and backoff settings
-  rate_limits:
-    reddit:
-      max_rps: 1.0
-      burst: 60
-      min_interval_ms: 60000
-      jitter_ms: 6000
-    
-    youtube:
-      max_rps: 0.17
-      burst: 10
-      min_interval_ms: 6000
-      jitter_ms: 1200
-    
-    google_trends:
-      max_rps: 0.08
-      burst: 5
-      min_interval_ms: 120000
-      jitter_ms: 18000
-    
-    # General web scraping limits
-    web_scraping:
-      max_rps: 0.5
-      burst: 30
-      min_interval_ms: 60000
-      jitter_ms: 12000
 
-  # Domain quality scores
-  domain_scores:
-    wikipedia.org: 0.9
-    en.wikipedia.org: 0.9
-    designmuseum.org: 0.8
-    moma.org: 0.85
-    tate.org.uk: 0.8
-    vam.ac.uk: 0.8
-    cooperhewitt.org: 0.75
-    metmuseum.org: 0.85
-    nga.gov: 0.8
-    si.edu: 0.8
-    britannica.com: 0.85
-    encyclopedia.com: 0.7
-    academic.oup.com: 0.9
-    jstor.org: 0.95
-    arxiv.org: 0.9
-    researchgate.net: 0.7
-    scholar.google.com: 0.8
-    ieee.org: 0.9
-    acm.org: 0.9
-    springer.com: 0.85
-    nature.com: 0.95
-    example.com: 0.2
+
+# Domain reputation scores (moved from hardcoded values)
+domain_scores:
+  "wikipedia.org": 1.0
+  "en.wikipedia.org": 1.0
+  "nytimes.com": 0.9
+  "medium.com": 0.5
+  "designmuseum.org": 0.8
+  "moma.org": 0.85
+  "tate.org.uk": 0.8
+  "vam.ac.uk": 0.8
+  "cooperhewitt.org": 0.75
+  "metmuseum.org": 0.85
+  "nga.gov": 0.8
+  "si.edu": 0.8
+  "britannica.com": 0.85
+  "encyclopedia.com": 0.7
+  "academic.oup.com": 0.9
+  "jstor.org": 0.95
+  "arxiv.org": 0.9
+  "researchgate.net": 0.7
+  "scholar.google.com": 0.8
+  "ieee.org": 0.9
+  "acm.org": 0.9
+  "springer.com": 0.85
+  "nature.com": 0.95
+  "example.com": 0.2
+
+
+
+
 
 # API toggles - enable/disable live data sources
 apis:
@@ -113,6 +94,15 @@ domains:
 
 # Provider-specific settings
 providers:
+  rate_limits:
+    local_fixtures: { min_interval_ms: 0, jitter_ms: 0 }
+    bing: { min_interval_ms: 1200, jitter_ms: 200 }
+    news: { min_interval_ms: 1500, jitter_ms: 300 }
+    reddit: { min_interval_ms: 60000, jitter_ms: 6000 }
+    youtube: { min_interval_ms: 6000, jitter_ms: 1200 }
+    google_trends: { min_interval_ms: 120000, jitter_ms: 18000 }
+    web_scraping: { min_interval_ms: 60000, jitter_ms: 12000 }
+  
   reddit:
     subreddits: ["technology", "science", "programming", "mac", "macbook"]
     time_filter: "week"  # hour, day, week, month, year, all

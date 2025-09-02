@@ -1,0 +1,7 @@
+This is a sample script for testing the quality gates system.
+
+It contains a call to action: subscribe to our channel for more content like this.
+
+The script should have proper pacing and no banned tokens like [CITATION NEEDED].
+
+This content is sponsored by our partners and contains affiliate links.

@@ -4,64 +4,47 @@ Branded Animatics Pipeline - Cutout Package
 This package provides the core SDK for creating branded animatics from SceneScripts.
 """
 
-from .sdk import (
-    # Constants
-    VIDEO_W,
-    VIDEO_H,
+from .anim_fx import (
+    apply_keyframes,
+    bg_gradient,
+    create_test_animatic,
+    entrance,
+    exit,
+    make_image_clip,
+    make_text_clip,
+)
+from .raster_cache import clear_cache, get_cache_stats, get_cached, rasterize_svg
+from .sdk import (  # Constants; Enums; Path helpers; Models; Helper functions
     FPS,
-    SAFE_MARGINS_PX,
-    MAX_WORDS_PER_CARD,
     LINE_HEIGHT,
-    
-    # Enums
+    MAX_WORDS_PER_CARD,
+    SAFE_MARGINS_PX,
+    VIDEO_H,
+    VIDEO_W,
     AnimType,
-    
-    # Path helpers
-    Paths,
-    
-    # Models
     BrandStyle,
-    Keyframe,
     Element,
+    Keyframe,
+    Paths,
     Scene,
     SceneScript,
-    
-    # Helper functions
-    load_style,
-    validate_scene_script,
-    save_scene_script,
     load_scene_script,
+    load_style,
+    save_scene_script,
+    validate_scene_script,
 )
-
-from .raster_cache import (
-    rasterize_svg,
-    get_cached,
-    clear_cache,
-    get_cache_stats,
-)
-
 from .svg_path_ops import (
-    SVGPathProcessor,
     MotifVariantGenerator,
+    SVGPathProcessor,
     create_path_processor,
     create_variant_generator,
     generate_motif_variants,
 )
 
-from .anim_fx import (
-    make_text_clip,
-    make_image_clip,
-    bg_gradient,
-    apply_keyframes,
-    entrance,
-    exit,
-    create_test_animatic,
-)
-
 __version__ = "0.1.0"
 __all__ = [
     "VIDEO_W",
-    "VIDEO_H", 
+    "VIDEO_H",
     "FPS",
     "SAFE_MARGINS_PX",
     "MAX_WORDS_PER_CARD",

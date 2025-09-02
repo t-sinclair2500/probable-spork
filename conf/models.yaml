@@ -59,6 +59,17 @@ models:
     repeat_penalty: 1.1
     description: "Used for topic clustering and categorization"
 
+  # Viral modules - same model, optimized for scoring
+  viral:
+    chat_model: "llama3.2:3b"
+    timeout_s: 20
+    seed: 1337
+    max_tokens: 256
+    temperature: 0.3
+    top_p: 0.9
+    repeat_penalty: 1.1
+    description: "Used for viral hook and title scoring"
+
 voice:
   # Text-to-Speech with Piper
   tts:

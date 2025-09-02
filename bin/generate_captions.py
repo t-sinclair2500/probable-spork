@@ -6,14 +6,22 @@ import re
 import shlex
 import subprocess
 import sys
-import time
 
 # Ensure repo root is on sys.path for `import bin.core`
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from bin.core import BASE, get_logger, guard_system, load_config, load_env, log_state, single_lock
 import requests
+
+from bin.core import (
+    BASE,
+    get_logger,
+    guard_system,
+    load_config,
+    load_env,
+    log_state,
+    single_lock,
+)
 
 log = get_logger("generate_captions")
 
@@ -41,16 +49,16 @@ def main(brief=None, input_file=None, output_file=None):
     cfg = load_config()
     guard_system(cfg)
     env = load_env()
-    
+
     # Log brief context if available
     if brief:
-        brief_title = brief.get('title', 'Untitled')
+        brief_title = brief.get("title", "Untitled")
         log_state("generate_captions", "START", f"brief={brief_title}")
         log.info(f"Running with brief: {brief_title}")
     else:
         log_state("generate_captions", "START", "brief=none")
         log.info("Running without brief - using default behavior")
-    
+
     # Get command line arguments from sys.argv since we're being called by the pipeline
     # with --brief-data that was already parsed by the main argument parser
     if input_file:
@@ -76,7 +84,9 @@ def main(brief=None, input_file=None, output_file=None):
     model_path = (
         cfg.asr.model
         if os.path.isabs(cfg.asr.model)
-        else os.path.join(os.path.expanduser("~"), "whisper.cpp", "models", cfg.asr.model)
+        else os.path.join(
+            os.path.expanduser("~"), "whisper.cpp", "models", cfg.asr.model
+        )
     )
     if not os.path.exists(bin_path) or not os.path.exists(model_path):
         # Optional OpenAI Whisper fallback
@@ -87,17 +97,29 @@ def main(brief=None, input_file=None, output_file=None):
                     files = {"file": (os.path.basename(mp3), f, "audio/mpeg")}
                     data = {"model": "whisper-1"}
                     headers = {"Authorization": f"Bearer {env['OPENAI_API_KEY']}"}
-                    r = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, data=data, files=files, timeout=600)
+                    r = requests.post(
+                        "https://api.openai.com/v1/audio/transcriptions",
+                        headers=headers,
+                        data=data,
+                        files=files,
+                        timeout=600,
+                    )
                 if r.ok:
                     txt = r.json().get("text", "")
                     # Write simple SRT with one block as fallback
                     with open(srt, "w", encoding="utf-8") as f:
-                        f.write("1\n00:00:00,000 --> 00:59:59,000\n" + txt.strip() + "\n")
+                        f.write(
+                            "1\n00:00:00,000 --> 00:59:59,000\n" + txt.strip() + "\n"
+                        )
                     log_state("generate_captions", "OK", os.path.basename(srt))
                     print(f"Generated SRT via OpenAI Whisper: {srt}")
                     return
                 else:
-                    log_state("generate_captions", "SKIP", f"openai_whisper_http_{r.status_code}")
+                    log_state(
+                        "generate_captions",
+                        "SKIP",
+                        f"openai_whisper_http_{r.status_code}",
+                    )
                     print("OpenAI Whisper failed:", r.status_code, r.text[:200])
                     return
             except Exception as e:
@@ -147,33 +169,45 @@ def main(brief=None, input_file=None, output_file=None):
         wpm = round((words / max(dur, 1.0)) * 60.0)
         # crude density metric: ratio of text lines to total blocks
         blocks = [b for b in raw.strip().split("\n\n") if b.strip()]
-        nonempty = sum(1 for b in blocks if len(b.splitlines()) >= 3 and b.splitlines()[-1].strip())
+        nonempty = sum(
+            1 for b in blocks if len(b.splitlines()) >= 3 and b.splitlines()[-1].strip()
+        )
         conf = round((nonempty / max(len(blocks), 1)) * 100)
-        
+
         # Apply brief settings for caption optimization if available
         if brief:
-            brief_tone = brief.get('tone', '').lower()
+            brief_tone = brief.get("tone", "").lower()
             if brief_tone:
                 log.info(f"Brief tone applied to captions: {brief_tone}")
                 # Log tone-specific caption metrics
-                if brief_tone in ['professional', 'corporate']:
-                    log.info("Professional tone: captions optimized for clarity and accuracy")
-                elif brief_tone in ['casual', 'friendly']:
-                    log.info("Casual tone: captions optimized for natural speech patterns")
-                elif brief_tone in ['energetic', 'enthusiastic']:
+                if brief_tone in ["professional", "corporate"]:
+                    log.info(
+                        "Professional tone: captions optimized for clarity and accuracy"
+                    )
+                elif brief_tone in ["casual", "friendly"]:
+                    log.info(
+                        "Casual tone: captions optimized for natural speech patterns"
+                    )
+                elif brief_tone in ["energetic", "enthusiastic"]:
                     log.info("Energetic tone: captions optimized for dynamic content")
-            
+
             # Check if brief keywords are present in captions
-            brief_keywords = brief.get('keywords_include', [])
+            brief_keywords = brief.get("keywords_include", [])
             if brief_keywords:
                 content_lower = content.lower()
-                present_keywords = [kw for kw in brief_keywords if kw.lower() in content_lower]
+                present_keywords = [
+                    kw for kw in brief_keywords if kw.lower() in content_lower
+                ]
                 if present_keywords:
-                    log.info(f"Brief keywords found in captions: {', '.join(present_keywords)}")
+                    log.info(
+                        f"Brief keywords found in captions: {', '.join(present_keywords)}"
+                    )
                 else:
                     log.warning("No brief keywords found in captions")
-        
-        log_state("generate_captions", "METRIC", f"dur={round(dur,1)}s;wpm={wpm};conf~{conf}%")
+
+        log_state(
+            "generate_captions", "METRIC", f"dur={round(dur,1)}s;wpm={wpm};conf~{conf}%"
+        )
     except Exception:
         pass
 
@@ -183,9 +217,10 @@ if __name__ == "__main__":
     parser.add_argument("--brief-data", help="JSON string containing brief data")
     parser.add_argument("-i", "--input", help="Input MP3 file path")
     parser.add_argument("-o", "--output", help="Output SRT file path")
-    
+    parser.add_argument("--slug", help="Content slug to generate captions for")
+
     args = parser.parse_args()
-    
+
     # Parse brief data if provided
     brief = None
     if args.brief_data:
@@ -194,6 +229,17 @@ if __name__ == "__main__":
             log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
         except (json.JSONDecodeError, TypeError) as e:
             log.warning(f"Failed to parse brief data: {e}")
-    
+
+    # If slug provided and no explicit input, set input/output based on slug
+    if args.slug and not args.input:
+        mp3 = os.path.join(BASE, "voiceovers", f"{args.slug}.mp3")
+        srt = os.path.join(BASE, "voiceovers", f"{args.slug}.srt")
+        if not os.path.exists(mp3):
+            log.warning(f"Requested slug '{args.slug}' VO not found; falling back to newest")
+            mp3 = None
+            srt = None
+        args.input = mp3 or args.input
+        args.output = srt or args.output
+
     with single_lock():
         main(brief, args.input, args.output)

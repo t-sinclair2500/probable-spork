@@ -1,0 +1,18 @@
+server:
+  port: 7860
+  share: false
+defaults:
+  mode: "reuse"          # reuse | live
+  yt_only: false
+  enable_viral: true
+  enable_shorts: true
+  enable_seo: true
+  seed: 1337
+  from_step: ""          # "", "research", "ground", "script", "storyboard", "animatics", "assemble", "viral_lab", "shorts_lab", "seo_packaging", "qa"
+paths:
+  briefs_dir: "conf/briefs"
+ui:
+  max_log_lines: 2000
+
+
+

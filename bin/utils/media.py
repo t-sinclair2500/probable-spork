@@ -1,14 +1,15 @@
 # bin/utils/media.py
 from __future__ import annotations
+
 import json
-import os
 import re
 import subprocess
-from dataclasses import dataclass
+from typing import List, Optional, Sequence, Tuple
+
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
 
 AUDIO_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".aac", ".ogg"}
+
 
 def _candidate_score(name: str, slug: str) -> Tuple[int, int]:
     """
@@ -25,14 +26,22 @@ def _candidate_score(name: str, slug: str) -> Tuple[int, int]:
         return (0, 0)
     # separators considered
     parts = re.split(r"[-_.\s]+", stem)
-    if slug_l in parts or stem.startswith(slug_l + "-") or stem.endswith("-" + slug_l) or f"_{slug_l}_" in f"_{stem}_":
+    if (
+        slug_l in parts
+        or stem.startswith(slug_l + "-")
+        or stem.endswith("-" + slug_l)
+        or f"_{slug_l}_" in f"_{stem}_"
+    ):
         # common prefix/suffix or tokenized
         return (1, abs(len(stem) - len(slug_l)))
     if slug_l in stem:
         return (2, abs(len(stem) - len(slug_l)))
     return (3, len(stem))
 
-def find_voiceover_for_slug(slug: str, search_dirs: Sequence[str] = ("voiceovers",)) -> Optional[Path]:
+
+def find_voiceover_for_slug(
+    slug: str, search_dirs: Sequence[str] = ("voiceovers",)
+) -> Optional[Path]:
     """
     Search known voiceover dirs for a file that best matches the slug.
     Preference: exact stem match → prefix/suffix tokenized → contains → newest mtime.
@@ -60,6 +69,7 @@ def find_voiceover_for_slug(slug: str, search_dirs: Sequence[str] = ("voiceovers
     candidates.sort(key=lambda t: (t[0][0], t[0][1], t[1], t[2].name))
     return candidates[0][2]
 
+
 def resolve_metadata_for_slug(slug: str) -> Optional[Path]:
     """
     Prefer scripts/<slug>.metadata.json, then videos/<slug>.metadata.json, then videos/<slug>/metadata.json
@@ -74,6 +84,7 @@ def resolve_metadata_for_slug(slug: str) -> Optional[Path]:
             return p
     return None
 
+
 def sanitize_text_for_pillow(text: str) -> str:
     """
     Replace Unicode ellipsis with ASCII to avoid missing glyphs in PIL fonts.
@@ -83,14 +94,17 @@ def sanitize_text_for_pillow(text: str) -> str:
         return ""
     return str(text).replace("\u2026", "...")
 
+
 def ffprobe_json(path: Path) -> dict:
     """
     Return ffprobe JSON (streams + format). Requires ffprobe on PATH.
     """
     cmd = [
         "ffprobe",
-        "-v", "error",
-        "-print_format", "json",
+        "-v",
+        "error",
+        "-print_format",
+        "json",
         "-show_streams",
         "-show_format",
         str(path),
@@ -103,6 +117,7 @@ def ffprobe_json(path: Path) -> dict:
         return json.loads(proc.stdout or "{}")
     except json.JSONDecodeError:
         return {}
+
 
 def write_media_inspector(slug: str, output_path: Path, encode_args: dict) -> Path:
     """

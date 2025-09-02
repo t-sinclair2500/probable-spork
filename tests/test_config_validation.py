@@ -1,4 +1,3 @@
-import os
 import unittest
 
 from bin.core import GlobalCfg, load_config

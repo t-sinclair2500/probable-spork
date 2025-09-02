@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import json
 import time
-from pathlib import Path
 from collections import Counter
+
+from pathlib import Path
 
 
 def collect(window_seconds: int = 7 * 24 * 3600) -> dict:
@@ -31,4 +33,3 @@ def collect(window_seconds: int = 7 * 24 * 3600) -> dict:
 
 if __name__ == "__main__":
     print(json.dumps(collect(), indent=2))
-

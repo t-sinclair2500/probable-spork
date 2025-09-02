@@ -1,8 +1,10 @@
 # bin/utils/flatten.py
 from __future__ import annotations
+
 from typing import Any, Dict, Iterable, List
 
 Element = Dict[str, Any]
+
 
 def _is_scene(obj: Any) -> bool:
     # Duck-typing: Scene if it has .elements, ["elements"], or to_elements()
@@ -15,6 +17,7 @@ def _is_scene(obj: Any) -> bool:
     if hasattr(obj, "to_elements") and callable(getattr(obj, "to_elements")):
         return True
     return False
+
 
 def _scene_to_elements(scene: Any) -> List[Element]:
     # Extract elements from varied scene shapes
@@ -29,6 +32,7 @@ def _scene_to_elements(scene: Any) -> List[Element]:
     if isinstance(scene, dict) and "elements" in scene:
         return list(scene.get("elements") or [])
     return []
+
 
 def flatten_elements(items: Iterable[Any]) -> List[Element]:
     """

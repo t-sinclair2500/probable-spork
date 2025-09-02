@@ -1,0 +1,56 @@
+# Pattern & scoring configuration for Hook/Title/Thumb labs
+seed: 1337
+
+counts:
+  hooks: 8
+  titles: 5
+  thumbs: 3
+
+weights:
+  hooks:
+    heuristics: 0.5
+    llm: 0.5
+  titles:
+    heuristics: 0.7
+    llm: 0.3
+
+heuristics:
+  power_words: ["surprising", "secret", "proven", "weird", "mistake", "ultimate", "simple", "unexpected", "hidden", "powerful", "fast", "shocking", "amazing", "incredible", "mind-blowing", "game-changing", "revolutionary", "breakthrough", "exposed", "revealed"]
+  ideal_title_min: 45
+  ideal_title_max: 65
+  max_token_repeat: 3
+  number_bonus: 0.2
+  bracket_bonus: 0.1     # e.g., [Guide], (2025)
+  question_bonus: 0.1
+  novelty_weight: 0.3    # less overlap with brief keywords → higher score
+
+patterns:
+  hooks:
+    - "What no one tells you about {topic} — and why it matters now"
+    - "We tried {topic} so you don't have to — here's what happened"
+    - "{n} {adjective} truths about {topic} most people get wrong"
+    - "The {inversion} about {topic} that will save you {benefit}"
+    - "Before you {action}, watch this about {topic}"
+    - "The {adjective} {topic} secret that {benefit}"
+    - "Why {topic} is {adjective} — and what you need to know"
+    - "The {inversion} {topic} strategy that actually works"
+    - "{n} {adjective} {topic} mistakes you're probably making"
+    - "The {topic} hack that changed everything"
+
+  titles:
+    - "{n} ways to {benefit} with {topic} in {timeframe}"
+    - "The {adjective} guide to {topic} ({year})"
+    - "Stop {common_mistake}: do this with {topic}"
+    - "{n} {adjective} {topic} strategies that work"
+    - "The {topic} method that {benefit}"
+    - "How to {benefit} with {topic} (step-by-step)"
+    - "{topic}: the {adjective} approach"
+    - "The {inversion} {topic} technique"
+
+thumbs:
+  text_max_words: 6
+  safe_area_pct: 0.9
+  font: "/System/Library/Fonts/Geneva.ttf"
+  palette: "assets/brand/style.yaml"   # used by ensure_palette()
+  background_colors: ["#1a1a1a", "#2d2d2d", "#3a3a3a"]
+  text_colors: ["#ffffff", "#f0f0f0", "#e0e0e0"]

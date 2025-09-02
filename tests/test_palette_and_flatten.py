@@ -1,12 +1,13 @@
 # tests/test_palette_and_flatten.py
-import pytest
-from dataclasses import dataclass
-from pathlib import Path
-import tempfile
 import json
+import tempfile
+from dataclasses import dataclass
 
-from bin.utils.palette import ensure_palette, load_palette, Palette
+import pytest
+from pathlib import Path
+
 from bin.utils.flatten import flatten_elements
+from bin.utils.palette import Palette, ensure_palette, load_palette
 
 
 def test_palette_adapter_from_dict_variants():
@@ -75,10 +76,10 @@ def test_palette_loader_from_palette():
 
 def test_palette_loader_from_path_string():
     """Test loading palette from path string."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump({"colors": ["#111111", "#222222"]}, f)
         path = f.name
-    
+
     try:
         p = load_palette(path)
         assert p.colors == ["#111111", "#222222"]
@@ -118,11 +119,14 @@ def test_palette_empty_colors():
 
 def test_flatten_elements_from_mixed_inputs():
     """Test flattening mixed inputs (elements and scenes)."""
+
     @dataclass
     class ElementObj:
         kind: str
         text: str
-        def to_dict(self): return {"type": self.kind, "text": self.text}
+
+        def to_dict(self):
+            return {"type": self.kind, "text": self.text}
 
     @dataclass
     class SceneObj:
@@ -131,7 +135,9 @@ def test_flatten_elements_from_mixed_inputs():
     # mix: single element dict, element object, and a scene (with dict+obj inside)
     el1 = {"type": "text", "text": "A"}
     el2 = ElementObj(kind="text", text="B")
-    scn = SceneObj(elements=[{"type": "rect", "w": 10}, ElementObj(kind="text", text="C")])
+    scn = SceneObj(
+        elements=[{"type": "rect", "w": 10}, ElementObj(kind="text", text="C")]
+    )
 
     out = flatten_elements([el1, el2, scn])
     assert isinstance(out, list) and len(out) == 4
@@ -146,10 +152,10 @@ def test_flatten_elements_from_scene_dict():
     scene_dict = {
         "elements": [
             {"type": "text", "text": "Hello"},
-            {"type": "image", "src": "test.png"}
+            {"type": "image", "src": "test.png"},
         ]
     }
-    
+
     out = flatten_elements([scene_dict])
     assert len(out) == 2
     assert out[0]["text"] == "Hello"
@@ -158,13 +164,11 @@ def test_flatten_elements_from_scene_dict():
 
 def test_flatten_elements_from_scene_with_to_elements():
     """Test flattening scene object with to_elements() method."""
+
     class SceneWithMethod:
         def to_elements(self):
-            return [
-                {"type": "text", "text": "Method"},
-                {"type": "rect", "w": 20}
-            ]
-    
+            return [{"type": "text", "text": "Method"}, {"type": "rect", "w": 20}]
+
     scene = SceneWithMethod()
     out = flatten_elements([scene])
     assert len(out) == 2
@@ -174,12 +178,8 @@ def test_flatten_elements_from_scene_with_to_elements():
 
 def test_flatten_elements_with_none_values():
     """Test flattening with None values."""
-    elements = [
-        {"type": "text", "text": "A"},
-        None,
-        {"type": "text", "text": "B"}
-    ]
-    
+    elements = [{"type": "text", "text": "A"}, None, {"type": "text", "text": "B"}]
+
     out = flatten_elements(elements)
     assert len(out) == 2
     assert out[0]["text"] == "A"
@@ -200,9 +200,10 @@ def test_flatten_elements_with_empty_list():
 
 def test_flatten_elements_with_scene_none_elements():
     """Test flattening scene with None elements."""
+
     class SceneWithNoneElements:
         elements = None
-    
+
     scene = SceneWithNoneElements()
     out = flatten_elements([scene])
     assert out == []
@@ -210,9 +211,10 @@ def test_flatten_elements_with_scene_none_elements():
 
 def test_flatten_elements_with_scene_empty_elements():
     """Test flattening scene with empty elements."""
+
     class SceneWithEmptyElements:
         elements = []
-    
+
     scene = SceneWithEmptyElements()
     out = flatten_elements([scene])
     assert out == []
@@ -220,13 +222,14 @@ def test_flatten_elements_with_scene_empty_elements():
 
 def test_flatten_elements_with_object_to_dict():
     """Test flattening object with to_dict() method."""
+
     class ElementWithDict:
         def __init__(self, data):
             self.data = data
-        
+
         def to_dict(self):
             return self.data
-    
+
     element = ElementWithDict({"type": "custom", "value": 42})
     out = flatten_elements([element])
     assert len(out) == 1
@@ -236,11 +239,12 @@ def test_flatten_elements_with_object_to_dict():
 
 def test_flatten_elements_with_unknown_object():
     """Test flattening unknown object (should use __dict__)."""
+
     class UnknownElement:
         def __init__(self):
             self.type = "unknown"
             self.value = 123
-    
+
     element = UnknownElement()
     out = flatten_elements([element])
     assert len(out) == 1
@@ -253,7 +257,7 @@ def test_flatten_elements_preserves_order():
     scene1 = {"elements": [{"id": "1"}, {"id": "2"}]}
     scene2 = {"elements": [{"id": "3"}, {"id": "4"}]}
     element = {"id": "5"}
-    
+
     out = flatten_elements([scene1, element, scene2])
     assert [e["id"] for e in out] == ["1", "2", "5", "3", "4"]
 

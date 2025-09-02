@@ -1,6 +1,0 @@
-<!-- METADATA: {"generator": "asset_generator.py", "seed": 44, "category": "prop", "style": "nonexistent_style", "palette": ["#D62828", "#4E9F3D"], "generator_params": {"prop_type": "geometric", "width": 200, "height": 200}, "notes": "Unknown style prop - should fallback to geometric"} -->
-<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="50,50 150,50 100,150" 
-                 fill="#D62828"/>
-        <circle cx="100" cy="100" r="25" fill="#4E9F3D"/>
-    </svg>

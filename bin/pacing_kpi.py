@@ -4,7 +4,7 @@ Pacing KPI Module
 
 Computes pacing metrics for video content:
 - Words per second
-- Cuts per minute  
+- Cuts per minute
 - Average scene length
 - Speech/music ratio
 
@@ -13,18 +13,18 @@ Deterministic metrics using script text, SRT timings, and scene durations.
 
 import argparse
 import json
-import logging
 import os
 import re
 from typing import Dict, List, Optional, Tuple
 
 try:
-    from .core import get_logger, load_config, load_modules_cfg, load_brief
+    from .core import get_logger, load_brief, load_config, load_modules_cfg
 except ImportError:
     # Handle direct execution
     import sys
+
     sys.path.append(os.path.dirname(__file__))
-    from core import get_logger, load_config, load_modules_cfg, load_brief
+    from core import get_logger, load_brief, load_config, load_modules_cfg
 
 log = get_logger("pacing-kpi")
 
@@ -32,48 +32,50 @@ log = get_logger("pacing-kpi")
 def parse_srt_timing(srt_path: str) -> Tuple[float, int]:
     """
     Parse SRT file to extract total speech duration and word count.
-    
+
     Args:
         srt_path: Path to SRT caption file
-        
+
     Returns:
         Tuple of (total_speech_ms, total_words)
     """
     if not os.path.exists(srt_path):
         log.warning(f"SRT file not found: {srt_path}")
         return 0.0, 0
-    
+
     try:
-        with open(srt_path, 'r', encoding='utf-8') as f:
+        with open(srt_path, "r", encoding="utf-8") as f:
             content = f.read()
-        
+
         # Parse SRT timing blocks
-        timing_pattern = r'(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})'
+        timing_pattern = r"(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})"
         matches = re.findall(timing_pattern, content)
-        
+
         total_speech_ms = 0
         total_words = 0
-        
+
         for start_str, end_str in matches:
             # Convert HH:MM:SS,mmm to milliseconds
-            start_parts = start_str.replace(',', '.').split(':')
-            end_parts = end_str.replace(',', '.').split(':')
-            
-            start_ms = (int(start_parts[0]) * 3600 + 
-                       int(start_parts[1]) * 60 + 
-                       float(start_parts[2])) * 1000
-            end_ms = (int(end_parts[0]) * 3600 + 
-                     int(end_parts[1]) * 60 + 
-                     float(end_parts[2])) * 1000
-            
+            start_parts = start_str.replace(",", ".").split(":")
+            end_parts = end_str.replace(",", ".").split(":")
+
+            start_ms = (
+                int(start_parts[0]) * 3600
+                + int(start_parts[1]) * 60
+                + float(start_parts[2])
+            ) * 1000
+            end_ms = (
+                int(end_parts[0]) * 3600 + int(end_parts[1]) * 60 + float(end_parts[2])
+            ) * 1000
+
             duration_ms = end_ms - start_ms
             total_speech_ms += duration_ms
-        
+
         # For SRT files, we don't count words from captions as they may contain full script
         # Instead, we'll use the script text for word count and SRT only for timing
         log.info(f"[pacing-kpi] Parsed SRT: {total_speech_ms:.0f}ms speech duration")
         return total_speech_ms, 0
-        
+
     except Exception as e:
         log.error(f"[pacing-kpi] Error parsing SRT file {srt_path}: {e}")
         return 0.0, 0
@@ -82,23 +84,24 @@ def parse_srt_timing(srt_path: str) -> Tuple[float, int]:
 def count_words(text: str) -> int:
     """Count words in text, handling common punctuation."""
     # Remove common punctuation and count word boundaries
-    cleaned = re.sub(r'[^\w\s]', ' ', text)
-    words = re.findall(r'\b\w+\b', cleaned)
+    cleaned = re.sub(r"[^\w\s]", " ", text)
+    words = re.findall(r"\b\w+\b", cleaned)
     return len(words)
 
 
 def load_intent_profiles() -> Dict:
     """Load intent-specific pacing profiles from configuration."""
-    config_dir = os.path.join(os.path.dirname(__file__), '..', 'conf')
-    profiles_path = os.path.join(config_dir, 'intent_profiles.yaml')
-    
+    config_dir = os.path.join(os.path.dirname(__file__), "..", "conf")
+    profiles_path = os.path.join(config_dir, "intent_profiles.yaml")
+
     if not os.path.exists(profiles_path):
         log.error(f"[pacing-kpi] Intent profiles not found: {profiles_path}")
         return {}
-    
+
     try:
         import yaml
-        with open(profiles_path, 'r') as f:
+
+        with open(profiles_path, "r") as f:
             profiles = yaml.safe_load(f)
         log.info(f"[pacing-kpi] Loaded {len(profiles)} intent profiles")
         return profiles
@@ -111,49 +114,56 @@ def get_current_intent() -> str:
     """Get the current intent from brief configuration."""
     try:
         brief_cfg = load_brief()
-        intent = brief_cfg.get('intent', 'default')
+        intent = brief_cfg.get("intent", "default")
         log.info(f"[pacing-kpi] Current intent: {intent}")
         return intent
     except Exception as e:
-        log.warning(f"[pacing-kpi] Could not load brief config, using default intent: {e}")
-        return 'default'
+        log.warning(
+            f"[pacing-kpi] Could not load brief config, using default intent: {e}"
+        )
+        return "default"
 
 
-def compute_pacing(script_text: str, scenes: List[Dict], video_ms: int, 
-                   srt_path: Optional[str] = None) -> Dict:
+def compute_pacing(
+    script_text: str, scenes: List[Dict], video_ms: int, srt_path: Optional[str] = None
+) -> Dict:
     """
     Compute pacing KPIs for video content.
-    
+
     Args:
         script_text: Final script text content
         scenes: List of scene dictionaries with duration_ms
         video_ms: Total video duration in milliseconds
         srt_path: Optional path to SRT caption file
-        
+
     Returns:
         Dictionary with pacing metrics and metadata
     """
-    log.info(f"[pacing-kpi] Computing pacing KPIs for {len(scenes)} scenes, {video_ms}ms video")
-    
+    log.info(
+        f"[pacing-kpi] Computing pacing KPIs for {len(scenes)} scenes, {video_ms}ms video"
+    )
+
     # Load configuration
     config = load_config()
     modules_cfg = load_modules_cfg()
-    render_cfg = modules_cfg.get('render', {})
-    
+    render_cfg = modules_cfg.get("render", {})
+
     # Extract scene durations and count transitions
     scene_durations = []
     scene_transitions = len(scenes)  # Each scene is a transition
-    
+
     for scene in scenes:
-        duration_ms = scene.get('duration_ms', 0)
+        duration_ms = scene.get("duration_ms", 0)
         if duration_ms > 0:
             scene_durations.append(duration_ms)
-            log.debug(f"[pacing-kpi] Scene {scene.get('id', 'unknown')}: {duration_ms}ms")
-    
+            log.debug(
+                f"[pacing-kpi] Scene {scene.get('id', 'unknown')}: {duration_ms}ms"
+            )
+
     # Count words in script
     script_words = count_words(script_text)
     log.info(f"[pacing-kpi] Script contains {script_words} words")
-    
+
     # Determine speech timing source
     if srt_path and os.path.exists(srt_path):
         speech_ms, srt_words = parse_srt_timing(srt_path)
@@ -163,40 +173,46 @@ def compute_pacing(script_text: str, scenes: List[Dict], video_ms: int,
             log.info(f"[pacing-kpi] Using SRT timing: {speech_ms:.0f}ms speech")
         else:
             # Fallback to script word count estimation
-            speech_ratio = render_cfg.get('speech_ratio_default', 0.8)
+            speech_ratio = render_cfg.get("speech_ratio_default", 0.8)
             total_speech_ms = video_ms * speech_ratio
-            log.warning(f"[pacing-kpi] SRT parsing failed, using estimated speech ratio: {speech_ratio}")
+            log.warning(
+                f"[pacing-kpi] SRT parsing failed, using estimated speech ratio: {speech_ratio}"
+            )
     else:
         # No SRT available, use brief target and configurable ratio
         brief_cfg = load_brief()
-        target_intent = brief_cfg.get('intent', 'default')
-        
+        target_intent = brief_cfg.get("intent", "default")
+
         # Load intent profiles for speech ratio
         intent_profiles = load_intent_profiles()
-        speech_ratio = intent_profiles.get(target_intent, {}).get('speech_ratio_default', 0.8)
-        
+        speech_ratio = intent_profiles.get(target_intent, {}).get(
+            "speech_ratio_default", 0.8
+        )
+
         total_speech_ms = video_ms * speech_ratio
         source = "brief"
-        log.info(f"[pacing-kpi] No SRT available, using brief target with {speech_ratio} speech ratio")
-    
+        log.info(
+            f"[pacing-kpi] No SRT available, using brief target with {speech_ratio} speech ratio"
+        )
+
     # Calculate KPIs
     video_seconds = video_ms / 1000.0
     speech_seconds = total_speech_ms / 1000.0
-    
+
     # Words per second
     words_per_sec = script_words / speech_seconds if speech_seconds > 0 else 0.0
-    
+
     # Cuts per minute
     video_minutes = video_seconds / 60.0
     cuts_per_min = scene_transitions / video_minutes if video_minutes > 0 else 0.0
-    
+
     # Average scene length
     if scene_durations:
         avg_scene_ms = sum(scene_durations) / len(scene_durations)
         avg_scene_s = avg_scene_ms / 1000.0
     else:
         avg_scene_s = 0.0
-    
+
     # Speech/music ratio
     music_ms = video_ms - total_speech_ms
     if music_ms > 0:
@@ -204,15 +220,17 @@ def compute_pacing(script_text: str, scenes: List[Dict], video_ms: int,
     else:
         # Clamp to reasonable value if no music
         speech_music_ratio = 10.0  # High ratio when no music
-    
+
     # Prepare scene details for report
     scene_details = []
     for scene in scenes:
-        scene_details.append({
-            "id": scene.get('id', 'unknown'),
-            "duration_ms": scene.get('duration_ms', 0)
-        })
-    
+        scene_details.append(
+            {
+                "id": scene.get("id", "unknown"),
+                "duration_ms": scene.get("duration_ms", 0),
+            }
+        )
+
     # Compile results
     kpi_result = {
         "words_per_sec": round(words_per_sec, 2),
@@ -226,66 +244,73 @@ def compute_pacing(script_text: str, scenes: List[Dict], video_ms: int,
             "video_duration_ms": video_ms,
             "speech_duration_ms": total_speech_ms,
             "scene_count": len(scenes),
-            "computed_at": None  # Will be set by caller
-        }
+            "computed_at": None,  # Will be set by caller
+        },
     }
-    
-    log.info(f"[pacing-kpi] Pacing KPIs computed: {words_per_sec:.2f} wps, {cuts_per_min:.1f} cpm, "
-             f"{avg_scene_s:.2f}s avg scene, {speech_music_ratio:.2f} speech/music")
-    
+
+    log.info(
+        f"[pacing-kpi] Pacing KPIs computed: {words_per_sec:.2f} wps, {cuts_per_min:.1f} cpm, "
+        f"{avg_scene_s:.2f}s avg scene, {speech_music_ratio:.2f} speech/music"
+    )
+
     return kpi_result
 
 
 def save_pacing_report(slug: str, kpi_data: Dict, report_dir: str = None) -> str:
     """
     Save pacing report to runs directory.
-    
+
     Args:
         slug: Content slug identifier
         kpi_data: KPI computation results
         report_dir: Optional custom report directory
-        
+
     Returns:
         Path to saved report file
     """
     if report_dir is None:
-        report_dir = os.path.join(os.path.dirname(__file__), '..', 'runs', slug)
-    
+        report_dir = os.path.join(os.path.dirname(__file__), "..", "runs", slug)
+
     os.makedirs(report_dir, exist_ok=True)
-    report_path = os.path.join(report_dir, 'pacing_report.json')
-    
+    report_path = os.path.join(report_dir, "pacing_report.json")
+
     # Check if existing report exists and preserve comparison data
     existing_report = {}
     if os.path.exists(report_path):
         try:
-            with open(report_path, 'r') as f:
+            with open(report_path, "r") as f:
                 existing_report = json.load(f)
-            log.info(f"[pacing-kpi] Found existing pacing report, preserving comparison data")
+            log.info(
+                "[pacing-kpi] Found existing pacing report, preserving comparison data"
+            )
         except Exception as e:
             log.warning(f"[pacing-kpi] Could not read existing report: {e}")
-    
+
     # Create complete report preserving existing comparison data
     complete_report = {
         "kpi_metrics": kpi_data,
         "comparison": existing_report.get("comparison", {}),
-        "metadata": existing_report.get("metadata", {})
+        "metadata": existing_report.get("metadata", {}),
     }
-    
+
     # Update metadata
     if "metadata" not in complete_report:
         complete_report["metadata"] = {}
     complete_report["metadata"]["slug"] = slug
-    
+
     # Add timestamp
     import datetime
-    complete_report["metadata"]["kpi_computed_at"] = datetime.datetime.utcnow().isoformat() + 'Z'
-    
+
+    complete_report["metadata"]["kpi_computed_at"] = (
+        datetime.datetime.utcnow().isoformat() + "Z"
+    )
+
     # Add timestamp to KPI data
-    kpi_data['metadata']['computed_at'] = complete_report["metadata"]["kpi_computed_at"]
-    
-    with open(report_path, 'w') as f:
+    kpi_data["metadata"]["computed_at"] = complete_report["metadata"]["kpi_computed_at"]
+
+    with open(report_path, "w") as f:
         json.dump(complete_report, f, indent=2)
-    
+
     log.info(f"[pacing-kpi] Pacing report saved to {report_path}")
     return report_path
 
@@ -293,72 +318,78 @@ def save_pacing_report(slug: str, kpi_data: Dict, report_dir: str = None) -> str
 def update_video_metadata(slug: str, kpi_data: Dict, metadata_dir: str = None) -> str:
     """
     Update video metadata with pacing KPIs.
-    
+
     Args:
         slug: Content slug identifier
         kpi_data: KPI computation results
         metadata_dir: Optional custom metadata directory
-        
+
     Returns:
         Path to updated metadata file
     """
     if metadata_dir is None:
-        metadata_dir = os.path.join(os.path.dirname(__file__), '..', 'videos')
-    
-    metadata_path = os.path.join(metadata_dir, f'{slug}.metadata.json')
-    
+        metadata_dir = os.path.join(os.path.dirname(__file__), "..", "videos")
+
+    metadata_path = os.path.join(metadata_dir, f"{slug}.metadata.json")
+
     # Load existing metadata
     if os.path.exists(metadata_path):
-        with open(metadata_path, 'r') as f:
+        with open(metadata_path, "r") as f:
             metadata = json.load(f)
     else:
         metadata = {}
-    
+
     # Add pacing section
-    metadata['pacing'] = {
-        "words_per_sec": kpi_data['words_per_sec'],
-        "cuts_per_min": kpi_data['cuts_per_min'],
-        "avg_scene_s": kpi_data['avg_scene_s'],
-        "speech_music_ratio": kpi_data['speech_music_ratio'],
-        "source": kpi_data['source'],
-        "computed_at": kpi_data['metadata']['computed_at']
+    metadata["pacing"] = {
+        "words_per_sec": kpi_data["words_per_sec"],
+        "cuts_per_min": kpi_data["cuts_per_min"],
+        "avg_scene_s": kpi_data["avg_scene_s"],
+        "speech_music_ratio": kpi_data["speech_music_ratio"],
+        "source": kpi_data["source"],
+        "computed_at": kpi_data["metadata"]["computed_at"],
     }
-    
+
     # Save updated metadata
-    with open(metadata_path, 'w') as f:
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
-    
+
     log.info(f"[pacing-kpi] Video metadata updated with pacing KPIs: {metadata_path}")
     return metadata_path
 
 
-def run_complete_pacing_analysis(slug: str, script_text: str, scenes: List[Dict], 
-                                video_ms: int, srt_path: Optional[str] = None) -> Dict:
+def run_complete_pacing_analysis(
+    slug: str,
+    script_text: str,
+    scenes: List[Dict],
+    video_ms: int,
+    srt_path: Optional[str] = None,
+) -> Dict:
     """
     Run complete pacing analysis including KPI computation and comparison.
-    
+
     Args:
         slug: Content slug identifier
         script_text: Final script text content
         scenes: List of scene dictionaries with duration_ms
         video_ms: Total video duration in milliseconds
         srt_path: Optional path to SRT caption file
-        
+
     Returns:
         Complete analysis results with KPIs and comparison
     """
     log.info(f"[pacing-kpi] Running complete pacing analysis for {slug}")
-    
+
     # Compute KPIs first
     kpi_data = compute_pacing(script_text, scenes, video_ms, srt_path)
-    
+
     # Save KPI report
     save_pacing_report(slug, kpi_data)
-    
+
     # Run comparison analysis
     try:
         # Try absolute import first
         from bin.pacing_compare import run_pacing_analysis
+
         comparison_result = run_pacing_analysis(slug, kpi_data)
         log.info(f"[pacing-kpi] Comparison analysis completed for {slug}")
         return comparison_result
@@ -366,100 +397,121 @@ def run_complete_pacing_analysis(slug: str, script_text: str, scenes: List[Dict]
         try:
             # Try relative import
             from .pacing_compare import run_pacing_analysis
+
             comparison_result = run_pacing_analysis(slug, kpi_data)
             log.info(f"[pacing-kpi] Comparison analysis completed for {slug}")
             return comparison_result
         except ImportError:
-            log.warning("[pacing-kpi] Pacing comparison module not available, skipping comparison")
+            log.warning(
+                "[pacing-kpi] Pacing comparison module not available, skipping comparison"
+            )
             # Update metadata with just KPIs
             update_video_metadata(slug, kpi_data)
             return {
                 "slug": slug,
                 "kpi_data": kpi_data,
                 "comparison": None,
-                "status": "kpi_only"
+                "status": "kpi_only",
             }
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compute pacing KPIs for video content")
+    parser = argparse.ArgumentParser(
+        description="Compute pacing KPIs for video content"
+    )
     parser.add_argument("--slug", required=True, help="Content slug identifier")
-    parser.add_argument("--script-file", help="Path to script file (auto-detected if not provided)")
-    parser.add_argument("--srt-file", help="Path to SRT caption file (auto-detected if not provided)")
-    
+    parser.add_argument(
+        "--script-file", help="Path to script file (auto-detected if not provided)"
+    )
+    parser.add_argument(
+        "--srt-file", help="Path to SRT caption file (auto-detected if not provided)"
+    )
+
     args = parser.parse_args()
     slug = args.slug
-    
+
     # Auto-detect script file if not provided
     if not args.script_file:
         # Try multiple possible script file locations
         possible_script_files = [
-            os.path.join(os.path.dirname(__file__), '..', 'scripts', f'{slug}.txt'),
-            os.path.join(os.path.dirname(__file__), '..', 'scripts', f'2025-08-12_{slug}.txt'),
-            os.path.join(os.path.dirname(__file__), '..', 'scripts', f'{slug}_script.txt')
+            os.path.join(os.path.dirname(__file__), "..", "scripts", f"{slug}.txt"),
+            os.path.join(
+                os.path.dirname(__file__), "..", "scripts", f"2025-08-12_{slug}.txt"
+            ),
+            os.path.join(
+                os.path.dirname(__file__), "..", "scripts", f"{slug}_script.txt"
+            ),
         ]
-        
+
         script_file = None
         for possible_file in possible_script_files:
             if os.path.exists(possible_file):
                 script_file = possible_file
                 break
-        
+
         if not script_file:
-            print(f"Error: Script file not found. Tried:")
+            print("Error: Script file not found. Tried:")
             for possible_file in possible_script_files:
                 print(f"  - {possible_file}")
             print("Please provide --script-file or ensure script exists")
             sys.exit(1)
     else:
         script_file = args.script_file
-    
+
     # Auto-detect SRT file if not provided
     if not args.srt_file:
-        srt_file = os.path.join(os.path.dirname(__file__), '..', 'voiceovers', f'{slug}.srt')
+        srt_file = os.path.join(
+            os.path.dirname(__file__), "..", "voiceovers", f"{slug}.srt"
+        )
         if not os.path.exists(srt_file):
             srt_file = None
-            log.info(f"[pacing-kpi] SRT file not found, will use brief-based timing")
+            log.info("[pacing-kpi] SRT file not found, will use brief-based timing")
     else:
         srt_file = args.srt_file
-    
+
     # Load script
     try:
-        with open(script_file, 'r') as f:
+        with open(script_file, "r") as f:
             script_text = f.read()
     except Exception as e:
         print(f"Error loading script file {script_file}: {e}")
         sys.exit(1)
-    
+
     # Load actual scenescript data
-    scenescript_path = os.path.join(os.path.dirname(__file__), '..', 'scenescripts', f'{slug}.json')
+    scenescript_path = os.path.join(
+        os.path.dirname(__file__), "..", "scenescripts", f"{slug}.json"
+    )
     if os.path.exists(scenescript_path):
-        with open(scenescript_path, 'r') as f:
+        with open(scenescript_path, "r") as f:
             scenescript = json.load(f)
-        scenes = scenescript.get('scenes', [])
-        video_ms = sum(scene.get('duration_ms', 0) for scene in scenes)
-        log.info(f"[pacing-kpi] Loaded scenescript: {len(scenes)} scenes, {video_ms}ms total")
+        scenes = scenescript.get("scenes", [])
+        video_ms = sum(scene.get("duration_ms", 0) for scene in scenes)
+        log.info(
+            f"[pacing-kpi] Loaded scenescript: {len(scenes)} scenes, {video_ms}ms total"
+        )
     else:
         print(f"Error: Scenescript not found at {scenescript_path}")
         print("Please ensure scenescript exists at scenescripts/{slug}.json")
         sys.exit(1)
-    
+
     # Compute KPIs
     kpi_result = compute_pacing(script_text, scenes, video_ms, srt_file)
-    
+
     # Save report and update metadata
     save_pacing_report(slug, kpi_result)
     update_video_metadata(slug, kpi_result)
-    
+
     # Print concise summary as required by P5-5
     flags = []
-    if kpi_result.get('source') == 'vo':
-        flags.append('vo-timed')
-    if kpi_result.get('source') == 'brief':
-        flags.append('brief-timed')
-    
-    print(f"{kpi_result['words_per_sec']:.1f}wps {kpi_result['cuts_per_min']:.1f}cuts/min {kpi_result['avg_scene_s']:.1f}s avg {' '.join(flags)} adjusted=false")
-    
+    if kpi_result.get("source") == "vo":
+        flags.append("vo-timed")
+    if kpi_result.get("source") == "brief":
+        flags.append("brief-timed")
+
+    print(
+        f"{kpi_result['words_per_sec']:.1f}wps {kpi_result['cuts_per_min']:.1f}cuts/min {kpi_result['avg_scene_s']:.1f}s avg {' '.join(flags)} adjusted=false"
+    )
+
     print(f"\nPacing KPIs computed and saved successfully for {slug}!")
     print(f"Words/sec: {kpi_result['words_per_sec']:.2f}")
     print(f"Cuts/min: {kpi_result['cuts_per_min']:.2f}")

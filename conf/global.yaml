@@ -43,6 +43,7 @@ video:
   codec: "h264"
   preset: "fast"
   crf: 23
+  animatics_only: false  # Set to false to run full pipeline including video production
 
 llm:
   provider: "ollama"
@@ -119,3 +120,9 @@ upload:
 
 limits:
   max_retries: 2
+
+# Viral module configuration
+viral:
+  enabled: true                  # Enable/disable viral lab functionality
+  shorts_enabled: true           # Enable/disable shorts generation
+  seo_enabled: true              # Enable/disable SEO packaging

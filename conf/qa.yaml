@@ -1,0 +1,41 @@
+policy:
+  required_gates: ["script", "audio", "visuals", "video_master", "research", "monetization"]
+  warn_gates: []
+  block_on_warn: false         # when true, WARN also blocks (used by --strict)
+
+thresholds:
+  script:
+    wpm_min: 145
+    wpm_max: 175
+    require_cta: true
+    ban_tokens: ["[CITATION NEEDED]"]
+  
+  audio:
+    lufs_target: -14.0
+    lufs_tolerance: 0.5
+    truepeak_max_db: -1.5
+    lra_max: 11.0
+    sibilance_max_db: -18.0       # proxy band energy threshold (e.g., 6–10kHz)
+    silence_max_pct: 4.0
+    ducking_min_db: 3.0           # music reduction during VO
+  
+  visuals:
+    contrast_min_ratio: 4.5
+    safe_area_pct: 0.9
+    ssim_min: 0.93
+    scene_duration_tolerance_pct: 3.0
+  
+  video_master:
+    delivery_crf_min: 18
+    delivery_crf_max: 20
+    audio_bitrate_kbps_min: 320
+    audio_sample_rate_hz: 48000
+  
+  research:
+    min_citations_per_beat: 1
+    fact_guard: "block"           # "off" | "warn" | "block"
+  
+  monetization:
+    require_disclosure: true
+    require_utm: true
+    max_links: 20

@@ -5,18 +5,15 @@ Run this to check if VideoToolbox is available on your Mac.
 """
 
 import subprocess
-import sys
+
 
 def check_videotoolbox():
     """Check if VideoToolbox hardware acceleration is available."""
     try:
         result = subprocess.run(
-            ["ffmpeg", "-encoders"], 
-            capture_output=True, 
-            text=True, 
-            check=False
+            ["ffmpeg", "-encoders"], capture_output=True, text=True, check=False
         )
-        
+
         if result.returncode == 0:
             if "h264_videotoolbox" in result.stdout:
                 print("✓ VideoToolbox hardware acceleration is available")
@@ -31,7 +28,7 @@ def check_videotoolbox():
             print("✗ Could not run ffmpeg -encoders")
             print(f"  - Error: {result.stderr}")
             return False
-            
+
     except FileNotFoundError:
         print("✗ ffmpeg not found in PATH")
         print("  - Install ffmpeg to use hardware acceleration")
@@ -40,43 +37,42 @@ def check_videotoolbox():
         print(f"✗ Error checking VideoToolbox: {e}")
         return False
 
+
 def check_ffmpeg_version():
     """Check ffmpeg version and build info."""
     try:
         result = subprocess.run(
-            ["ffmpeg", "-version"], 
-            capture_output=True, 
-            text=True, 
-            check=False
+            ["ffmpeg", "-version"], capture_output=True, text=True, check=False
         )
-        
+
         if result.returncode == 0:
-            lines = result.stdout.split('\n')
+            lines = result.stdout.split("\n")
             version_line = lines[0] if lines else "Unknown"
             print(f"ffmpeg version: {version_line}")
-            
+
             # Check for VideoToolbox in build info
             if "videotoolbox" in result.stdout.lower():
                 print("✓ VideoToolbox support compiled into ffmpeg")
             else:
                 print("⚠ VideoToolbox support not found in ffmpeg build")
-                
+
         else:
             print("Could not get ffmpeg version")
-            
+
     except Exception as e:
         print(f"Error checking ffmpeg version: {e}")
+
 
 if __name__ == "__main__":
     print("Hardware Acceleration Test for Video Encoding")
     print("=" * 50)
-    
+
     check_ffmpeg_version()
     print()
-    
+
     has_hw = check_videotoolbox()
     print()
-    
+
     if has_hw:
         print("Your system is ready for hardware-accelerated video encoding!")
         print("Update your conf/global.yaml to use:")
@@ -88,6 +84,6 @@ if __name__ == "__main__":
         print("Update your conf/global.yaml to use:")
         print("  codec: 'libx264'")
         print("  use_hardware_acceleration: false")
-    
+
     print()
     print("Run 'python bin/assemble_video.py' to test with your configuration.")

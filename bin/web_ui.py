@@ -1,31 +1,28 @@
 #!/usr/bin/env python3
 import json
 import os
-import subprocess
-import time
+import queue
 import secrets
-import hashlib
+import subprocess
+import sys
+import threading
+import time
 from functools import wraps
 
-from flask import Flask, jsonify, request, abort, render_template_string, session
-from flask_socketio import SocketIO, emit, disconnect
-import threading
-import queue
-
-import sys
-import os
+from flask import Flask, jsonify, render_template_string, request, session
+from flask_socketio import SocketIO, emit
 
 # Add the parent directory to the path so we can import from bin
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from bin.core import BASE, load_env
 from bin.analytics_collector import MetricsCollector
+from bin.core import BASE, load_env
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)  # Generate a secure secret key
 
 # Initialize SocketIO with CORS support
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # Rate limiting storage (simple in-memory for demo)
 rate_limit_store = {}
@@ -42,51 +39,57 @@ broadcast_queue = queue.Queue()
 
 def requires_auth(f):
     """Authentication decorator with session management."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         env = load_env()
         required_pw = env.get("WEB_UI_PASSWORD", "")
-        
+
         if not required_pw:
             return f(*args, **kwargs)  # No auth required
-        
+
         # Check session first
-        if session.get('authenticated'):
+        if session.get("authenticated"):
             return f(*args, **kwargs)
-        
+
         # Check X-Auth-Token header
         provided = request.headers.get("X-Auth-Token", "")
         if provided and provided == required_pw:
-            session['authenticated'] = True
+            session["authenticated"] = True
             return f(*args, **kwargs)
-        
+
         return jsonify({"error": "unauthorized"}), 401
+
     return decorated_function
 
 
 def rate_limit(calls_per_minute=30):
     """Simple rate limiting decorator."""
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             client_ip = request.remote_addr
             current_time = time.time()
-            
+
             # Clean old entries
             rate_limit_store[client_ip] = [
-                timestamp for timestamp in rate_limit_store.get(client_ip, [])
+                timestamp
+                for timestamp in rate_limit_store.get(client_ip, [])
                 if current_time - timestamp < 60
             ]
-            
+
             # Check rate limit
             if len(rate_limit_store.get(client_ip, [])) >= calls_per_minute:
                 return jsonify({"error": "rate_limit_exceeded"}), 429
-            
+
             # Add current request
             rate_limit_store.setdefault(client_ip, []).append(current_time)
-            
+
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 
@@ -99,15 +102,15 @@ def tail(path, n=200):
 
 
 # WebSocket event handlers
-@socketio.on('connect')
+@socketio.on("connect")
 def handle_connect():
     """Handle client connection."""
     connected_clients.add(request.sid)
-    emit('status', {'type': 'connection', 'message': 'Connected to pipeline dashboard'})
+    emit("status", {"type": "connection", "message": "Connected to pipeline dashboard"})
     print(f"Client {request.sid} connected. Total clients: {len(connected_clients)}")
 
 
-@socketio.on('disconnect')
+@socketio.on("disconnect")
 def handle_disconnect():
     """Handle client disconnection."""
     connected_clients.discard(request.sid)
@@ -116,61 +119,59 @@ def handle_disconnect():
     print(f"Client {request.sid} disconnected. Total clients: {len(connected_clients)}")
 
 
-@socketio.on('subscribe_logs')
+@socketio.on("subscribe_logs")
 def handle_subscribe_logs(data):
     """Subscribe to real-time log updates."""
     log_watchers.add(request.sid)
-    source = data.get('source', 'state')
-    emit('log_subscription', {'status': 'subscribed', 'source': source})
-    
+    source = data.get("source", "state")
+    emit("log_subscription", {"status": "subscribed", "source": source})
+
     # Send initial log data
     log_sources = {
         "state": os.path.join(BASE, "jobs", "state.jsonl"),
         "pipeline": os.path.join(BASE, "logs", "pipeline.log"),
     }
-    
+
     if source in log_sources:
         content = tail(log_sources[source], 50)
-        emit('log_update', {
-            'source': source,
-            'content': content,
-            'timestamp': time.time()
-        })
+        emit(
+            "log_update",
+            {"source": source, "content": content, "timestamp": time.time()},
+        )
 
 
-@socketio.on('unsubscribe_logs')
+@socketio.on("unsubscribe_logs")
 def handle_unsubscribe_logs():
     """Unsubscribe from log updates."""
     log_watchers.discard(request.sid)
-    emit('log_subscription', {'status': 'unsubscribed'})
+    emit("log_subscription", {"status": "unsubscribed"})
 
 
-@socketio.on('subscribe_metrics')
+@socketio.on("subscribe_metrics")
 def handle_subscribe_metrics():
     """Subscribe to real-time metrics updates."""
     metrics_watchers.add(request.sid)
-    emit('metrics_subscription', {'status': 'subscribed'})
-    
+    emit("metrics_subscription", {"status": "subscribed"})
+
     # Send initial metrics
     try:
         metrics = analytics_collector.collect_system_metrics()
-        emit('metrics_update', {
-            'type': 'system',
-            'data': metrics,
-            'timestamp': time.time()
-        })
+        emit(
+            "metrics_update",
+            {"type": "system", "data": metrics, "timestamp": time.time()},
+        )
     except Exception as e:
-        emit('error', {'message': f'Failed to get initial metrics: {e}'})
+        emit("error", {"message": f"Failed to get initial metrics: {e}"})
 
 
-@socketio.on('unsubscribe_metrics')
+@socketio.on("unsubscribe_metrics")
 def handle_unsubscribe_metrics():
     """Unsubscribe from metrics updates."""
     metrics_watchers.discard(request.sid)
-    emit('metrics_subscription', {'status': 'unsubscribed'})
+    emit("metrics_subscription", {"status": "unsubscribed"})
 
 
-@socketio.on('request_full_update')
+@socketio.on("request_full_update")
 def handle_request_full_update():
     """Send complete dashboard update to client."""
     try:
@@ -178,15 +179,18 @@ def handle_request_full_update():
         state_data = get_pipeline_state()
         metrics_data = analytics_collector.collect_system_metrics()
         queue_data = get_upload_queue()
-        
-        emit('full_update', {
-            'state': state_data,
-            'metrics': metrics_data,
-            'queue': queue_data,
-            'timestamp': time.time()
-        })
+
+        emit(
+            "full_update",
+            {
+                "state": state_data,
+                "metrics": metrics_data,
+                "queue": queue_data,
+                "timestamp": time.time(),
+            },
+        )
     except Exception as e:
-        emit('error', {'message': f'Failed to get full update: {e}'})
+        emit("error", {"message": f"Failed to get full update: {e}"})
 
 
 def get_pipeline_state():
@@ -196,20 +200,20 @@ def get_pipeline_state():
     if os.path.exists(p):
         with open(p, "r", encoding="utf-8") as f:
             lines = [json.loads(x) for x in f.read().splitlines() if x.strip()]
-    
+
     recent_lines = lines[-20:] if lines else []
     step_counts = {}
     for line in lines:
-        step = line.get('step', 'unknown')
-        status = line.get('status', 'unknown')
+        step = line.get("step", "unknown")
+        status = line.get("status", "unknown")
         key = f"{step}:{status}"
         step_counts[key] = step_counts.get(key, 0) + 1
-    
+
     return {
         "count": len(lines),
         "last": (lines[-1] if lines else {}),
         "recent": recent_lines,
-        "step_counts": step_counts
+        "step_counts": step_counts,
     }
 
 
@@ -225,21 +229,22 @@ def get_upload_queue():
 
 def broadcast_update(update_type, data):
     """Broadcast updates to subscribed clients."""
-    if update_type == 'logs' and log_watchers:
-        socketio.emit('log_update', data, room=None)
-    elif update_type == 'metrics' and metrics_watchers:
-        socketio.emit('metrics_update', data, room=None)
-    elif update_type == 'state' and connected_clients:
-        socketio.emit('state_update', data, room=None)
+    if update_type == "logs" and log_watchers:
+        socketio.emit("log_update", data, room=None)
+    elif update_type == "metrics" and metrics_watchers:
+        socketio.emit("metrics_update", data, room=None)
+    elif update_type == "state" and connected_clients:
+        socketio.emit("state_update", data, room=None)
 
 
 def start_background_monitor():
     """Start background monitoring for real-time updates."""
+
     def monitor_logs():
         """Monitor log files for changes."""
         last_state_size = 0
         state_file = os.path.join(BASE, "jobs", "state.jsonl")
-        
+
         while True:
             try:
                 if os.path.exists(state_file):
@@ -247,46 +252,54 @@ def start_background_monitor():
                     if current_size > last_state_size and log_watchers:
                         # New log entries detected
                         content = tail(state_file, 10)  # Get last 10 lines
-                        broadcast_update('logs', {
-                            'source': 'state',
-                            'content': content,
-                            'timestamp': time.time(),
-                            'type': 'incremental'
-                        })
+                        broadcast_update(
+                            "logs",
+                            {
+                                "source": "state",
+                                "content": content,
+                                "timestamp": time.time(),
+                                "type": "incremental",
+                            },
+                        )
                         last_state_size = current_size
-                
+
                 time.sleep(2)  # Check every 2 seconds
             except Exception as e:
                 print(f"Log monitoring error: {e}")
                 time.sleep(5)
-    
+
     def monitor_metrics():
         """Monitor system metrics for changes."""
         last_metrics = None
-        
+
         while True:
             try:
                 if metrics_watchers:
                     current_metrics = analytics_collector.collect_system_metrics()
-                    
+
                     # Only broadcast if metrics changed significantly
-                    if last_metrics is None or metrics_changed(last_metrics, current_metrics):
-                        broadcast_update('metrics', {
-                            'type': 'system',
-                            'data': current_metrics,
-                            'timestamp': time.time()
-                        })
+                    if last_metrics is None or metrics_changed(
+                        last_metrics, current_metrics
+                    ):
+                        broadcast_update(
+                            "metrics",
+                            {
+                                "type": "system",
+                                "data": current_metrics,
+                                "timestamp": time.time(),
+                            },
+                        )
                         last_metrics = current_metrics
-                
+
                 time.sleep(10)  # Check every 10 seconds
             except Exception as e:
                 print(f"Metrics monitoring error: {e}")
                 time.sleep(15)
-    
+
     # Start monitoring threads
     log_thread = threading.Thread(target=monitor_logs, daemon=True)
     metrics_thread = threading.Thread(target=monitor_metrics, daemon=True)
-    
+
     log_thread.start()
     metrics_thread.start()
 
@@ -294,15 +307,15 @@ def start_background_monitor():
 def metrics_changed(old_metrics, new_metrics, threshold=5.0):
     """Check if metrics changed significantly enough to broadcast."""
     try:
-        old_cpu = old_metrics.get('cpu', {}).get('percent', 0)
-        new_cpu = new_metrics.get('cpu', {}).get('percent', 0)
-        
-        old_memory = old_metrics.get('memory', {}).get('percent', 0)
-        new_memory = new_metrics.get('memory', {}).get('percent', 0)
-        
+        old_cpu = old_metrics.get("cpu", {}).get("percent", 0)
+        new_cpu = new_metrics.get("cpu", {}).get("percent", 0)
+
+        old_memory = old_metrics.get("memory", {}).get("percent", 0)
+        new_memory = new_metrics.get("memory", {}).get("percent", 0)
+
         cpu_change = abs(new_cpu - old_cpu)
         memory_change = abs(new_memory - old_memory)
-        
+
         return cpu_change > threshold or memory_change > threshold
     except Exception:
         return True  # If we can't compare, assume changed
@@ -316,22 +329,24 @@ def api_state():
     if os.path.exists(p):
         with open(p, "r", encoding="utf-8") as f:
             lines = [json.loads(x) for x in f.read().splitlines() if x.strip()]
-    
+
     # Enhanced state information
     recent_lines = lines[-20:] if lines else []
     step_counts = {}
     for line in lines:
-        step = line.get('step', 'unknown')
-        status = line.get('status', 'unknown')
+        step = line.get("step", "unknown")
+        status = line.get("status", "unknown")
         key = f"{step}:{status}"
         step_counts[key] = step_counts.get(key, 0) + 1
-    
-    return jsonify({
-        "count": len(lines), 
-        "last": (lines[-1] if lines else {}),
-        "recent": recent_lines,
-        "step_counts": step_counts
-    })
+
+    return jsonify(
+        {
+            "count": len(lines),
+            "last": (lines[-1] if lines else {}),
+            "recent": recent_lines,
+            "step_counts": step_counts,
+        }
+    )
 
 
 @app.get("/api/topics")
@@ -352,23 +367,25 @@ def api_logs():
         "state": os.path.join(BASE, "jobs", "state.jsonl"),
         "pipeline": os.path.join(BASE, "logs", "pipeline.log"),
     }
-    
+
     source = request.args.get("source", "state")
     lines = int(request.args.get("lines", 200))
-    
+
     if source not in log_sources:
         return jsonify({"error": "invalid log source"}), 400
-    
+
     log_path = log_sources[source]
     content = tail(log_path, lines)
-    
-    return jsonify({
-        "source": source,
-        "lines": lines,
-        "content": content,
-        "path": log_path,
-        "exists": os.path.exists(log_path)
-    })
+
+    return jsonify(
+        {
+            "source": source,
+            "lines": lines,
+            "content": content,
+            "path": log_path,
+            "exists": os.path.exists(log_path),
+        }
+    )
 
 
 @app.get("/api/queue")
@@ -392,12 +409,11 @@ def api_run():
         "cluster": "bin/llm_cluster.py",
         "outline": "bin/llm_outline.py",
         "script": "bin/llm_script.py",
-        "assets": "bin/fetch_assets.py",
+        "storyboard": "bin/storyboard_plan.py",
         "tts": "bin/tts_generate.py",
         "captions": "bin/generate_captions.py",
         "assemble": "bin/assemble_video.py",
         "stage": "bin/upload_stage.py",
-
     }
     if step not in mapping:
         return jsonify({"error": "unknown step"}), 400
@@ -468,6 +484,7 @@ def api_analytics_alerts():
 # CUTOUT STYLE PREVIEW ENDPOINTS
 # ============================================================================
 
+
 @app.get("/api/cutout/style")
 @rate_limit(60)
 def api_cutout_style_get():
@@ -476,11 +493,12 @@ def api_cutout_style_get():
         style_path = os.path.join(BASE, "assets", "brand", "style.yaml")
         if not os.path.exists(style_path):
             return jsonify({"error": "style.yaml not found"}), 404
-        
-        with open(style_path, 'r', encoding='utf-8') as f:
+
+        with open(style_path, "r", encoding="utf-8") as f:
             import yaml
+
             style_data = yaml.safe_load(f)
-        
+
         return jsonify(style_data)
     except Exception as e:
         return jsonify({"error": f"Failed to load style: {str(e)}"}), 500
@@ -494,30 +512,36 @@ def api_cutout_style_update():
     try:
         if not request.is_json:
             return jsonify({"error": "Content-Type must be application/json"}), 400
-        
+
         style_data = request.get_json()
         if not style_data:
             return jsonify({"error": "No style data provided"}), 400
-        
+
         # Validate required fields
-        required_fields = ['colors', 'fonts', 'font_sizes']
+        required_fields = ["colors", "fonts", "font_sizes"]
         for field in required_fields:
             if field not in style_data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
-        
+
         # Validate font_sizes has required keys
-        required_font_sizes = ['hook', 'body', 'lower_third']
-        if not all(key in style_data.get('font_sizes', {}) for key in required_font_sizes):
-            return jsonify({"error": f"font_sizes must include: {required_font_sizes}"}), 400
-        
+        required_font_sizes = ["hook", "body", "lower_third"]
+        if not all(
+            key in style_data.get("font_sizes", {}) for key in required_font_sizes
+        ):
+            return (
+                jsonify({"error": f"font_sizes must include: {required_font_sizes}"}),
+                400,
+            )
+
         # Save to style.yaml
         style_path = os.path.join(BASE, "assets", "brand", "style.yaml")
         os.makedirs(os.path.dirname(style_path), exist_ok=True)
-        
-        with open(style_path, 'w', encoding='utf-8') as f:
+
+        with open(style_path, "w", encoding="utf-8") as f:
             import yaml
+
             yaml.dump(style_data, f, default_flow_style=False, allow_unicode=True)
-        
+
         return jsonify({"status": "success", "message": "Style updated successfully"})
     except Exception as e:
         return jsonify({"error": f"Failed to update style: {str(e)}"}), 500
@@ -529,91 +553,108 @@ def api_cutout_preview():
     """Generate a short preview MP4 for style testing."""
     try:
         scene_type = request.args.get("scene", "hook")
-        
+
         # Create previews directory
         previews_dir = "/tmp/previews"
         os.makedirs(previews_dir, exist_ok=True)
-        
+
         # Generate unique filename
         import time
+
         timestamp = int(time.time())
-        preview_file = os.path.join(previews_dir, f"preview_{scene_type}_{timestamp}.mp4")
-        
+        preview_file = os.path.join(
+            previews_dir, f"preview_{scene_type}_{timestamp}.mp4"
+        )
+
         # Check if we already have a recent preview
         if os.path.exists(preview_file):
-            return jsonify({
-                "status": "success",
-                "preview_url": f"/tmp/previews/{os.path.basename(preview_file)}",
-                "message": "Using existing preview"
-            })
-        
+            return jsonify(
+                {
+                    "status": "success",
+                    "preview_url": f"/tmp/previews/{os.path.basename(preview_file)}",
+                    "message": "Using existing preview",
+                }
+            )
+
         # Import required modules for preview generation
         try:
-            from bin.cutout.sdk import BrandStyle, load_style, VIDEO_W, VIDEO_H, FPS
-            from bin.cutout.anim_fx import make_text_clip, make_background_clip
-            from moviepy.editor import CompositeVideoClip, ColorClip
+            from moviepy.editor import ColorClip, CompositeVideoClip
+
+            from bin.cutout.anim_fx import make_text_clip
+            from bin.cutout.sdk import FPS, VIDEO_H, VIDEO_W, load_style
         except ImportError as e:
-            return jsonify({"error": f"Preview generation not available: {str(e)}"}), 500
-        
+            return (
+                jsonify({"error": f"Preview generation not available: {str(e)}"}),
+                500,
+            )
+
         # Load current style
         style = load_style()
-        
+
         # Create a simple preview based on scene type
         if scene_type == "hook":
             # Hook scene: large text with background
             text_clip = make_text_clip("Sample Hook Text", style, "hook")
             text_clip = text_clip.set_duration(3.0)
-            
+
             # Create a simple background
             bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(0, 0, 0), duration=3.0)
-            
+
             # Composite the clips
             preview = CompositeVideoClip([bg_clip, text_clip])
-            
+
         elif scene_type == "body":
             # Body scene: smaller text with background
-            text_clip = make_text_clip("Sample body text for demonstration", style, "body")
+            text_clip = make_text_clip(
+                "Sample body text for demonstration", style, "body"
+            )
             text_clip = text_clip.set_duration(3.0)
-            
-            bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(255, 255, 255), duration=3.0)
+
+            bg_clip = ColorClip(
+                size=(VIDEO_W, VIDEO_H), color=(255, 255, 255), duration=3.0
+            )
             preview = CompositeVideoClip([bg_clip, text_clip])
-            
+
         elif scene_type == "lower_third":
             # Lower third scene: small text at bottom
             text_clip = make_text_clip("Lower Third", style, "lower_third")
             text_clip = text_clip.set_duration(3.0)
             text_clip = text_clip.set_position(("center", "bottom"))
-            
+
             bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(0, 0, 0), duration=3.0)
             preview = CompositeVideoClip([bg_clip, text_clip])
-            
+
         else:
             # Default scene
             text_clip = make_text_clip("Preview Scene", style, "body")
             text_clip = text_clip.set_duration(3.0)
-            
-            bg_clip = ColorClip(size=(VIDEO_W, VIDEO_H), color=(128, 128, 128), duration=3.0)
+
+            bg_clip = ColorClip(
+                size=(VIDEO_W, VIDEO_H), color=(128, 128, 128), duration=3.0
+            )
             preview = CompositeVideoClip([bg_clip, text_clip])
-        
+
         # Write preview to file
         preview.write_videofile(
             preview_file,
             fps=FPS,
-            codec='libx264',
-            audio_codec='aac',
+            codec="libx264",
+            audio_codec="aac",
             verbose=False,
-            logger=None
+            logger=None,
         )
-        
-        return jsonify({
-            "status": "success",
-            "preview_url": f"/tmp/previews/{os.path.basename(preview_file)}",
-            "message": f"Preview generated for {scene_type} scene",
-            "duration": 3.0,
-            "resolution": f"{VIDEO_W}x{VIDEO_H}",
-            "fps": FPS
-        })
-        
+
+        return jsonify(
+            {
+                "status": "success",
+                "preview_url": f"/tmp/previews/{os.path.basename(preview_file)}",
+                "message": f"Preview generated for {scene_type} scene",
+                "duration": 3.0,
+                "resolution": f"{VIDEO_W}x{VIDEO_H}",
+                "fps": FPS,
+            }
+        )
+
     except Exception as e:
         return jsonify({"error": f"Failed to generate preview: {str(e)}"}), 500
 
@@ -621,7 +662,7 @@ def api_cutout_preview():
 @app.get("/analytics")
 def analytics_dashboard():
     """Advanced analytics dashboard with charts and metrics."""
-    html = '''
+    html = """
 <!doctype html>
 <html><head><meta charset='utf-8'><title>Analytics Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -982,7 +1023,7 @@ if (!initWebSocket()) {
 }
 </script>
 </body></html>
-    '''
+    """
     return html
 
 
@@ -1573,6 +1614,6 @@ window.addEventListener('beforeunload', () => {
 if __name__ == "__main__":
     # Start background monitoring
     start_background_monitor()
-    
+
     # Run with SocketIO support
     socketio.run(app, host="0.0.0.0", port=8099, debug=False)

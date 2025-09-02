@@ -1,13 +1,15 @@
 # bin/utils/subproc.py
-from collections import deque
-import subprocess
 import os
-from typing import Iterable, Optional, Sequence, Mapping, Union
+import subprocess
+from collections import deque
+from typing import Mapping, Optional, Sequence
+
 
 def _ensure_parent(path: str) -> None:
     if not path:
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
+
 
 def run_streamed(
     cmd: Sequence[str],

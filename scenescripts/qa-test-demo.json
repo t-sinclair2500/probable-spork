@@ -1,0 +1,19 @@
+{
+  "scenes": [
+    {
+      "id": "scene1",
+      "elements": [
+        {
+          "type": "text",
+          "color": "#FFFFFF",
+          "bbox": [
+            0.1,
+            0.1,
+            0.8,
+            0.2
+          ]
+        }
+      ]
+    }
+  ]
+}

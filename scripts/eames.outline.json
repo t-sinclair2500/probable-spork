@@ -1,0 +1,61 @@
+{
+  "title": "eames: Narrative History",
+  "topic": "eames",
+  "target_duration_sec": 60,
+  "intent": "narrative_history",
+  "sections": [
+    {
+      "id": "hook",
+      "title": "Opening Hook",
+      "target_duration_ms": 6666,
+      "needs_citations": false,
+      "content": "[Opening Hook content will be generated]",
+      "notes": "Target duration: 6666ms, Citations required: False"
+    },
+    {
+      "id": "context",
+      "title": "Historical Context",
+      "target_duration_ms": 10000,
+      "needs_citations": true,
+      "content": "[Historical Context content will be generated]",
+      "notes": "Target duration: 10000ms, Citations required: True"
+    },
+    {
+      "id": "key_figure",
+      "title": "Key Figure Introduction",
+      "target_duration_ms": 12500,
+      "needs_citations": true,
+      "content": "[Key Figure Introduction content will be generated]",
+      "notes": "Target duration: 12500ms, Citations required: True"
+    },
+    {
+      "id": "major_event",
+      "title": "Major Historical Event",
+      "target_duration_ms": 15000,
+      "needs_citations": true,
+      "content": "[Major Historical Event content will be generated]",
+      "notes": "Target duration: 15000ms, Citations required: True"
+    },
+    {
+      "id": "impact",
+      "title": "Lasting Impact",
+      "target_duration_ms": 10000,
+      "needs_citations": true,
+      "content": "[Lasting Impact content will be generated]",
+      "notes": "Target duration: 10000ms, Citations required: True"
+    },
+    {
+      "id": "closing",
+      "title": "Reflective Close",
+      "target_duration_ms": 5833,
+      "needs_citations": false,
+      "content": "[Reflective Close content will be generated]",
+      "notes": "Target duration: 5833ms, Citations required: False"
+    }
+  ],
+  "tone": "curious, authoritative",
+  "evidence_load": "high",
+  "cta_policy": "omit",
+  "generated_at": "/Users/tylersinclair/Documents/GitHub/probable-spork",
+  "model_used": "llama3.2:3b"
+}

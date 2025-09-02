@@ -40,10 +40,7 @@ tts:
   openai_enabled: false
 
 assets:
-  providers:
-    - "pixabay"
-    - "pexels"
-    # - "unsplash"   # Optional; requires UNSPLASH_ACCESS_KEY in .env and attribution
+  providers: []  # Legacy stock providers removed - using procedural generation
   max_per_section: 3
 
 # Music bed policy configuration

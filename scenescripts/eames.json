@@ -4,17 +4,17 @@
   "scenes": [
     {
       "id": "scene_000",
-      "duration_ms": 15000,
+      "duration_ms": 30000,
       "bg": "gradient1",
       "audio_cue": null,
       "elements": [
         {
           "id": "scene_000_main",
           "type": "text",
-          "content": "Welcome to our 90-second history of Ray and Charles Eames, two design...",
+          "content": "2. Collaborate with others to create something special. 3. Sketch and experiment...",
           "asset_path": null,
-          "x": 306.0,
-          "y": 180.0,
+          "x": 306,
+          "y": 180,
           "width": null,
           "height": null,
           "keyframes": [
@@ -35,7 +35,7 @@
               "opacity": 1.0
             },
             {
-              "t": 14700,
+              "t": 29700,
               "x": null,
               "y": null,
               "scale": null,
@@ -43,7 +43,7 @@
               "opacity": 1.0
             },
             {
-              "t": 15000,
+              "t": 30000,
               "x": null,
               "y": null,
               "scale": null,
@@ -61,269 +61,17 @@
         }
       ],
       "metadata": {
-        "duration_rationale": "Used duration_ms from grounded beats",
-        "duration_strategy": "beat"
-      }
-    },
-    {
-      "id": "scene_001",
-      "duration_ms": 20000,
-      "bg": "gradient1",
-      "audio_cue": null,
-      "elements": [
-        {
-          "id": "scene_001_main",
-          "type": "text",
-          "content": "Tip #1: Think outside the box \u2013 or in this case, the...",
-          "asset_path": null,
-          "x": 306.0,
-          "y": 180.0,
-          "width": null,
-          "height": null,
-          "keyframes": [
-            {
-              "t": 0,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            },
-            {
-              "t": 200,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 19700,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 20000,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            }
-          ],
-          "style": {
-            "font_size": "body",
-            "text_align": "center",
-            "max_width": 1152,
-            "color": "#111827"
-          },
-          "metadata": null
-        }
-      ],
-      "metadata": {
-        "duration_rationale": "Used duration_ms from grounded beats",
-        "duration_strategy": "beat"
-      }
-    },
-    {
-      "id": "scene_002",
-      "duration_ms": 20000,
-      "bg": "gradient1",
-      "audio_cue": null,
-      "elements": [
-        {
-          "id": "scene_002_main",
-          "type": "text",
-          "content": "Tip #2: Collaborate with others to create something truly special. Charles and...",
-          "asset_path": null,
-          "x": 306.0,
-          "y": 180.0,
-          "width": null,
-          "height": null,
-          "keyframes": [
-            {
-              "t": 0,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            },
-            {
-              "t": 200,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 19700,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 20000,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            }
-          ],
-          "style": {
-            "font_size": "body",
-            "text_align": "center",
-            "max_width": 1152,
-            "color": "#111827"
-          },
-          "metadata": null
-        }
-      ],
-      "metadata": {
-        "duration_rationale": "Used duration_ms from grounded beats",
-        "duration_strategy": "beat"
-      }
-    },
-    {
-      "id": "scene_003",
-      "duration_ms": 20000,
-      "bg": "gradient1",
-      "audio_cue": null,
-      "elements": [
-        {
-          "id": "scene_003_main",
-          "type": "text",
-          "content": "Tip #3: The power of sketching and experimentation is still unparalleled today.",
-          "asset_path": null,
-          "x": 306.0,
-          "y": 180.0,
-          "width": null,
-          "height": null,
-          "keyframes": [
-            {
-              "t": 0,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            },
-            {
-              "t": 200,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 19700,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 20000,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            }
-          ],
-          "style": {
-            "font_size": "body",
-            "text_align": "center",
-            "max_width": 1152,
-            "color": "#111827"
-          },
-          "metadata": null
-        }
-      ],
-      "metadata": {
-        "duration_rationale": "Used duration_ms from grounded beats",
-        "duration_strategy": "beat"
-      }
-    },
-    {
-      "id": "scene_004",
-      "duration_ms": 15000,
-      "bg": "gradient1",
-      "audio_cue": null,
-      "elements": [
-        {
-          "id": "scene_004_main",
-          "type": "text",
-          "content": "So what can we learn from the Eameses? Here are five quick...",
-          "asset_path": null,
-          "x": 306.0,
-          "y": 180.0,
-          "width": null,
-          "height": null,
-          "keyframes": [
-            {
-              "t": 0,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            },
-            {
-              "t": 200,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 14700,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 1.0
-            },
-            {
-              "t": 15000,
-              "x": null,
-              "y": null,
-              "scale": null,
-              "rotate": null,
-              "opacity": 0.0
-            }
-          ],
-          "style": {
-            "font_size": "body",
-            "text_align": "center",
-            "max_width": 1152,
-            "color": "#111827"
-          },
-          "metadata": null
-        }
-      ],
-      "metadata": {
-        "duration_rationale": "Used duration_ms from grounded beats",
-        "duration_strategy": "beat"
+        "duration_rationale": "Distributed 90000ms across 1 beats using word-weighted strategy",
+        "duration_strategy": "weighted"
       }
     }
   ],
   "metadata": {
-    "total_scenes": 5,
-    "total_duration_ms": 90000,
+    "total_scenes": 1,
+    "total_duration_ms": 30000,
     "target_duration_ms": 90000,
-    "deviation_pct": 0.0,
-    "timing_compliant": 1,
+    "deviation_pct": 66.67,
+    "timing_compliant": 0,
     "timing_tolerance_pct": 5,
     "truncation_count": 0
   }

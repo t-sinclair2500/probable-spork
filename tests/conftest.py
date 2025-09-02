@@ -9,7 +9,6 @@ This module provides pytest fixtures and monkeypatching to ensure:
 
 import os
 import sys
-from unittest.mock import patch
 
 import pytest
 import requests
@@ -28,7 +27,7 @@ def test_config():
     return load_config()
 
 
-@pytest.fixture(scope="session") 
+@pytest.fixture(scope="session")
 def test_env():
     """Provide test environment variables"""
     return dict(os.environ)
@@ -83,11 +82,11 @@ def temp_fixtures_dir(tmp_path):
     """Create temporary fixtures directory for testing"""
     fixtures_dir = tmp_path / "assets" / "fixtures"
     fixtures_dir.mkdir(parents=True)
-    
+
     # Create generic fixtures subdirectory
     generic_dir = fixtures_dir / "_generic"
     generic_dir.mkdir()
-    
+
     return str(fixtures_dir)
 
 
@@ -117,78 +116,45 @@ def sample_outline():
             {
                 "title": "Introduction",
                 "beats": ["Welcome message", "Tool overview"],
-                "broll": ["typing on keyboard", "computer screen"]
+                "broll": ["typing on keyboard", "computer screen"],
             },
             {
-                "title": "Productivity Tools", 
+                "title": "Productivity Tools",
                 "beats": ["Tool selection", "Use cases"],
-                "broll": ["software interface", "workflow automation"]
-            }
+                "broll": ["software interface", "workflow automation"],
+            },
         ],
         "tags": ["ai", "productivity", "tools"],
         "tone": "helpful",
-        "target_len_sec": 30
+        "target_len_sec": 30,
     }
 
 
 class MockResponse:
     """Mock HTTP response for testing"""
-    
+
     def __init__(self, json_data=None, status_code=200, content=b""):
         self.json_data = json_data or {}
         self.status_code = status_code
         self.content = content
         self.headers = {"content-type": "application/json"}
-    
+
     def json(self):
         return self.json_data
-    
+
     def raise_for_status(self):
         if self.status_code >= 400:
             raise requests.HTTPError(f"HTTP {self.status_code}")
 
 
-@pytest.fixture
-def mock_pixabay_response():
-    """Mock successful Pixabay API response"""
-    return MockResponse({
-        "hits": [
-            {
-                "id": 12345,
-                "webformatURL": "https://example.com/test1.jpg",
-                "largeImageURL": "https://example.com/test1_large.jpg", 
-                "user": "test_user",
-                "tags": "test, image",
-                "type": "photo"
-            }
-        ],
-        "total": 1
-    })
-
-
-@pytest.fixture
-def mock_pexels_response():
-    """Mock successful Pexels API response"""
-    return MockResponse({
-        "photos": [
-            {
-                "id": 67890,
-                "src": {
-                    "original": "https://example.com/pexels_test.jpg",
-                    "large": "https://example.com/pexels_test_large.jpg"
-                },
-                "photographer": "Test Photographer",
-                "alt": "Test image"
-            }
-        ],
-        "total_results": 1
-    })
+# Legacy stock provider fixtures removed - using procedural generation
 
 
 def pytest_configure(config):
     """Configure pytest markers"""
     config.addinivalue_line(
-        "markers", "liveapi: marks tests that require live API access (disabled by default)"
+        "markers",
+        "liveapi: marks tests that require live API access (disabled by default)",
     )
     config.addinivalue_line(
         "markers", "reuse: marks tests that use fixture reuse mode (default)"
@@ -201,7 +167,7 @@ def pytest_collection_modifyitems(config, items):
         # Mark live API tests
         if "live" in item.nodeid or "liveapi" in item.keywords:
             item.add_marker(pytest.mark.liveapi)
-        
+
         # Mark reuse tests (most tests should be reuse by default)
         if "reuse" in item.nodeid or "reuse" not in item.keywords:
             item.add_marker(pytest.mark.reuse)

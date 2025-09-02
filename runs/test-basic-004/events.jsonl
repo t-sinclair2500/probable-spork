@@ -1,1 +1,0 @@
-{"ts": "2025-08-14T16:24:49.424250+00:00", "type": "test_event", "stage": null, "status": null, "message": "Test event message", "payload": {"test": true}}

@@ -30,6 +30,8 @@ execution:
     - generate_captions     # Generate captions (optional)
     - assemble_video        # Assemble final video
     - make_thumbnail        # Generate thumbnail
+    - quality_gates         # Quality assurance checks
+    - viral_lab            # Viral growth variants (optional)
     - upload_stage          # Stage for upload
   
   

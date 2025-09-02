@@ -1,17 +1,21 @@
 # bin/utils/http.py
 import time
 from typing import Any, Dict, Optional, Tuple
+
 import requests
 
 DEFAULT_TIMEOUT = 60.0
+
 
 def make_session() -> requests.Session:
     s = requests.Session()
     # Do NOT set a session-wide timeout; enforce per-call.
     return s
 
+
 def _should_retry(status: int) -> bool:
     return status >= 500 or status == 429
+
 
 def request_json(
     session: requests.Session,
@@ -37,7 +41,7 @@ def request_json(
                 timeout=timeout,
             )
             if _should_retry(resp.status_code) and attempt < retries:
-                time.sleep(backoff_sec * (2 ** attempt))
+                time.sleep(backoff_sec * (2**attempt))
                 continue
             # Raise for 4xx/5xx to bubble a clean error
             resp.raise_for_status()
@@ -46,7 +50,7 @@ def request_json(
         except requests.RequestException as e:
             last_exc = e
             if attempt < retries:
-                time.sleep(backoff_sec * (2 ** attempt))
+                time.sleep(backoff_sec * (2**attempt))
             else:
                 raise
     # Should not reach here

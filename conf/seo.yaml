@@ -1,0 +1,76 @@
+# SEO packaging configuration
+# Used by bin/packaging/seo_packager.py for optimizing video metadata
+
+templates:
+  # Template patterns for different content types
+  title:
+    pattern: "{title} ({year})"
+    max_length: 100
+    include_keywords: true
+  
+  description:
+    pattern: "{hook}\n\n{summary}\n\n{chapters}\n\n{cta}"
+    max_length: 5000
+    include_timestamp: true
+    include_links: true
+  
+  tags:
+    max_tags: 15
+    include_auto_generated: true
+    include_brief_keywords: true
+    include_topic_tags: true
+
+tags:
+  max_tags: 15
+  min_tags: 5
+  auto_generate: true
+  include_brief_keywords: true
+  include_topic_tags: true
+  exclude_common: ["video", "youtube", "watch", "subscribe"]
+
+chapters:
+  enabled: true
+  auto_generate: true
+  max_chapters: 10
+  min_chapter_duration: 30  # seconds
+  include_timestamps: true
+  format: "00:00 Introduction\n00:30 Main Point 1\n01:00 Main Point 2"
+
+cta:
+  # Call-to-action configuration
+  enabled: true
+  text: "Subscribe for more content like this!"
+  position: "end"  # start, middle, end
+  duration_sec: 5
+  background_color: "#ff0000"
+  text_color: "#ffffff"
+  include_subscribe_button: true
+
+end_screen:
+  # End screen configuration
+  enabled: true
+  duration_sec: 10
+  overlay_seconds: 10  # How many seconds from the end to overlay CTA
+  elements:
+    - type: "subscribe"
+      position: "top_left"
+      size: "large"
+    - type: "playlist"
+      position: "top_right"
+      size: "medium"
+    - type: "video"
+      position: "bottom_left"
+      size: "medium"
+    - type: "channel"
+      position: "bottom_right"
+      size: "large"
+  
+  background:
+    color: "#000000"
+    opacity: 0.8
+  
+  text:
+    title: "Thanks for watching!"
+    subtitle: "Don't forget to subscribe"
+    font_size: 36
+    color: "#ffffff"

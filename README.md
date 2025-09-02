@@ -222,6 +222,54 @@ venv/bin/python --version  # Should show Python 3.11.x
 - **Provider Reliability**: Automated tracking and optimization recommendations
 - **Real-Time Monitoring**: Background file watching with intelligent change detection
 
+## Viral Lab
+
+The Viral Lab module generates optimized hooks, titles, and thumbnails for maximum engagement using local LLM scoring with heuristic fallback.
+
+### Quickstart: Viral
+
+**Run Viral Lab for a script:**
+```bash
+# Generate viral variants for the latest script
+python3 bin/viral/demo.py
+
+# Generate for specific slug
+python3 bin/viral/run.py --slug my-video-slug
+
+# Interactive selection of variants
+python3 bin/viral/chooser.py --slug my-video-slug --interactive
+```
+
+**Enable/Disable Viral steps in pipeline:**
+```bash
+# Default: all viral steps enabled
+python3 bin/run_pipeline.py
+
+# Disable specific viral steps
+python3 bin/run_pipeline.py --no-viral --no-shorts --no-seo
+
+# Enable only specific steps
+python3 bin/run_pipeline.py --enable-viral --enable-shorts --no-seo
+```
+
+**Configuration:**
+- **Viral Lab**: `conf/viral.yaml` - Hook/title patterns, scoring weights, thumbnail settings
+- **Shorts Generation**: `conf/shorts.yaml` - Vertical video settings, crop, overlays, encoding
+- **SEO Packaging**: `conf/seo.yaml` - Metadata templates, tags, chapters, CTA settings
+- **Model Settings**: `conf/models.yaml` - LLM configuration for viral scoring
+
+**Artifacts:**
+- **Hooks/Titles**: `videos/{slug}/metadata.json` - Scored variants with selections
+- **Thumbnails**: `videos/{slug}/thumbs/` - Generated thumbnail variants
+- **Shorts**: `videos/{slug}/shorts/` - Vertical video cuts
+- **SEO Data**: `videos/{slug}/seo/` - Optimized metadata and end screens
+
+**LLM Integration:**
+- Uses `llama3.2:3b` with 20-second timeout for scoring
+- Graceful fallback to heuristics if LLM unavailable
+- Deterministic results with configurable seed (default: 1337)
+- Per-request timeout handling with exponential backoff
+
 ## Monetization Strategy
 
 ⚠️ **Important**: This pipeline generates high-quality content but **does not include monetization mechanisms**. See `MONETIZATION_STRATEGY.md` for:
@@ -263,8 +311,21 @@ For comprehensive documentation, see the organized structure in the `docs/` dire
 - **Development**: [docs/development/](docs/development/) - Workflow and best practices
 - **Technical**: [docs/technical/](docs/technical/) - Engine specs and technical deep-dives
 
-## Configuration reference
+## Configuration
 
+### Config Precedence
+Configuration follows strict precedence order (low → high):
+
+1. **Defaults in code** (Pydantic model defaults)
+2. **Base configs**: `conf/global.yaml`, `conf/pipeline.yaml`, `conf/research.yaml`, `conf/models.yaml`
+3. **Profile overlay**: `conf/m2_8gb_optimized.yaml` or `conf/pi_8gb.yaml`
+4. **Environment variables** (e.g., `OLLAMA_*`, `SHORT_RUN_SECS`)
+5. **CLI flags** (highest precedence)
+
+### Research Policy
+Research and grounding policy lives **only** in `conf/research.yaml`. `conf/models.yaml` defines model names & options, not policy.
+
+### Environment Variables
 - `.env` (copy from `.env.example`)
   - PIXABAY_API_KEY, PEXELS_API_KEY (assets)
   - Optional: UNSPLASH_ACCESS_KEY (only if enabled later)
@@ -273,10 +334,15 @@ For comprehensive documentation, see the organized structure in the `docs/` dire
   
   - YOUTUBE_UPLOAD_DRY_RUN=true|false (controlled by centralized flags)
 
+### Config Files
 - `conf/global.yaml`
   - `limits.max_retries` controls API backoff retries for providers.
   - `assets.providers` currently supports `pixabay`, `pexels`.
   - To add Unsplash, enable in config and add key to `.env` (code support TBD).
+
+- `conf/research.yaml` - Research policy, grounding settings, domain allowlists
+- `conf/models.yaml` - Model names and LLM options only
+- `conf/pipeline.yaml` - Pipeline step configuration
 
 - `conf/sources.yaml` has been archived; use `.env` for keys.
 After running `scripts/install_systemd_and_logrotate.sh`, visit:

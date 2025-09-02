@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
-import os
-import sqlite3
-import time
 import argparse
 import json
+import os
+import sqlite3
 
 # Ensure repo root on path
 import sys
+import time
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from bin.core import BASE, get_logger, guard_system, load_config, load_env, log_state, single_lock  # noqa: E402
 import requests
+
+from bin.core import (  # noqa: E402
+    BASE,
+    get_logger,
+    guard_system,
+    load_config,
+    load_env,
+    log_state,
+    single_lock,
+)
 
 log = get_logger("niche_trends")
 
@@ -61,11 +70,10 @@ def insert_row(con: sqlite3.Connection, source: str, title: str, tags: str):
 def backoff_delays(max_retries: int = 2):
     import random
 
-    return [min(30.0, (2 ** i) + random.uniform(0, 1)) for i in range(max_retries + 1)]
+    return [min(30.0, (2**i) + random.uniform(0, 1)) for i in range(max_retries + 1)]
 
 
 def http_get_json(url: str, timeout: int = 30) -> dict:
-    import requests
 
     r = requests.get(url, timeout=timeout)
     if r.status_code == 429:
@@ -98,7 +106,9 @@ def fetch_youtube(env: dict, cfg) -> int:
                     for it in items:
                         sn = it.get("snippet", {})
                         title = sn.get("title", "").strip()
-                        tags = ",".join(sn.get("tags", [])[:10]) if sn.get("tags") else ""
+                        tags = (
+                            ",".join(sn.get("tags", [])[:10]) if sn.get("tags") else ""
+                        )
                         if title:
                             insert_row(con, "youtube", title, tags)
                             total += 1
@@ -107,6 +117,7 @@ def fetch_youtube(env: dict, cfg) -> int:
                 # If category-specific call 404s, try without category as a fallback
                 try:
                     import requests as _rq  # local alias to check HTTPError type safely
+
                     is_http_err = isinstance(e, _rq.exceptions.HTTPError)
                     status = getattr(getattr(e, "response", None), "status_code", None)
                 except Exception:
@@ -121,14 +132,26 @@ def fetch_youtube(env: dict, cfg) -> int:
                             for it in items:
                                 sn = it.get("snippet", {})
                                 title = sn.get("title", "").strip()
-                                tags = ",".join(sn.get("tags", [])[:10]) if sn.get("tags") else ""
+                                tags = (
+                                    ",".join(sn.get("tags", [])[:10])
+                                    if sn.get("tags")
+                                    else ""
+                                )
                                 if title:
                                     insert_row(con, "youtube", title, tags)
                                     total += 1
-                        log_state("niche_trends_youtube", "INFO", f"cat={cat};fallback_no_category_used")
+                        log_state(
+                            "niche_trends_youtube",
+                            "INFO",
+                            f"cat={cat};fallback_no_category_used",
+                        )
                         break
                     except Exception as fe:
-                        log_state("niche_trends_youtube", "WARN", f"cat={cat};fallback_err:{fe}")
+                        log_state(
+                            "niche_trends_youtube",
+                            "WARN",
+                            f"cat={cat};fallback_err:{fe}",
+                        )
                         time.sleep(delay)
                         continue
                 else:
@@ -168,7 +191,10 @@ def fetch_reddit(env: dict, cfg) -> int:
     cid = env.get("REDDIT_CLIENT_ID")
     csecret = env.get("REDDIT_CLIENT_SECRET")
     uagent = env.get("REDDIT_USER_AGENT") or "yt-pipeline/0.1 by pi"
-    subs = (env.get("REDDIT_SUBREDDITS") or "technology,AskReddit,worldnews,science,AskScience").split(",")
+    subs = (
+        env.get("REDDIT_SUBREDDITS")
+        or "technology,AskReddit,worldnews,science,AskScience"
+    ).split(",")
     if not (cid and csecret):
         return 0
     try:
@@ -183,7 +209,9 @@ def fetch_reddit(env: dict, cfg) -> int:
         with db_connect() as con:
             for s in subs[:5]:
                 try:
-                    for post in reddit.subreddit(s.strip()).top(time_filter="day", limit=20):
+                    for post in reddit.subreddit(s.strip()).top(
+                        time_filter="day", limit=20
+                    ):
                         title = (post.title or "").strip()
                         if title:
                             insert_row(con, "reddit", title, s.strip())
@@ -203,14 +231,14 @@ def main(brief=None, models_config=None):
 
     # Log brief context if available
     if brief:
-        brief_title = brief.get('title', 'Untitled')
+        brief_title = brief.get("title", "Untitled")
         log_state("niche_trends", "START", f"brief={brief_title}")
         log.info(f"Running with brief: {brief_title}")
-        
+
         # Log brief keywords for transparency
-        if brief.get('keywords_include'):
+        if brief.get("keywords_include"):
             log.info(f"Brief keywords to include: {brief['keywords_include']}")
-        if brief.get('keywords_exclude'):
+        if brief.get("keywords_exclude"):
             log.info(f"Brief keywords to exclude: {brief['keywords_exclude']}")
     else:
         log_state("niche_trends", "START", "brief=none")
@@ -234,16 +262,20 @@ def main(brief=None, models_config=None):
     # If nothing added, add a single demo row (idempotent-ish; duplicates not harmful for demo)
     if added == 0:
         # Use brief keywords if available, otherwise fall back to defaults
-        if brief and brief.get('keywords_include'):
+        if brief and brief.get("keywords_include"):
             # Use brief keywords and avoid excluded terms
-            include_keywords = brief['keywords_include'][:3]
-            exclude_keywords = brief.get('keywords_exclude', [])
-            
+            include_keywords = brief["keywords_include"][:3]
+            exclude_keywords = brief.get("keywords_exclude", [])
+
             # Filter out any include keywords that are also in exclude
-            filtered_keywords = [kw for kw in include_keywords if kw.lower() not in [ex.lower() for ex in exclude_keywords]]
-            
+            filtered_keywords = [
+                kw
+                for kw in include_keywords
+                if kw.lower() not in [ex.lower() for ex in exclude_keywords]
+            ]
+
             if filtered_keywords:
-                demo_keywords = ','.join(filtered_keywords)
+                demo_keywords = ",".join(filtered_keywords)
                 demo_title = f"{brief.get('title', 'Topic')} that save time"
             else:
                 # Fallback if all keywords were excluded
@@ -253,28 +285,28 @@ def main(brief=None, models_config=None):
             # No brief - use generic defaults
             demo_keywords = "productivity,tips,guide"
             demo_title = "Productivity tips that save time"
-        
+
         insert_row(con, "demo", demo_title, demo_keywords)
         added = 1
     con.commit()
     con.close()
-    
+
     # Include brief context in final log
     if brief:
-        brief_title = brief.get('title', 'Untitled')
+        brief_title = brief.get("title", "Untitled")
         log_state("niche_trends", "OK", f"rows={added};brief={brief_title}")
     else:
         log_state("niche_trends", "OK", f"rows={added}")
-    
+
     print(f"Ingestion complete; rows added: {added}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Niche trends ingestion")
     parser.add_argument("--brief-data", help="JSON string containing brief data")
-    
+
     args = parser.parse_args()
-    
+
     # Parse brief data if provided
     brief = None
     if args.brief_data:
@@ -283,6 +315,6 @@ if __name__ == "__main__":
             log.info(f"Loaded brief: {brief.get('title', 'Untitled')}")
         except (json.JSONDecodeError, TypeError) as e:
             log.warning(f"Failed to parse brief data: {e}")
-    
+
     with single_lock():
         main(brief, models_config=None)  # models_config not passed via CLI

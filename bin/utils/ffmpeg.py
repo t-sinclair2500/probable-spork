@@ -2,13 +2,16 @@
 import platform
 import shutil
 from typing import List, Optional, Sequence
+
 from bin.utils.subproc import run_streamed
+
 
 def _default_codecs() -> List[str]:
     # Prefer VideoToolbox on macOS; otherwise just libx264.
     if platform.system().lower() == "darwin":
         return ["h264_videotoolbox", "libx264"]
     return ["libx264"]
+
 
 def encode_with_fallback(
     input_path: str,
@@ -34,13 +37,20 @@ def encode_with_fallback(
         cmd = [
             "ffmpeg",
             "-y",
-            "-i", input_path,
-            "-c:v", codec,
-            "-crf", crf,
-            "-profile:v", profile,
-            "-pix_fmt", pix_fmt,
-            "-c:a", "aac",
-            "-b:a", a_bitrate,
+            "-i",
+            input_path,
+            "-c:v",
+            codec,
+            "-crf",
+            crf,
+            "-profile:v",
+            profile,
+            "-pix_fmt",
+            pix_fmt,
+            "-c:a",
+            "aac",
+            "-b:a",
+            a_bitrate,
             output_path,
         ]
         if extra_video_args:

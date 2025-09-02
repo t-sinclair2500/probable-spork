@@ -1,0 +1,73 @@
+# Shorts generation configuration
+# Used by bin/viral/shorts.py for creating vertical video variants
+
+counts:
+  variants: 3
+  max_duration_sec: 60
+  min_duration_sec: 15
+
+selection:
+  # How to select which part of the video to use for shorts
+  strategy: "best_moment"  # best_moment, random, start, end, middle
+  best_moment_window_sec: 30  # Window to search for best moment
+  quality_threshold: 0.7  # Minimum quality score to consider
+
+crop:
+  # Vertical crop settings (9:16 aspect ratio)
+  target_width: 1080
+  target_height: 1920
+  maintain_aspect: true
+  smart_crop: true  # Use AI to find best crop area
+  padding_color: "#000000"  # Background color for letterboxing
+
+captions:
+  enabled: true
+  font: "assets/brand/fonts/Inter-Bold.ttf"
+  font_size_pct: 5.0          # % of video height
+  fill_rgba: [255,255,255,255]
+  stroke_rgba: [0,0,0,220]
+  bottom_margin_pct: 10.0
+  max_lines: 2
+  position: "bottom"  # top, middle, bottom
+  animation: "fade_in"  # fade_in, slide_up, none
+
+overlays:
+  # Visual overlays for shorts
+  logo: "assets/brand/overlays/logo_white.png"
+  subscribe: "assets/brand/overlays/subscribe.png"
+  logo_pos: ["right","top"]   # with 40px margin
+  subscribe_pos: ["right","bottom"]
+  progress_bar: true
+  progress_color: "#ff0000"
+  progress_height: 4
+  progress_position: "top"
+
+audio:
+  # Audio processing for shorts
+  lufs_target: -14.0
+  truepeak_max_db: -1.5
+  normalize: true
+  target_lufs: -16.0
+  fade_in_ms: 500
+  fade_out_ms: 500
+  background_music: false
+  music_path: "assets/music/shorts_bed.mp3"
+  music_volume: -20  # dB
+
+encoding:
+  # Video encoding settings for shorts
+  crf: 20
+  pix_fmt: "yuv420p"
+  preset: "medium"
+  codec: "h264"
+  fps: 30
+  bitrate: "2000k"
+  audio_codec: "aac"
+  audio_bitrate: "128k"
+
+filename:
+  # Naming pattern for generated shorts
+  pattern: "{slug}__short_{n}__{keywords}__9x16.mp4"
+  max_keywords: 4
+  include_timestamp: false
+  include_quality_score: true

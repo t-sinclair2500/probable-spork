@@ -1,8 +1,10 @@
 # tests/test_media_utils.py
-import json
 import time
+
 from pathlib import Path
-from bin.utils.media import find_voiceover_for_slug, resolve_metadata_for_slug, sanitize_text_for_pillow
+
+from bin.utils.media import find_voiceover_for_slug, sanitize_text_for_pillow
+
 
 def test_vo_discovery_prefers_exact(tmp_path, monkeypatch):
     vd = tmp_path / "voiceovers"
@@ -14,9 +16,9 @@ def test_vo_discovery_prefers_exact(tmp_path, monkeypatch):
     time.sleep(0.01)
     (vd / "my-slug.mp3").write_bytes(b"")  # exact
     # redirect search dir
-    from bin.utils import media as M
     slug = "my-slug"
     assert find_voiceover_for_slug(slug, search_dirs=[str(vd)]).name == "my-slug.mp3"
+
 
 def test_vo_discovery_falls_back_newest_reasonable(tmp_path):
     vd = tmp_path / "voiceovers"
@@ -27,22 +29,27 @@ def test_vo_discovery_falls_back_newest_reasonable(tmp_path):
     path = find_voiceover_for_slug("my-slug", search_dirs=[str(vd)])
     assert path is not None and path.suffix in {".mp3", ".m4a"}
 
+
 def test_metadata_resolution_order(tmp_path, monkeypatch):
     s = tmp_path / "scripts"
     v = tmp_path / "videos"
-    s.mkdir(); v.mkdir()
+    s.mkdir()
+    v.mkdir()
     (v / "my-slug.metadata.json").write_text("{}", encoding="utf-8")
     (s / "my-slug.metadata.json").write_text('{"from":"scripts"}', encoding="utf-8")
     # monkeypatch working dir
     cwd = Path.cwd()
     try:
         import os
+
         os.chdir(tmp_path)
         from bin.utils.media import resolve_metadata_for_slug
+
         p = resolve_metadata_for_slug("my-slug")
         assert p and p.parent.name == "scripts"
     finally:
         os.chdir(cwd)
+
 
 def test_sanitize_ellipsis():
     assert sanitize_text_for_pillow("Hello… world") == "Hello... world"

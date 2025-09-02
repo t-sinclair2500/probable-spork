@@ -2,11 +2,9 @@ import hashlib
 import json
 import logging
 import logging.handlers
-import math
 import os
 import re
 import shutil
-import subprocess
 import sys
 import time
 from contextlib import contextmanager
@@ -21,7 +19,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ValidationError
 
 # Platform-aware utilities
-from bin.utils.platform import is_macos, is_linux_arm, read_pi_cpu_temp_celsius
+from bin.utils.platform import is_linux_arm, is_macos, read_pi_cpu_temp_celsius
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -41,7 +39,9 @@ def get_logger(name="pipeline", log_file=None):
     logger.addHandler(sh)
     if log_file:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        fh = logging.handlers.RotatingFileHandler(log_file, maxBytes=5_000_000, backupCount=5)
+        fh = logging.handlers.RotatingFileHandler(
+            log_file, maxBytes=5_000_000, backupCount=5
+        )
         fh.setFormatter(fmt)
         logger.addHandler(fh)
     return logger
@@ -84,45 +84,47 @@ class StorageCfg(BaseModel):
 
 def _default_whisper_paths():
     """Smart defaults for whisper.cpp paths based on platform"""
-    import platform
     home = os.path.expanduser("~")
-    
+
     # Check common whisper.cpp locations
     possible_paths = [
         f"{home}/whisper.cpp/build/bin/whisper-cli",  # Standard user install
-        "/usr/local/bin/whisper-cli",                 # System install
-        "/opt/whisper.cpp/build/bin/whisper-cli",     # Alternative location
+        "/usr/local/bin/whisper-cli",  # System install
+        "/opt/whisper.cpp/build/bin/whisper-cli",  # Alternative location
     ]
-    
+
     possible_models = [
         f"{home}/whisper.cpp/models/ggml-base.en.bin",
         "/usr/local/share/whisper.cpp/models/ggml-base.en.bin",
         "/opt/whisper.cpp/models/ggml-base.en.bin",
     ]
-    
+
     # Find first existing binary
     binary_path = None
     for path in possible_paths:
         if os.path.exists(path):
             binary_path = path
             break
-    
+
     # Find first existing model
     model_path = None
     for path in possible_models:
         if os.path.exists(path):
             model_path = path
             break
-    
+
     # Fallback to standard Pi paths if nothing found
     return {
         "binary": binary_path or f"{home}/whisper.cpp/build/bin/whisper-cli",
-        "model": model_path or f"{home}/whisper.cpp/models/ggml-base.en.bin"
+        "model": model_path or f"{home}/whisper.cpp/models/ggml-base.en.bin",
     }
+
 
 class ASRCfg(BaseModel):
     provider: str = "whisper_cpp"
-    whisper_cpp_path: str = Field(default_factory=lambda: _default_whisper_paths()["binary"])
+    whisper_cpp_path: str = Field(
+        default_factory=lambda: _default_whisper_paths()["binary"]
+    )
     model: str = Field(default_factory=lambda: _default_whisper_paths()["model"])
     openai_enabled: bool = False
 
@@ -138,15 +140,15 @@ class TTSCfg(BaseModel):
 
 
 class AssetsCfg(BaseModel):
-    providers: List[str] = ["pixabay", "pexels"]
+    providers: List[str] = []  # Legacy stock providers removed - using procedural generation
     max_per_section: int = 3
 
 
 class AudioCfg(BaseModel):
-    vo_lufs_target: float = -16.0      # Voiceover target LUFS
-    music_lufs_target: float = -23.0   # Music bed target LUFS  
-    true_peak_max: float = -1.0        # Maximum true peak in dBTP
-    ducking_min_db: float = 6.0        # Minimum ducking difference in dB
+    vo_lufs_target: float = -16.0  # Voiceover target LUFS
+    music_lufs_target: float = -23.0  # Music bed target LUFS
+    true_peak_max: float = -1.0  # Maximum true peak in dBTP
+    ducking_min_db: float = 6.0  # Minimum ducking difference in dB
     enable_auto_normalization: bool = True  # Auto-normalize if out of spec
 
 
@@ -188,15 +190,16 @@ class VideoCfg(BaseModel):
 class ProceduralCfg(BaseModel):
     max_colors_per_scene: int = 3
     seed: Optional[int] = 42
-    placement: Optional[Dict[str, Any]] = Field(default_factory=lambda: {
-        "min_spacing_px": 64,
-        "safe_margin_px": 40
-    })
-    layout: Optional[Dict[str, Any]] = Field(default_factory=lambda: {
-        "strategy": "auto",
-        "prefer_thirds": True,
-        "max_attempts": 200
-    })
+    placement: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"min_spacing_px": 64, "safe_margin_px": 40}
+    )
+    layout: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {
+            "strategy": "auto",
+            "prefer_thirds": True,
+            "max_attempts": 200,
+        }
+    )
 
 
 class TextureGrainCfg(BaseModel):
@@ -231,6 +234,12 @@ class TextureCfg(BaseModel):
     brand_palette_only: bool = True
 
 
+class ViralCfg(BaseModel):
+    enabled: bool = True
+    shorts_enabled: bool = True
+    seo_enabled: bool = True
+
+
 class GlobalCfg(BaseModel):
     storage: StorageCfg
     pipeline: PipelineCfg
@@ -245,6 +254,7 @@ class GlobalCfg(BaseModel):
     limits: LimitsCfg = Field(default_factory=LimitsCfg)
     procedural: ProceduralCfg = Field(default_factory=ProceduralCfg)
     textures: TextureCfg = Field(default_factory=TextureCfg)
+    viral: ViralCfg = Field(default_factory=ViralCfg)
 
 
 def load_yaml(path: str) -> dict:
@@ -257,20 +267,20 @@ def load_config() -> GlobalCfg:
     if not os.path.exists(path):
         path = os.path.join(BASE, "conf", "global.example.yaml")
     raw = load_yaml(path)
-    
+
     # Handle auto-detection for whisper.cpp paths
     if raw.get("asr", {}).get("whisper_cpp_path") == "auto":
         defaults = _default_whisper_paths()
         raw["asr"]["whisper_cpp_path"] = defaults["binary"]
-    
+
     if raw.get("asr", {}).get("model") == "auto":
         defaults = _default_whisper_paths()
         raw["asr"]["model"] = defaults["model"]
-    
+
     # Handle relative base_dir
     if raw.get("storage", {}).get("base_dir") == ".":
         raw["storage"]["base_dir"] = BASE
-    
+
     try:
         cfg = GlobalCfg(**raw)
     except ValidationError as e:
@@ -288,9 +298,6 @@ def load_env() -> dict:
     return env
 
 
-
-
-
 def load_modules_cfg():
     """Load modules configuration from modules.yaml"""
     p = os.path.join(BASE, "conf", "modules.yaml")
@@ -298,6 +305,7 @@ def load_modules_cfg():
         log.warning("modules.yaml not found, using empty configuration")
         return {}
     import yaml
+
     return yaml.safe_load(open(p, "r", encoding="utf-8"))
 
 
@@ -305,6 +313,7 @@ def load_brief():
     """Load workstream brief from conf/brief.yaml or conf/brief.md"""
     try:
         from .brief_loader import load_brief as _load_brief
+
         return _load_brief()
     except ImportError:
         # Fallback if brief_loader is not available
@@ -314,12 +323,14 @@ def load_brief():
             "audience": [],
             "tone": "informative",
             "video": {"target_length_min": 5, "target_length_max": 7},
-
             "keywords_include": [],
             "keywords_exclude": [],
             "sources_preferred": [],
-            "monetization": {"primary": ["lead_magnet", "email_capture"], "cta_text": "Download our free guide"},
-            "notes": ""
+            "monetization": {
+                "primary": ["lead_magnet", "email_capture"],
+                "cta_text": "Download our free guide",
+            },
+            "notes": "",
         }
 
 
@@ -327,70 +338,73 @@ def create_brief_context(brief: dict) -> str:
     """Create a standardized brief context string for injection into prompts"""
     if not brief:
         return ""
-    
-    context_parts = []
-    
-    if brief.get('title'):
-        context_parts.append(f"Title: {brief['title']}")
-    
-    if brief.get('intent'):
-        context_parts.append(f"Intent: {brief['intent']}")
-    
-    if brief.get('audience'):
-        audience_str = ', '.join(brief['audience'])
-        context_parts.append(f"Audience: {audience_str}")
-    
-    if brief.get('tone'):
-        context_parts.append(f"Tone: {brief['tone']}")
-    
-    if brief.get('keywords_include'):
-        keywords_str = ', '.join(brief['keywords_include'])
-        context_parts.append(f"Keywords to include: {keywords_str}")
-    
-    if brief.get('keywords_exclude'):
-        exclude_str = ', '.join(brief['keywords_exclude'])
-        context_parts.append(f"Keywords to exclude: {exclude_str}")
-    
-    if brief.get('video', {}).get('target_length_min') and brief.get('video', {}).get('target_length_max'):
-        context_parts.append(f"Video target: {brief['video']['target_length_min']}-{brief['video']['target_length_max']} minutes")
-    
 
-    
-    if brief.get('sources_preferred'):
-        sources_str = ', '.join(brief['sources_preferred'])
+    context_parts = []
+
+    if brief.get("title"):
+        context_parts.append(f"Title: {brief['title']}")
+
+    if brief.get("intent"):
+        context_parts.append(f"Intent: {brief['intent']}")
+
+    if brief.get("audience"):
+        audience_str = ", ".join(brief["audience"])
+        context_parts.append(f"Audience: {audience_str}")
+
+    if brief.get("tone"):
+        context_parts.append(f"Tone: {brief['tone']}")
+
+    if brief.get("keywords_include"):
+        keywords_str = ", ".join(brief["keywords_include"])
+        context_parts.append(f"Keywords to include: {keywords_str}")
+
+    if brief.get("keywords_exclude"):
+        exclude_str = ", ".join(brief["keywords_exclude"])
+        context_parts.append(f"Keywords to exclude: {exclude_str}")
+
+    if brief.get("video", {}).get("target_length_min") and brief.get("video", {}).get(
+        "target_length_max"
+    ):
+        context_parts.append(
+            f"Video target: {brief['video']['target_length_min']}-{brief['video']['target_length_max']} minutes"
+        )
+
+    if brief.get("sources_preferred"):
+        sources_str = ", ".join(brief["sources_preferred"])
         context_parts.append(f"Preferred sources: {sources_str}")
-    
-    if brief.get('notes'):
+
+    if brief.get("notes"):
         context_parts.append(f"Notes: {brief['notes']}")
-    
+
     if context_parts:
         return "BRIEF CONTEXT:\n" + "\n".join(context_parts) + "\n\n"
-    
+
     return ""
 
 
 def validate_brief_intent(brief: dict) -> tuple[bool, str]:
     """
     Validate that a brief has a valid intent field.
-    
+
     Args:
         brief: Brief configuration dictionary
-        
+
     Returns:
         Tuple of (is_valid, error_message)
     """
     if not brief:
         return False, "No brief provided"
-    
-    if 'intent' not in brief:
+
+    if "intent" not in brief:
         return False, "Brief missing required 'intent' field"
-    
-    intent = brief['intent']
+
+    intent = brief["intent"]
     if not intent or not isinstance(intent, str):
         return False, f"Invalid intent value: {intent}"
-    
+
     try:
         from bin.intent_loader import validate_intent
+
         if not validate_intent(intent):
             return False, f"Intent template '{intent}' validation failed"
         return True, ""
@@ -404,23 +418,24 @@ def validate_brief_intent(brief: dict) -> tuple[bool, str]:
 def get_brief_intent_template(brief: dict) -> dict:
     """
     Get the intent template for a brief.
-    
+
     Args:
         brief: Brief configuration dictionary
-        
+
     Returns:
         Intent template dictionary
-        
+
     Raises:
         KeyError: If intent field is missing or invalid
         ImportError: If intent loader is not available
     """
-    if not brief or 'intent' not in brief:
+    if not brief or "intent" not in brief:
         raise KeyError("Brief missing required 'intent' field")
-    
+
     try:
         from bin.intent_loader import load_intent_template
-        return load_intent_template(brief['intent'])
+
+        return load_intent_template(brief["intent"])
     except ImportError:
         raise ImportError("Intent loader not available")
 
@@ -428,29 +443,29 @@ def get_brief_intent_template(brief: dict) -> dict:
 def filter_content_by_brief(content: str, brief: dict) -> tuple[str, list[str]]:
     """
     Filter content based on brief keywords_exclude and return filtered content with rejection reasons.
-    
+
     Args:
         content: Text content to filter
         brief: Brief configuration with keywords_exclude
-        
+
     Returns:
         Tuple of (filtered_content, rejection_reasons)
     """
-    if not brief or not brief.get('keywords_exclude'):
+    if not brief or not brief.get("keywords_exclude"):
         return content, []
-    
-    exclude_terms = [term.lower().strip() for term in brief['keywords_exclude']]
+
+    exclude_terms = [term.lower().strip() for term in brief["keywords_exclude"]]
     content_lower = content.lower()
     rejection_reasons = []
-    
+
     for term in exclude_terms:
         if term in content_lower:
             rejection_reasons.append(f"Contains excluded term: '{term}'")
-    
+
     if rejection_reasons:
         log.warning(f"Content rejected due to excluded terms: {rejection_reasons}")
         return "", rejection_reasons
-    
+
     return content, rejection_reasons
 
 
@@ -467,21 +482,21 @@ def require_keys(env: dict, keys: List[str], feature_name: str):
 def single_lock():
     lock_path = os.path.join(BASE, "jobs", "lock")
     os.makedirs(os.path.dirname(lock_path), exist_ok=True)
-    
+
     # Windows-compatible locking
-    if os.name == 'nt':  # Windows
+    if os.name == "nt":  # Windows
         try:
             # Simple file-based locking for Windows
             if os.path.exists(lock_path):
                 log.info("Another job is running. Exiting.")
                 sys.exit(0)
-            
+
             # Create lock file
-            with open(lock_path, 'w') as f:
+            with open(lock_path, "w") as f:
                 f.write(str(os.getpid()))
-            
+
             yield
-            
+
         finally:
             try:
                 if os.path.exists(lock_path):
@@ -492,6 +507,7 @@ def single_lock():
         fd = os.open(lock_path, os.O_CREAT | os.O_RDWR)
         try:
             import fcntl
+
             fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             yield
         except BlockingIOError:
@@ -500,6 +516,7 @@ def single_lock():
         finally:
             try:
                 import fcntl
+
                 fcntl.lockf(fd, fcntl.LOCK_UN)
                 os.close(fd)
                 os.remove(lock_path)
@@ -539,7 +556,9 @@ def disk_free_gb(path: str) -> float:
     return round(free / 1e9, 2)
 
 
-def maybe_defer_for_thermals(threshold_c: float = 75.0, sleep_seconds: int = 30) -> None:
+def maybe_defer_for_thermals(
+    threshold_c: float = 75.0, sleep_seconds: int = 30
+) -> None:
     """
     Pi-only: If CPU temp exceeds threshold, sleep/backoff to protect device.
     On macOS: no-op (thermal management is handled by OS; no vcgencmd).
@@ -562,7 +581,7 @@ def maybe_defer_for_thermals(threshold_c: float = 75.0, sleep_seconds: int = 30)
 def guard_system(cfg: GlobalCfg, min_free_gb: float = 5.0, max_temp_c: float = 75.0):
     # Use platform-aware thermal guard
     maybe_defer_for_thermals(max_temp_c, 60)
-    
+
     # Disk space check
     free = disk_free_gb(cfg.storage.base_dir)
     if free < min_free_gb:
@@ -623,11 +642,14 @@ else:
 
 def sanitize_html(html: str) -> str:
     if bleach is not None:
-        return bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True)
+        return bleach.clean(
+            html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True
+        )
     else:
         # Fallback: basic HTML stripping
         import re
-        return re.sub(r'<[^>]+>', '', html)
+
+        return re.sub(r"<[^>]+>", "", html)
 
 
 # ---------------- Hashing & Dedupe ----------------
@@ -653,7 +675,9 @@ def slugify(text: str) -> str:
 # ---------------- Beat Timing (fallback) ----------------
 
 
-def estimate_beats(script_text: str, target_sec: int = 420, wpm: int = 160) -> List[Dict[str, Any]]:
+def estimate_beats(
+    script_text: str, target_sec: int = 420, wpm: int = 160
+) -> List[Dict[str, Any]]:
     # Split by sentences; rough duration by words count / wps
     parts = re.split(r"(?<=[.!?])\s+", script_text.strip())
     words = sum(len(p.split()) for p in parts if p.strip())
@@ -671,38 +695,19 @@ def estimate_beats(script_text: str, target_sec: int = 420, wpm: int = 160) -> L
     return beats
 
 
-# ---------------- Schema.org Article ----------------
-
-
-def schema_article(
-    title: str, desc: str, url: str, img_url: str, author_name: str = "Editor"
-) -> str:
-    data = {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        "headline": title,
-        "description": desc,
-        "author": {"@type": "Person", "name": author_name},
-        "image": img_url,
-        "mainEntityOfPage": {"@type": "WebPage", "@id": url},
-        "datePublished": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
-    return json.dumps(data)
-
-
 # ---------------- Publish Flags & DRY_RUN Governance ----------------
 
 
 def get_publish_flags(cli_dry_run: bool = False) -> Dict[str, bool]:
     """
     Centralized publish flag governance with clear precedence hierarchy.
-    
+
     Args:
         cli_dry_run: CLI --dry-run flag state
-        
+
     Returns:
         Dict with flags: {"youtube_dry_run": bool}
-        
+
     Precedence (highest to lowest):
         1. CLI flags (--dry-run)
         2. Environment variables (YOUTUBE_UPLOAD_DRY_RUN)
@@ -710,23 +715,18 @@ def get_publish_flags(cli_dry_run: bool = False) -> Dict[str, bool]:
     """
     env = load_env()
     flags = {}
-    
+
     # YouTube publish flags
     if cli_dry_run:
         # CLI override: force dry-run
         flags["youtube_dry_run"] = True
     else:
         # Check environment variable (default to safe dry-run)
-        env_dry = env.get("YOUTUBE_UPLOAD_DRY_RUN", "true").lower() in ("1", "true", "yes")
+        env_dry = env.get("YOUTUBE_UPLOAD_DRY_RUN", "true").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         flags["youtube_dry_run"] = env_dry
-    
+
     return flags
-
-
-def should_publish_youtube(cli_dry_run: bool = False) -> bool:
-    """Check if YouTube upload should be live (not dry-run)"""
-    flags = get_publish_flags(cli_dry_run)
-    return not flags["youtube_dry_run"]
-
-
-
